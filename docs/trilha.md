@@ -79,7 +79,7 @@ Cada linha: habilidade → como praticar de graça → ferramenta open source �
 | Inspecionar grafo | Netron em ONNX/safetensors públicos | Netron | export PNG/JSON da arquitetura |
 | Pesos e shapes | `safetensors`, `torchinfo` | Python | script `models/inspect.py` |
 | Hooks / ativações | nnsight em modelos pequenos (CPU) | nnsight | notebook ou Actions com relatório |
-| Ablação de parâmetros | grade de experimentos (guidance, steps) | ACE-Step em Kaggle/Colab grátis | tabela de resultados em `eval/` |
+| Ablação de parâmetros | grade de experimentos (guidance, steps) | modelos pequenos em CPU no Actions | tabela de resultados em `eval/` |
 
 ### 2.6 Áudio, DSP e MIR (prioridade Fyah)
 
@@ -145,7 +145,7 @@ Pensada para rodar **só no celular + GitHub Actions/Codespaces**, sem PC local 
 - **Prova:** `formats/` com 1 parser; `writeups/` com 3 labs.
 
 ### Fase 3 — Inversão áudio + stems (roadmap F2)
-- Intro2DDSP + dasp-pytorch em CPU (trechos curtos) ou Kaggle grátis.
+- Intro2DDSP + dasp-pytorch em CPU (trechos curtos).
 - T5 stems (Demucs) + T2 comparador com auraloss.
 - Dataset ground-truth com pedalboard.
 - **Prova:** receita de FX estimada com erro < limiar documentado.

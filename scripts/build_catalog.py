@@ -1,6 +1,6 @@
 """Gera docs/catalogo/: catálogo de repositórios open source de engenharia reversa via API do GitHub.
 
-Uso: GH_TOKEN=... python scripts/build_catalog.py [--quick]
+Uso: python scripts/build_catalog.py [--quick]  (usa o gh CLI; no Actions, o GITHUB_TOKEN automático)
 Só leitura na API; respeita rate limit (pausa ao atingir o limite). Requer o gh CLI.
 """
 import json,subprocess,time,re,glob,csv,datetime,sys,os,pathlib,tempfile

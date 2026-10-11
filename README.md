@@ -8,7 +8,8 @@ Entender *como* faixas e vídeos são construídos (espectro, BPM, tonalidade, t
 
 ## Regras
 
-- **Custo zero sempre, código aberto sempre.** Tudo roda nos runners gratuitos do GitHub Actions (CPU). GPU só em opções gratuitas (Kaggle, Colab grátis, HF Spaces), ver [arsenal](docs/arsenal.md).
+- **Custo zero sempre, código aberto sempre.** Tudo roda nos runners gratuitos do GitHub Actions (CPU). Sem GPU externa; ver [arsenal](docs/arsenal.md).
+- **Sem API, sem token, sem cadastro.** Nenhuma ferramenta exige chave de API, conta ou cadastro em outro serviço; o único token é o `GITHUB_TOKEN` automático do Actions. Modelos só com pesos públicos baixados anonimamente, rodando em CPU.
 - **Só links:** nenhum código de terceiros é copiado para cá; dependências são declaradas no `pyproject.toml` ou instaladas no workflow.
 - **Só trabalho legal.** Sem quebrar DRM nem contornar proteções técnicas ou criptografia.
 - **Respeitar licenças e termos de uso.** Ferramentas GPL só via CLI isolada; licenças não comerciais (ex.: DeepAFx-ST, Diff-MST) ficam fora do código.
@@ -24,7 +25,6 @@ scripts/     build_catalog.py (gerador do catálogo)
 docs/        metodologia, trilha, arsenal, referências, catalogo/
 writeups/    relatos de análises
 labs/        exercícios práticos
-kaggle/      jobs de GPU grátis (Kaggle)
 tests/       testes (pytest)
 .github/workflows/  ci, catalog-refresh e as 5 ferramentas
 ```
@@ -43,7 +43,6 @@ Abra **Actions** no app/site do GitHub → escolha o workflow → **Run workflow
 | `catalog-refresh` | — (mensal) | atualiza `docs/catalogo/` |
 | `er-analyze` | ferramenta + URL(s) | ponto único para todas as ferramentas acima |
 | `er-daily` | — (dias úteis 09:00 BRT) | diário de estudo em `docs/diario/` |
-| `er-gpu-kaggle` | pasta em `kaggle/` + URL | GPU grátis do Kaggle (precisa de secrets) |
 
 Detalhes da infraestrutura custo zero: [docs/maquina.md](docs/maquina.md).
 
@@ -64,7 +63,7 @@ pytest -q
 - **Fase 2 — Inversão de áudio:** estimar EQ/compressão/reverb com DSP diferenciável (dasp-pytorch, grafx) e validar re-renderizando (pedalboard via CLI); dataset ground-truth próprio.
 - **Fase 3 — Forense e transcrição:** fingerprint (Chromaprint), marca d'água (AudioSeal), detecção de música IA (SONICS), áudio→MIDI (basic-pitch).
 - **Fase 4 — Formatos, binários e protocolos:** parsers Kaitai, rizin/Ghidra headless — só arquivos próprios ou autorizados.
-- **Fase 5 — Modelos de ML:** inspeção de arquiteturas e ativações (Netron, nnsight) em GPU gratuita.
+- **Fase 5 — Modelos de ML:** inspeção de arquiteturas e ativações (Netron, nnsight) em CPU.
 
 ## Licença
 

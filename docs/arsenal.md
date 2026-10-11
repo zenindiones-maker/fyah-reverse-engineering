@@ -17,15 +17,10 @@
 | Artefatos | `upload-artifact@v4`, retenção configurável (padrão 90 dias), baixáveis no celular |
 | Codespaces | cota grátis mensal (~120 h-core, 15 GB); parar ao atingir a cota — nunca ativar cobrança |
 
-Regra prática (custo zero): modelos ≤ ~1 GB em CPU cabem; modelos de geração (ACE-Step) e treino de DSP diferenciável **não** cabem bem → rodar em CPU com trechos curtos ou usar uma GPU **gratuita**:
+Regra prática (custo zero): modelos ≤ ~1 GB em CPU cabem; modelos de geração (ACE-Step) e treino de DSP diferenciável **não** cabem bem → rodar em CPU com trechos curtos sem depender de GPU externa.
 
-## GPU gratuita (só quando CPU não der)
-| Opção | Limites (aprox., verificar) | Uso |
-|---|---|---|
-| Kaggle Notebooks | ~30 h GPU/semana (T4 x2 ou P100), sessão até 9–12 h, conta verificada por telefone | treino curto de DSP diferenciável, YourMT3, ACE-Step |
-| Google Colab gratuito | T4 sem garantia, sessão ~12 h máx., desconecta por inatividade, cota variável | testes rápidos; funciona no navegador do celular |
-| Hugging Face Spaces (CPU básico grátis) / ZeroGPU | CPU 2 vCPU/16 GB grátis; ZeroGPU com cota diária de poucos minutos por usuário e criação de Spaces ZeroGPU restrita a contas PRO | demos/inferência leve; ZeroGPU só usando Spaces públicos existentes |
-Nenhuma opção paga é considerada.
+## Sem GPU externa
+Regra: **sem API, sem token, sem cadastro**. Tudo roda em CPU nos runners do GitHub Actions; pesos só de repositórios públicos baixados anonimamente. O que exige GPU fica para estudo, com trechos curtos em CPU.
 
 ## Ferramentas 
 Legenda roadmap: **T1** perfil de faixa · **T2** comparador · **T3** inspetor de mídia · **T4** cortes e ritmo · **T5** stems + análise por stem · **F2+** fases futuras (inversão, forense, binários, modelos).
@@ -48,7 +43,7 @@ Legenda roadmap: **T1** perfil de faixa · **T2** comparador · **T3** inspetor 
 | grafx | Apache-2.0 | grafos de processamento diferenciáveis | F2 fx_chain | torch; GPU recomendado → CPU só com trechos curtos |
 | DeepAFx-ST | Adobe Research (não comercial, **não é open source**) | transferência de estilo de FX | ❌ **DESCARTADO** (só leitura de estudo do artigo) | não usar no código; alternativa aberta: dasp-pytorch + grafx |
 | Diff-MST | CC BY-NC-SA 4.0 (confirmado; **não é open source**) | inversão de mix multitrack | ❌ **DESCARTADO** (só estudo do método) | não usar no código; reimplementar a ideia com dasp-pytorch (Apache-2.0) |
-| ddsp | Apache-2.0 | síntese diferenciável / sound matching | F2 synth_match | TF; treino precisa GPU → Colab/HF sob aprovação |
+| ddsp | Apache-2.0 | síntese diferenciável / sound matching | F2 synth_match | TF; treino pesado → só estudo / trechos curtos em CPU |
 | DawDreamer | GPL-3 | host de VST/Faust headless em Python | F2 synth_match, dataset | pip wheel Linux · CPU · render de presets |
 | audioseal | MIT | marca d'água/detecção em áudio (Meta) | forense F3 | modelo pequeno (~ dezenas de MB) · CPU · relatório JSON |
 | sonics | MIT | detecção de música gerada por IA | forense F3 / T2 | modelos SpecTTTra (~100–300 MB) · CPU · score JSON |
@@ -63,7 +58,7 @@ Legenda roadmap: **T1** perfil de faixa · **T2** comparador · **T3** inspetor 
 | angr | BSD-2 | execução simbólica | F4 | pip pesado (~1 GB) · CPU · análise pontual |
 | netron | MIT | visualizar grafos de modelos (ONNX etc.) | F5 RE de modelos | `pip install netron` gera visualização; no Actions exportar arquitetura |
 | nnsight | MIT | inspeção/intervenção em ativações de modelos | F5 (ex.: Demucs, ACE-Step) | torch; modelos pequenos em CPU |
-| ACE-Step-1.5 | MIT (código) + pesos MIT (card HF `ACE-Step/Ace-Step1.5`: license:mit, confirmado) | modelo de geração musical (estudo de modelos) | F5 | sem GPU no Actions → Kaggle/Colab gratuito sob aprovação |
+| ACE-Step-1.5 | MIT (código) + pesos MIT (license:mit no card público, confirmado) | modelo de geração musical (estudo de modelos) | F5 | sem GPU → só estudo de arquitetura (Netron/nnsight em CPU) |
 
 ## Pesos grandes — NÃO baixados (aguardando aprovação)
 Tamanhos aproximados (verificar no card antes de baixar):
@@ -78,7 +73,7 @@ Tamanhos aproximados (verificar no card antes de baixar):
 | SONICS SpecTTTra | ~100–300 MB | Actions CPU |
 | AudioSeal gerador+detector | ~30–60 MB | Actions CPU |
 | fadtk embeddings (CLAP/MERT) | ~0.3–1.2 GB | Actions CPU + cache |
-| ACE-Step-1.5 | vários GB (~4–8+) | Kaggle/Colab gratuito |
+| ACE-Step-1.5 | vários GB (~4–8+) | fora do escopo de execução (só estudo) |
 
 ## Workflows propostos (ativos)
 Em `.github/workflows/`: `audio-profile.yml`, `compare.yml`, `media-inspect.yml`, `cuts-pacing.yml`, `stems.yml`. Todos `workflow_dispatch` com inputs (URL do arquivo), runner `ubuntu-latest`, timeout definido, cache pip/modelos e resultado em artefato + resumo no `GITHUB_STEP_SUMMARY` (legível no app do GitHub). Pressupõem módulos `audio.profile`, `audio.compare`, `video.pacing` no repo fyah-reverse-engineering (ainda a implementar). Entrada por URL evita commitar mídia; arquivos privados podem vir via Release ou link do Drive.
