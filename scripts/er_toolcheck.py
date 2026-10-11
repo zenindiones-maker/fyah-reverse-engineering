@@ -197,7 +197,7 @@ def pretty_midi_():
     inst.notes.append(pretty_midi.Note(100, 60, 0, 0.5)); pm.instruments.append(inst); p = T / "x.mid"; pm.write(str(p))
     return f"pretty_midi: MIDI {pretty_midi.PrettyMIDI(str(p)).get_end_time():.1f}s"
 def mido_():
-    import mido; return f"mido {mido.__version__}: {len(mido.MidiFile(T / 'x.mid').tracks)} trilha(s)"
+    import mido; return f"mido: {len(mido.MidiFile(T / 'x.mid').tracks)} trilha(s)"
 def muspy_():
     return iso("musicxml", "import muspy, pathlib, os; m=muspy.read_midi(pathlib.Path(os.environ['T'])/'x.mid'); print(f'muspy {muspy.__version__}: {len(m.tracks)} trilha(s)')")
 def partitura_():
@@ -249,7 +249,7 @@ def apkleaks_():
     r = subprocess.run(["apkleaks", "-f", str(APK), "-o", str(T/"apkleaks.json")], capture_output=True, text=True, timeout=300)
     return f"apkleaks: rc={r.returncode}, saída {(T/'apkleaks.json').exists()}"
 def objection_():
-    return iso("objection", "import subprocess; print(subprocess.check_output(['objection','version'], text=True).strip())")
+    return iso("objection", "import objection, importlib.metadata as m; print('objection', m.version('objection'))")
 def magika_():
     from magika import Magika; r = Magika().identify_path(APK if APK.exists() else WAV); return f"magika: {r.output.ct_label}"
 def olefile_():
@@ -329,7 +329,7 @@ CHECKS = {
     "audio": [("librosa", librosa_), ("pyloudnorm", pyloudnorm_), ("essentia", essentia_), ("pedalboard", pedalboard_),
               ("audioflux", audioflux_), ("matchering", matchering_), ("music21", music21_), ("PyWavelets", pywt_),
               ("audiomentations", audiomentations_), ("mir_eval", mir_eval_), ("miditok", miditok_), ("mirdata", mirdata_),
-              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("nnAudio", nnaudio_), ("chromaprint (fpcalc)", chromaprint_), ("nussl", nussl_), ("msaf", msaf_), ("fyah audio.profile", fyah_profile_)],
+              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("chromaprint (fpcalc)", chromaprint_), ("nussl", nussl_), ("msaf", msaf_), ("fyah audio.profile", fyah_profile_)],
     "video": [("ffmpeg", ffmpeg_), ("ffprobe", ffprobe_), ("mediainfo", mediainfo_), ("pymediainfo", pymediainfo_),
               ("PySceneDetect", scenedetect_), ("TransNetV2", transnet_), ("colour-science", colour_), ("PyAV", av_), ("ffmpy", ffmpy_), ("Pillow", pillow_)],
     "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_), ("apkleaks", apkleaks_), ("objection", objection_)],

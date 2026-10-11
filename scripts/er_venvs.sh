@@ -22,9 +22,9 @@ if [ ! -x "$V/allin1/bin/python" ]; then
   uv pip install -q --no-build-isolation "madmom @ git+https://github.com/CPJKU/madmom" allin1 || { echo "::warning::venv allin1 falhou"; rm -rf "$V/allin1"; }
   unset VIRTUAL_ENV
 fi
-mk nussl 3.10 nussl "numpy<1.24" "setuptools<81"
-mk msaf 3.10 msaf "numpy<1.24" "setuptools<81"
-mk angr 3.11 $TORCH_CPU angr unicorn keystone-engine "PyYAML"
+mk nussl 3.11 nussl "setuptools<81" || mk nussl 3.10 nussl "numpy<1.24" "setuptools<81"
+mk msaf 3.10 msaf "numpy<1.24" "scipy<1.11" "setuptools<81"
+mk angr 3.11 $TORCH_CPU "bitstring<4.2" angr unicorn keystone-engine "PyYAML"
 mk objection 3.11 objection frida-tools
 mk musicxml 3.11 miditok muspy partitura pretty_midi mido
 ls "$V"
