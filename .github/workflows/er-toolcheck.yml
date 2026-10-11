@@ -15,7 +15,7 @@ jobs:
       - uses: ./.github/actions/setup-er
         with: {extras: "all", torch: "true", jadx: "true", ghidra: "true"}
       - uses: actions/cache@v6
-        with: {path: ~/.er-venvs, key: er-venvs-${{ hashFiles('scripts/er_venvs.sh') }}}
+        with: {path: ~/.er-venvs, key: "er-venvs-${{ hashFiles('scripts/er_venvs.sh') }}"}
       - name: Venvs isoladas
         run: bash scripts/er_venvs.sh
       - name: Smoke test
