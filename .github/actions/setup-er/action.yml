@@ -25,10 +25,12 @@ runs:
       run: pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
     - name: pip extras
       shell: bash
-      env: {EXTRAS: "${{ inputs.extras }}"}
+      env: {EXTRAS: "${{ inputs.extras }}", PIP_PREFER_BINARY: "1"}
       run: |
-        pip install -q --only-binary=:all: "PyYAML>=6" || pip install -q "PyYAML>=6"
-        pip install -q -e ".[${EXTRAS}]"
+        pip install -q "PyYAML==6.0.2"
+        # pacotes pesados/quebrados vão em venvs (er_venvs.sh); o main fica leve
+        pip install -q -c constraints.txt -e ".[${EXTRAS}]"
+
     - name: versões de jadx/Ghidra
       id: rel
       if: inputs.jadx == 'true' || inputs.ghidra == 'true'

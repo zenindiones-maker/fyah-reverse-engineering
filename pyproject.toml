@@ -14,7 +14,7 @@ dependencies = []
 
 [project.optional-dependencies]
 audio = ["librosa>=0.10", "pyloudnorm>=0.1.1", "soundfile>=0.12", "numpy>=1.24"]
-audio-plus = ["fyah-re[audio]", "essentia", "pedalboard", "audioflux", "matchering", "music21", "PyWavelets", "audiomentations", "mir_eval", "miditok", "mirdata", "pretty_midi", "mido", "muspy", "partitura", "resampy", "nnAudio", "pyacoustid"]
+audio-plus = ["fyah-re[audio]", "essentia", "pedalboard", "audioflux", "matchering", "music21", "PyWavelets", "audiomentations", "mir_eval", "miditok", "mirdata", "pretty_midi", "mido", "muspy", "partitura", "resampy", "pyacoustid"]
 ml = ["demucs", "torchcrepe", "dawdreamer", "beat_this @ git+https://github.com/CPJKU/beat_this", "onnx", "onnxruntime", "onnxsim", "netron", "scapy"]
 # isoladas em venvs próprias (scripts/er_venvs.sh): basic-pitch, spleeter, asteroid, transnetv2-pytorch, allin1
 video = ["scenedetect>=0.6.4", "opencv-python-headless", "colour-science", "pymediainfo", "av", "ffmpy", "pillow"]
