@@ -6,9 +6,9 @@ on:
       model:
         description: "Modelo (fast=0.5B; qwen3-4b; qwen25-7b; qwen3-8b)"
         required: true
-        default: qwen3-4b
+        default: qwen25-14b
         type: choice
-        options: [fast, qwen3-4b, qwen25-7b, qwen3-8b]
+        options: [fast, qwen25-7b, qwen25-14b, qwen3-14b, qwen3-30b-a3b, r1-14b]
       task:
         description: "Tarefa para o E.R."
         required: true
@@ -21,7 +21,7 @@ permissions: {contents: read}
 jobs:
   harness:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 360
     env:
       LOCAL_LLM_KEY: local-no-cloud-key
       ER_TOOLS_DIR: ${{ github.workspace }}/.er-tools
@@ -51,6 +51,10 @@ jobs:
             .er-tools/models
             .er-tools/llama
           key: ${{ steps.meta.outputs.cache_key }}
+      - name: Free RAM / disk
+        run: |
+          free -h || true
+          df -h . || true
       - name: Start llama-server
         env:
           GH_TOKEN: ${{ github.token }}
@@ -61,7 +65,7 @@ jobs:
             bash harness/run_local_llm.sh > llama.log 2>&1 &
             echo $! > llama.pid
             ok=0
-            for i in $(seq 1 300); do
+            for i in $(seq 1 600); do
               if curl -sf http://127.0.0.1:8080/v1/models >/tmp/models.json; then ok=1; break; fi
               if ! kill -0 "$(cat llama.pid)" 2>/dev/null; then
                 echo "llama-server morreu; log:"; tail -120 llama.log; exit 1

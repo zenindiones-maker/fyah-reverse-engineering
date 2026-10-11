@@ -1,5 +1,4 @@
 # Rota OpenAI-compatible local (llama.cpp). Placeholder LOCAL_LLM_KEY != chave de nuvem.
-# Desliga upload de session-log para DeepSeek. Substitui o adapter Anthropic-Messages do sdk-minimal.
 - remove:
     - llm-deepseek
 - config:
@@ -21,17 +20,25 @@
             models:
               - id: qwen2.5-0.5b
                 name: Qwen2.5-0.5B-Instruct (GGUF Q4_K_M)
-                contextWindow: 4096
-                maxTokens: 1024
-              - id: qwen3-4b-instruct
-                name: Qwen3-4B-Instruct-2507 (GGUF Q4_K_M)
-                contextWindow: 4096
-                maxTokens: 1024
+                contextWindow: 8192
+                maxTokens: 512
               - id: qwen2.5-7b
                 name: Qwen2.5-7B-Instruct (GGUF Q4_K_M)
+                contextWindow: 8192
+                maxTokens: 512
+              - id: qwen2.5-14b
+                name: Qwen2.5-14B-Instruct (GGUF Q3_K_M)
                 contextWindow: 4096
-                maxTokens: 1024
-              - id: qwen3-8b
-                name: Qwen3-8B (GGUF Q4_K_M)
+                maxTokens: 512
+              - id: qwen3-14b
+                name: Qwen3-14B (GGUF Q3_K_M)
                 contextWindow: 4096
-                maxTokens: 1024
+                maxTokens: 512
+              - id: qwen3-30b-a3b
+                name: Qwen3-30B-A3B-Instruct-2507 (GGUF UD-IQ1_M)
+                contextWindow: 4096
+                maxTokens: 512
+              - id: r1-distill-qwen-14b
+                name: DeepSeek-R1-Distill-Qwen-14B (GGUF Q3_K_M)
+                contextWindow: 4096
+                maxTokens: 512

@@ -68,19 +68,16 @@ def main() -> int:
     from tools.catalog import list_for_prompt
     system = (ROOT / "prompts" / "system.txt").read_text() + "\n" + list_for_prompt()
     # Qwen3 base (non-Instruct-2507) may think; Instruct-2507 usually won't need this.
-    if a.model_preset == "qwen3-8b":
+    if meta.get("no_think"):
         system = "/no_think\n" + system
     os.environ["DSH_SYSTEM_PROMPT"] = system
-    os.environ["DSH_CONTEXT_WINDOW"] = str(meta["ctx"] * 2)
+    os.environ["DSH_CONTEXT_WINDOW"] = str(meta["ctx"])
 
     task = a.task
     if a.file_url:
         task += (
-            f"\n\nArquivo de entrada (URL): {a.file_url}\n"
-            "Passos obrigatórios (use a ferramenta bash, um comando por vez):\n"
-            "1) python -m tools run media-inspect --input '<URL>' --out out/media-inspect.json && cat out/media-inspect.json\n"
-            "2) python -m tools run audio-full --input '<URL>' --out out/audio-full.json && cat out/audio-full.json\n"
-            "Substitua <URL> pela URL acima. Não invente nomes de ferramentas."
+            f"\n\nInput URL: {a.file_url}\n"
+            "Use bash to run media-inspect then audio-full on that URL (see system prompt)."
         )
 
     patch = str((ROOT / "patches" / "local-llm.patch.yml").resolve())

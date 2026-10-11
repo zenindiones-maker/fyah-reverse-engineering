@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Sobe llama-server (CPU) com GGUF Apache-2.0 baixado anonimamente. Sem API key real.
-# Uso: MODEL_PRESET=qwen3-4b bash harness/run_local_llm.sh
+# Sobe llama-server (CPU) com GGUF open-weights baixado anonimamente. Sem API key real.
 set -euxo pipefail
 ROOT="${ER_TOOLS_DIR:-$HOME/.er-tools}"
 MODEL_DIR="$ROOT/models"
@@ -22,16 +21,21 @@ print(f"export MODEL_NAME={shlex.quote(m['name'])}")
 print(f"export MODEL_URL={shlex.quote(m['url'])}")
 print(f"export MODEL_CTX={shlex.quote(str(m['ctx']))}")
 print(f"export MODEL_FILENAME={shlex.quote(m['file'])}")
+print(f"export MODEL_JINJA={shlex.quote('1' if m.get('jinja', True) else '0')}")
+print(f"export MODEL_NO_THINK={shlex.quote('1' if m.get('no_think') else '0')}")
 PY
 )"
 
 GGUF="$MODEL_DIR/$MODEL_FILENAME"
 if [ ! -f "$GGUF" ]; then
-  echo "Baixando $MODEL_NAME ($PRESET, Apache-2.0, anônimo)…"
+  echo "Baixando $MODEL_NAME ($PRESET, anônimo)…"
+  # free disk: drop other cached GGUFs except this target (cache restore may bring several)
+  find "$MODEL_DIR" -type f -name '*.gguf' ! -name "$MODEL_FILENAME" -delete 2>/dev/null || true
   curl -L --fail --retry 3 -A "fyah-re" -o "$GGUF.partial" "$MODEL_URL"
   mv "$GGUF.partial" "$GGUF"
 fi
 ls -lh "$GGUF"
+df -h . "$MODEL_DIR" | head -20 || true
 
 if [ ! -x "$BIN_DIR/llama-server" ]; then
   tag=$(gh api repos/ggml-org/llama.cpp/releases --jq '[.[] | select([.assets[].name] | any(test("bin-ubuntu-x64.tar.gz$")))][0].tag_name' 2>/dev/null || true)
@@ -47,9 +51,15 @@ if [ ! -x "$BIN_DIR/llama-server" ]; then
   chmod +x "$b"
 fi
 "$BIN_DIR/llama-server" --version || true
-extra=()
-case "$PRESET" in
-  qwen3-*) extra+=(--jinja) ;;
-esac
+
+extra=(-np 1)
+if [ "$MODEL_JINJA" = "1" ]; then
+  extra+=(--jinja)
+fi
+# Qwen3 thinking models: disable thinking in template when possible
+if [ "$MODEL_NO_THINK" = "1" ]; then
+  extra+=(--chat-template-kwargs '{"enable_thinking":false}')
+fi
+
 exec "$BIN_DIR/llama-server" -m "$GGUF" --host 127.0.0.1 --port 8080 \
-  -c "$MODEL_CTX" -t "$(nproc)" -np 1 --alias "$MODEL_ID" "${extra[@]}"
+  -c "$MODEL_CTX" -t "$(nproc)" --alias "$MODEL_ID" "${extra[@]}"

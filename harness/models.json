@@ -2,51 +2,76 @@
   "fast": {
     "id": "qwen2.5-0.5b",
     "name": "Qwen2.5-0.5B-Instruct (GGUF Q4_K_M)",
-    "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
     "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
     "url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
     "license": "Apache-2.0",
     "approx_gb": 0.4,
-    "ctx": 4096,
-    "max_tokens": 1024,
-    "cache_key": "er-llama-qwen25-05b-v1"
-  },
-  "qwen3-4b": {
-    "id": "qwen3-4b-instruct",
-    "name": "Qwen3-4B-Instruct-2507 (GGUF Q4_K_M)",
-    "repo": "unsloth/Qwen3-4B-Instruct-2507-GGUF",
-    "file": "Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-    "url": "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-    "license": "Apache-2.0",
-    "approx_gb": 2.5,
-    "ctx": 4096,
-    "max_tokens": 1024,
-    "cache_key": "er-llama-qwen3-4b-i2507-v1",
-    "notes": "Instruct-2507 (non-thinking). Qwen2.5-3B skipped: Research License, not Apache."
+    "ctx": 8192,
+    "max_tokens": 512,
+    "cache_key": "er-llama-qwen25-05b-v2",
+    "jinja": true
   },
   "qwen25-7b": {
     "id": "qwen2.5-7b",
     "name": "Qwen2.5-7B-Instruct (GGUF Q4_K_M)",
-    "repo": "bartowski/Qwen2.5-7B-Instruct-GGUF",
     "file": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
     "url": "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
     "license": "Apache-2.0",
     "approx_gb": 4.68,
-    "ctx": 4096,
-    "max_tokens": 1024,
-    "cache_key": "er-llama-qwen25-7b-v1"
+    "ctx": 8192,
+    "max_tokens": 512,
+    "cache_key": "er-llama-qwen25-7b-v2",
+    "jinja": true
   },
-  "qwen3-8b": {
-    "id": "qwen3-8b",
-    "name": "Qwen3-8B (GGUF Q4_K_M)",
-    "repo": "Qwen/Qwen3-8B-GGUF",
-    "file": "Qwen3-8B-Q4_K_M.gguf",
-    "url": "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf",
+  "qwen25-14b": {
+    "id": "qwen2.5-14b",
+    "name": "Qwen2.5-14B-Instruct (GGUF Q3_K_M)",
+    "file": "Qwen2.5-14B-Instruct-Q3_K_M.gguf",
+    "url": "https://huggingface.co/bartowski/Qwen2.5-14B-Instruct-GGUF/resolve/main/Qwen2.5-14B-Instruct-Q3_K_M.gguf",
     "license": "Apache-2.0",
-    "approx_gb": 5.03,
-    "ctx": 3072,
-    "max_tokens": 1024,
-    "cache_key": "er-llama-qwen3-8b-v1",
-    "notes": "Tight on 16 GB RAM; lower ctx. Prefer /no_think in prompt if thinking burns tokens."
+    "approx_gb": 7.34,
+    "ctx": 4096,
+    "max_tokens": 512,
+    "cache_key": "er-llama-qwen25-14b-q3km-v1",
+    "jinja": true,
+    "notes": "Strong dense Instruct; Q3_K_M fits 16GB RAM + 10GB cache better than Q4."
+  },
+  "qwen3-14b": {
+    "id": "qwen3-14b",
+    "name": "Qwen3-14B (GGUF Q3_K_M)",
+    "file": "Qwen3-14B-Q3_K_M.gguf",
+    "url": "https://huggingface.co/unsloth/Qwen3-14B-GGUF/resolve/main/Qwen3-14B-Q3_K_M.gguf",
+    "license": "Apache-2.0",
+    "approx_gb": 7.32,
+    "ctx": 4096,
+    "max_tokens": 512,
+    "cache_key": "er-llama-qwen3-14b-q3km-v1",
+    "jinja": true,
+    "no_think": true
+  },
+  "qwen3-30b-a3b": {
+    "id": "qwen3-30b-a3b",
+    "name": "Qwen3-30B-A3B-Instruct-2507 (GGUF UD-IQ1_M)",
+    "file": "Qwen3-30B-A3B-Instruct-2507-UD-IQ1_M.gguf",
+    "url": "https://huggingface.co/unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF/resolve/main/Qwen3-30B-A3B-Instruct-2507-UD-IQ1_M.gguf",
+    "license": "Apache-2.0",
+    "approx_gb": 9.69,
+    "ctx": 4096,
+    "max_tokens": 512,
+    "cache_key": "er-llama-qwen3-30b-a3b-iq1m-v1",
+    "jinja": true,
+    "notes": "MoE ~3B active; IQ1_M keeps file under 10GB cache. gpt-oss-20b (~11.5GB) exceeds cache+disk budget."
+  },
+  "r1-14b": {
+    "id": "r1-distill-qwen-14b",
+    "name": "DeepSeek-R1-Distill-Qwen-14B (GGUF Q3_K_M)",
+    "file": "DeepSeek-R1-Distill-Qwen-14B-Q3_K_M.gguf",
+    "url": "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-14B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-14B-Q3_K_M.gguf",
+    "license": "MIT",
+    "approx_gb": 7.34,
+    "ctx": 4096,
+    "max_tokens": 512,
+    "cache_key": "er-llama-r1-14b-q3km-v1",
+    "jinja": true
   }
 }

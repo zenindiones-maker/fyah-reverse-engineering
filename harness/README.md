@@ -1,33 +1,21 @@
 # Harness E.R. × DeepSeek Harness (local, sem API de nuvem)
 
 ## Regras
-- **Sem API DeepSeek, sem token de nuvem, sem cadastro.**
-- Modelos open-weights Apache-2.0 (GGUF Q4_K_M) via **llama.cpp** na CPU do runner.
-- DSH fala com `http://127.0.0.1:8080/v1` via adapter **llm-pi-ai** (`openai-completions`).
+- Sem API DeepSeek / token de nuvem / cadastro.
+- GGUF Apache-2.0 ou MIT via llama.cpp na CPU do runner free (4 vCPU, 16 GB RAM).
+- Cache de modelo ≤ ~10 GB (limite Actions).
 
-## Presets (`MODEL_PRESET` / input `model`)
-| preset | modelo | ~GGUF | uso |
-|--------|--------|------:|-----|
-| `fast` | Qwen2.5-0.5B-Instruct | 0.4 GB | rápido / fraco em tool-use |
-| `qwen3-4b` | Qwen3-4B-Instruct-2507 | 2.5 GB | padrão candidato (qualidade/tempo) |
-| `qwen25-7b` | Qwen2.5-7B-Instruct | 4.7 GB | mais forte, mais lento |
-| `qwen3-8b` | Qwen3-8B | 5.0 GB | apertado em 16 GB RAM |
+## Presets
+| preset | modelo | ~GB | notas |
+|--------|--------|----:|-------|
+| `fast` | Qwen2.5-0.5B-Instruct Q4 | 0.4 | opção rápida |
+| `qwen25-7b` | Qwen2.5-7B-Instruct Q4 | 4.7 | meio-termo |
+| `qwen25-14b` | Qwen2.5-14B-Instruct Q3_K_M | 7.3 | denso forte (default candidato) |
+| `qwen3-14b` | Qwen3-14B Q3_K_M | 7.3 | Qwen3 denso |
+| `qwen3-30b-a3b` | Qwen3-30B-A3B-Instruct IQ1_M | 9.7 | MoE ~3B ativos |
+| `r1-14b` | R1-Distill-Qwen-14B Q3_K_M | 7.3 | MIT |
 
-**Qwen2.5-3B-Instruct foi pulado:** licença *Qwen Research*, não Apache-2.0.
+**Fora do orçamento:** gpt-oss-20b (~11.5 GB) e Qwen3-30B-A3B Q4 (~18 GB) — passam de 10 GB de cache e apertam disco/RAM.
+**Qwen2.5-3B:** licença Research, não Apache.
 
-Registro: `harness/models.json`.
-
-## Placeholder ≠ API key
-O cliente OpenAI-compatible do pi-ai **exige** um header `Authorization`. Usamos
-`LOCAL_LLM_KEY=local-no-cloud-key` (hardcoded). O llama.cpp ignora o valor. **Não há secret no GitHub.**
-
-## Uso
-```bash
-MODEL_PRESET=qwen3-4b bash harness/run_local_llm.sh   # terminal 1
-MODEL_PRESET=qwen3-4b python harness/run_dsh.py \
-  --model-preset qwen3-4b \
-  --task "Inspecione a mídia e rode audio-full" \
-  --file-url 'https://…'
-```
-
-Workflow: `er-harness.yml` (choice `model`). Score de tool-use em `out/score.json` **antes** do fallback direto das tools.
+Placeholder `LOCAL_LLM_KEY=local-no-cloud-key` (não é secret).
