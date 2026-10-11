@@ -25,3 +25,6 @@ Essencial LOCAL_OK da curadoria que **não** entram no `setup-er` / `er-toolchec
 | protocolos | 4 | 1 (scapy) | ecapture (precisa eBPF/root), honeypots |
 
 Atualize esta lista ao promover uma ferramenta de referência → instalada.
+
+## Tentadas e descartadas da instalação
+- **nussl**: deps antigas (numpy/scipy) quebram em Python moderno; use demucs/spleeter.

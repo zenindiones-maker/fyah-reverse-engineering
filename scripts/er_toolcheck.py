@@ -210,9 +210,7 @@ def nnaudio_():
 def chromaprint_():
     import acoustid; dur, fp = acoustid.fingerprint_file(str(WAV)); return f"chromaprint/fpcalc: fingerprint {len(fp)} bytes, {dur:.1f}s (local, sem lookup)"
 def nussl_():
-    return iso("nussl", """
-import os, nussl
-sig = nussl.AudioSignal(os.environ['WAV']); r = nussl.separation.primitive.HPSS(sig)(); print(f'nussl {nussl.__version__}: HPSS {len(r)} fontes')""")
+    raise RuntimeError("nussl: dependências antigas (numpy/scipy) — classificado como referência; use demucs/spleeter")
 def msaf_():
     return iso("msaf", """
 import os, msaf
@@ -329,7 +327,7 @@ CHECKS = {
     "audio": [("librosa", librosa_), ("pyloudnorm", pyloudnorm_), ("essentia", essentia_), ("pedalboard", pedalboard_),
               ("audioflux", audioflux_), ("matchering", matchering_), ("music21", music21_), ("PyWavelets", pywt_),
               ("audiomentations", audiomentations_), ("mir_eval", mir_eval_), ("miditok", miditok_), ("mirdata", mirdata_),
-              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("chromaprint (fpcalc)", chromaprint_), ("nussl", nussl_), ("msaf", msaf_), ("fyah audio.profile", fyah_profile_)],
+              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("chromaprint (fpcalc)", chromaprint_), ("msaf", msaf_), ("fyah audio.profile", fyah_profile_)],
     "video": [("ffmpeg", ffmpeg_), ("ffprobe", ffprobe_), ("mediainfo", mediainfo_), ("pymediainfo", pymediainfo_),
               ("PySceneDetect", scenedetect_), ("TransNetV2", transnet_), ("colour-science", colour_), ("PyAV", av_), ("ffmpy", ffmpy_), ("Pillow", pillow_)],
     "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_), ("apkleaks", apkleaks_), ("objection", objection_)],
