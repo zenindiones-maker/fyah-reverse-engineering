@@ -382,11 +382,11 @@ def capa_():
     return "capa " + (out.stdout or out.stderr).strip().splitlines()[0][:80]
 
 def floss_():
-    out = subprocess.run(["floss", "-q", SAMPLE_BIN], capture_output=True, text=True, timeout=120)
-    if out.returncode not in (0, 1):  # floss às vezes rc=1 com avisos
+    # FLOSS analisa PE; no smoke usamos --version (ELF do runner não é suportado)
+    out = subprocess.run(["floss", "--version"], capture_output=True, text=True, timeout=60)
+    if out.returncode != 0:
         raise RuntimeError((out.stderr or out.stdout).strip()[:160])
-    lines = [ln for ln in (out.stdout or "").splitlines() if ln.strip()]
-    return f"floss: {len(lines)} linhas em /bin/ls"
+    return "floss " + (out.stdout or out.stderr).strip().splitlines()[0][:80]
 
 def slither_():
     return "slither " + sh("slither --version 2>&1 | head -1")

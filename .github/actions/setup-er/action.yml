@@ -80,7 +80,7 @@ runs:
         echo "$d/current/support" >> "$GITHUB_PATH"
     - uses: actions/cache@v6
       if: inputs.capa == 'true' || inputs.floss == 'true' || inputs.dextools == 'true'
-      with: {path: ~/.er-tools, key: "er-releases-v3"}
+      with: {path: ~/.er-tools, key: "er-releases-v4"}
     - name: Releases oficiais (capa/floss/dex2jar/smali)
       if: inputs.capa == 'true' || inputs.floss == 'true' || inputs.dextools == 'true'
       shell: bash

@@ -11,11 +11,9 @@ if [ "${ER_CAPA:-}" = 1 ]; then
   if ! need "$d/capa"; then
     mkdir -p "$d" /tmp/capa && rm -rf /tmp/capa/* 
     tag=$(gh api repos/mandiant/capa/releases/latest --jq .tag_name)
-    # prefer amd64/x86_64 (evitar aarch64 → Exec format error no runner)
-    gh release download "$tag" -R mandiant/capa -p "*linux*amd64*" -D /tmp/capa --clobber \
-      || gh release download "$tag" -R mandiant/capa -p "*linux*x86_64*" -D /tmp/capa --clobber \
-      || gh release download "$tag" -R mandiant/capa -p "*ubuntu*" -D /tmp/capa --clobber
-    f=$(ls /tmp/capa/*amd64* /tmp/capa/*x86_64* /tmp/capa/*linux* 2>/dev/null | head -1)
+    # Asset x86_64 chama-se capa-v*-linux.zip (arm64 é *-linux-arm64.zip)
+    gh release download "$tag" -R mandiant/capa -p "capa-*-linux.zip" -D /tmp/capa --clobber
+    f=$(ls /tmp/capa/capa-*-linux.zip 2>/dev/null | head -1)
     case "$f" in *.zip) unzip -q -o "$f" -d "$d";; *) tar -xaf "$f" -C "$d" 2>/dev/null || cp "$f" "$d/";; esac
     b=$(find "$d" -type f \( -name capa -o -name 'capa-*' \) ! -name '*.json' | head -1)
     cp "$b" "$d/capa" && chmod +x "$d/capa"
@@ -28,10 +26,9 @@ if [ "${ER_FLOSS:-}" = 1 ]; then
   if ! need "$d/floss"; then
     mkdir -p "$d" /tmp/floss && rm -rf /tmp/floss/*
     tag=$(gh api repos/mandiant/flare-floss/releases/latest --jq .tag_name)
-    gh release download "$tag" -R mandiant/flare-floss -p "*linux*amd64*" -D /tmp/floss --clobber \
-      || gh release download "$tag" -R mandiant/flare-floss -p "*linux*x86_64*" -D /tmp/floss --clobber \
-      || gh release download "$tag" -R mandiant/flare-floss -p "*linux*" -D /tmp/floss --clobber
-    f=$(ls /tmp/floss/*amd64* /tmp/floss/*x86_64* /tmp/floss/*linux* 2>/dev/null | head -1)
+    gh release download "$tag" -R mandiant/flare-floss -p "floss-*-linux.zip" -D /tmp/floss --clobber \
+      || gh release download "$tag" -R mandiant/flare-floss -p "*linux.zip" -D /tmp/floss --clobber
+    f=$(ls /tmp/floss/*linux.zip 2>/dev/null | grep -v arm64 | head -1)
     case "$f" in *.zip) unzip -q -o "$f" -d "$d";; *) tar -xaf "$f" -C "$d" 2>/dev/null || cp "$f" "$d/";; esac
     b=$(find "$d" -type f \( -name floss -o -name 'floss-*' \) | head -1)
     cp "$b" "$d/floss" && chmod +x "$d/floss"
