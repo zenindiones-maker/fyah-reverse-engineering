@@ -27,8 +27,6 @@ mk angr 3.11 $TORCH_CPU "bitstring<4.2" angr unicorn keystone-engine "PyYAML"
 mk objection 3.11 objection frida-tools
 mk musicxml 3.11 miditok muspy partitura pretty_midi mido
 mk audioseal 3.11 $TORCH_CPU torch torchaudio audioseal
-mk crepe 3.11 "tensorflow-cpu==2.15.*" crepe "numpy<2" "setuptools<81"
 mk qiling 3.11 qiling unicorn
 mk gopro 3.11 "gopro2gpx @ git+https://github.com/juanmcasillas/gopro2gpx" || true
-mk apk2url 3.11 "apk2url @ git+https://github.com/n0mi1k/apk2url" || true
 ls "$V"

@@ -80,7 +80,7 @@ runs:
         echo "$d/current/support" >> "$GITHUB_PATH"
     - uses: actions/cache@v6
       if: inputs.capa == 'true' || inputs.floss == 'true' || inputs.dextools == 'true'
-      with: {path: ~/.er-tools, key: "er-releases-v2"}
+      with: {path: ~/.er-tools, key: "er-releases-v3"}
     - name: Releases oficiais (capa/floss/dex2jar/smali)
       if: inputs.capa == 'true' || inputs.floss == 'true' || inputs.dextools == 'true'
       shell: bash
@@ -89,4 +89,5 @@ runs:
         ER_CAPA: ${{ inputs.capa == 'true' && '1' || '0' }}
         ER_FLOSS: ${{ inputs.floss == 'true' && '1' || '0' }}
         ER_DEXTOOLS: ${{ inputs.dextools == 'true' && '1' || '0' }}
+        ER_RIZIN: ${{ inputs.capa == 'true' && '1' || '0' }}
       run: bash scripts/er_releases.sh

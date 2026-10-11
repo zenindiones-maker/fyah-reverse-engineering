@@ -25,5 +25,8 @@ Triagem automática em `TRIAGEM.csv` (Essencial LOCAL_OK da curadoria).
 ## Tentadas e descartadas
 - **nussl**: deps antigas (numpy/scipy)
 - **nnAudio**: removida do extra (conflito torch no main)
+- **crepe** (marl/crepe): build TensorFlow falha no runner; use **torchcrepe** (já OK)
+- **paddle2onnx**: exige `paddlepaddle` (GB); fora do orçamento de disco/tempo do Actions
+- **apk2url**: pip git instável
 
 Atualize `TRIAGEM.csv` / este arquivo ao promover referência → instalada.

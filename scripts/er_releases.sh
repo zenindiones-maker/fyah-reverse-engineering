@@ -11,8 +11,11 @@ if [ "${ER_CAPA:-}" = 1 ]; then
   if ! need "$d/capa"; then
     mkdir -p "$d" /tmp/capa && rm -rf /tmp/capa/* 
     tag=$(gh api repos/mandiant/capa/releases/latest --jq .tag_name)
-    gh release download "$tag" -R mandiant/capa -p "*linux*" -D /tmp/capa --clobber
-    f=$(ls /tmp/capa/*linux* 2>/dev/null | head -1)
+    # prefer amd64/x86_64 (evitar aarch64 → Exec format error no runner)
+    gh release download "$tag" -R mandiant/capa -p "*linux*amd64*" -D /tmp/capa --clobber \
+      || gh release download "$tag" -R mandiant/capa -p "*linux*x86_64*" -D /tmp/capa --clobber \
+      || gh release download "$tag" -R mandiant/capa -p "*ubuntu*" -D /tmp/capa --clobber
+    f=$(ls /tmp/capa/*amd64* /tmp/capa/*x86_64* /tmp/capa/*linux* 2>/dev/null | head -1)
     case "$f" in *.zip) unzip -q -o "$f" -d "$d";; *) tar -xaf "$f" -C "$d" 2>/dev/null || cp "$f" "$d/";; esac
     b=$(find "$d" -type f \( -name capa -o -name 'capa-*' \) ! -name '*.json' | head -1)
     cp "$b" "$d/capa" && chmod +x "$d/capa"
@@ -25,8 +28,10 @@ if [ "${ER_FLOSS:-}" = 1 ]; then
   if ! need "$d/floss"; then
     mkdir -p "$d" /tmp/floss && rm -rf /tmp/floss/*
     tag=$(gh api repos/mandiant/flare-floss/releases/latest --jq .tag_name)
-    gh release download "$tag" -R mandiant/flare-floss -p "*linux*" -D /tmp/floss --clobber
-    f=$(ls /tmp/floss/*linux* 2>/dev/null | head -1)
+    gh release download "$tag" -R mandiant/flare-floss -p "*linux*amd64*" -D /tmp/floss --clobber \
+      || gh release download "$tag" -R mandiant/flare-floss -p "*linux*x86_64*" -D /tmp/floss --clobber \
+      || gh release download "$tag" -R mandiant/flare-floss -p "*linux*" -D /tmp/floss --clobber
+    f=$(ls /tmp/floss/*amd64* /tmp/floss/*x86_64* /tmp/floss/*linux* 2>/dev/null | head -1)
     case "$f" in *.zip) unzip -q -o "$f" -d "$d";; *) tar -xaf "$f" -C "$d" 2>/dev/null || cp "$f" "$d/";; esac
     b=$(find "$d" -type f \( -name floss -o -name 'floss-*' \) | head -1)
     cp "$b" "$d/floss" && chmod +x "$d/floss"
@@ -60,4 +65,24 @@ if [ "${ER_DEXTOOLS:-}" = 1 ]; then
     chmod +x "$d/smali"
   fi
   echo "$d" >> "$GITHUB_PATH"
+fi
+
+if [ "${ER_RIZIN:-}" = 1 ]; then
+  d="$D/rizin"
+  if ! command -v rizin >/dev/null 2>&1 && ! need "$d/bin/rizin"; then
+    mkdir -p "$d" /tmp/rizin && rm -rf /tmp/rizin/*
+    tag=$(gh api repos/rizinorg/rizin/releases/latest --jq .tag_name)
+    gh release download "$tag" -R rizinorg/rizin -p "*static*x86_64*" -D /tmp/rizin --clobber \
+      || gh release download "$tag" -R rizinorg/rizin -p "*linux*x86_64*" -D /tmp/rizin --clobber || true
+    if ls /tmp/rizin/* >/dev/null 2>&1; then
+      f=$(ls /tmp/rizin/* | head -1)
+      case "$f" in *.tar.*|*.tgz) tar -xaf "$f" -C "$d";; *.zip) unzip -q -o "$f" -d "$d";; *) cp "$f" "$d/";; esac
+      b=$(find "$d" -type f -name rizin | head -1)
+      if [ -n "$b" ]; then
+        echo "$(dirname "$b")" >> "$GITHUB_PATH"
+        chmod +x "$b" "$(dirname "$b")"/* 2>/dev/null || true
+      fi
+    fi
+  fi
+  [ -d "$d/bin" ] && echo "$d/bin" >> "$GITHUB_PATH"
 fi

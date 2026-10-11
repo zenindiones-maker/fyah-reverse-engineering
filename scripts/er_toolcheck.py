@@ -259,6 +259,7 @@ def onnx_():
 def onnxruntime_():
     import onnxruntime as ort; return f"onnxruntime {ort.__version__}: {ort.get_available_providers()}"
 def onnxsim_():
+    import ml_dtypes  # noqa: F401
     import onnxsim; return f"onnxsim {getattr(onnxsim,'__version__',ver('onnxsim'))}"
 def netron_():
     import netron; return f"netron {netron.__version__} (import; servidor/visualização sob demanda)"
@@ -328,9 +329,10 @@ def python_speech_features_():
 
 def fast_bss_eval_():
     import fast_bss_eval, torch
-    # SI-SDR de um sinal consigo mesmo → +inf / grande
-    x = torch.randn(1, 8000); s = fast_bss_eval.sdr(x, x)
-    return f"fast_bss_eval: sdr self={float(s.mean()):.1f} dB"
+    # (batch, n_src, samples) — SI-SDR de fonte consigo mesma
+    ref = torch.randn(1, 2, 8000); est = ref + 0.01 * torch.randn_like(ref)
+    s = fast_bss_eval.sdr(ref, est, clamp_db=50)
+    return f"fast_bss_eval: sdr={float(s.mean()):.1f} dB"
 
 def beets_():
     import beets; return f"beets {beets.__version__} (import CLI disponível)"
@@ -374,11 +376,17 @@ def apk2url_():
     return sh("apk2url -h 2>&1 | head -1")
 
 def capa_():
-    return "capa " + sh("capa --version 2>&1 | head -1")
+    out = subprocess.run(["capa", "--version"], capture_output=True, text=True)
+    if out.returncode != 0:
+        raise RuntimeError((out.stderr or out.stdout or "capa falhou").strip()[:160])
+    return "capa " + (out.stdout or out.stderr).strip().splitlines()[0][:80]
 
 def floss_():
-    out = sh(f"floss -q {SAMPLE_BIN} 2>&1 | head -5")
-    return f"floss: {len(out.splitlines())} linhas de saída em /bin/ls"
+    out = subprocess.run(["floss", "-q", SAMPLE_BIN], capture_output=True, text=True, timeout=120)
+    if out.returncode not in (0, 1):  # floss às vezes rc=1 com avisos
+        raise RuntimeError((out.stderr or out.stdout).strip()[:160])
+    lines = [ln for ln in (out.stdout or "").splitlines() if ln.strip()]
+    return f"floss: {len(lines)} linhas em /bin/ls"
 
 def slither_():
     return "slither " + sh("slither --version 2>&1 | head -1")
@@ -394,7 +402,11 @@ def qiling_():
     return iso("qiling", "import qiling; print(f'qiling {qiling.__version__}')")
 
 def rizin_():
-    return sh("rizin -v 2>&1 | head -1") or sh("rz-bin -v 2>&1 | head -1")
+    for cmd in (["rizin", "-v"], ["rz-bin", "-v"]):
+        out = subprocess.run(cmd, capture_output=True, text=True)
+        if out.returncode == 0:
+            return (out.stdout or out.stderr).strip().splitlines()[0][:100]
+    raise RuntimeError("rizin/rz-bin não encontrado")
 
 def dex2jar_():
     return "dex2jar " + sh("d2j-dex2jar.sh 2>&1 | head -1")
@@ -412,14 +424,14 @@ def honeypots_():
 
 
 CHECKS_EXTRA = {
-    "modelos_ml": [("onnx", onnx_), ("onnxruntime", onnxruntime_), ("onnxsim", onnxsim_), ("netron", netron_), ("paddle2onnx", paddle2onnx_)],
+    "modelos_ml": [("onnx", onnx_), ("onnxruntime", onnxruntime_), ("onnxsim", onnxsim_), ("netron", netron_)],
     "protocolos": [("scapy", scapy_), ("honeypots", honeypots_)],
 }
 CHECKS = {
     "audio": [("librosa", librosa_), ("pyloudnorm", pyloudnorm_), ("essentia", essentia_), ("pedalboard", pedalboard_),
               ("audioflux", audioflux_), ("matchering", matchering_), ("music21", music21_), ("PyWavelets", pywt_),
               ("audiomentations", audiomentations_), ("mir_eval", mir_eval_), ("miditok", miditok_), ("mirdata", mirdata_),
-              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("chromaprint (fpcalc)", chromaprint_), ("msaf", msaf_), ("python_speech_features", python_speech_features_), ("fast_bss_eval", fast_bss_eval_), ("beets", beets_), ("audioseal", audioseal_), ("crepe", crepe_), ("fyah audio.profile", fyah_profile_)],
+              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("chromaprint (fpcalc)", chromaprint_), ("msaf", msaf_), ("python_speech_features", python_speech_features_), ("fast_bss_eval", fast_bss_eval_), ("beets", beets_), ("audioseal", audioseal_), ("fyah audio.profile", fyah_profile_)],
     "video": [("ffmpeg", ffmpeg_), ("ffprobe", ffprobe_), ("mediainfo", mediainfo_), ("pymediainfo", pymediainfo_),
               ("PySceneDetect", scenedetect_), ("TransNetV2", transnet_), ("colour-science", colour_), ("PyAV", av_), ("ffmpy", ffmpy_), ("Pillow", pillow_), ("plotbitrate", plotbitrate_), ("gopro2gpx", gopro2gpx_)],
     "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_), ("apkleaks", apkleaks_), ("objection", objection_), ("quark-engine", quark_), ("dex2jar", dex2jar_), ("smali", smali_)],
