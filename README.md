@@ -10,6 +10,7 @@ Entender *como* faixas e vídeos são construídos (espectro, BPM, tonalidade, t
 
 - **Custo zero sempre, código aberto sempre.** Tudo roda nos runners gratuitos do GitHub Actions (CPU). Sem GPU externa; ver [arsenal](docs/arsenal.md).
 - **Sem API, sem token, sem cadastro.** Nenhuma ferramenta exige chave de API, conta ou cadastro em outro serviço; o único token é o `GITHUB_TOKEN` automático do Actions. Modelos só com pesos públicos baixados anonimamente, rodando em CPU.
+  - Lista viva do que passou nesse filtro: [docs/curadoria](docs/curadoria/README.md). O que pede API ou está incerto: [fora.md](docs/curadoria/fora.md).
 - **Só links:** nenhum código de terceiros é copiado para cá; dependências são declaradas no `pyproject.toml` ou instaladas no workflow.
 - **Só trabalho legal.** Sem quebrar DRM nem contornar proteções técnicas ou criptografia.
 - **Respeitar licenças e termos de uso.** Ferramentas GPL só via CLI isolada; licenças não comerciais (ex.: DeepAFx-ST, Diff-MST) ficam fora do código.
@@ -22,7 +23,7 @@ audio/       profile/ (perfil), compare/ (comparador), spectrum, tempo, key, tim
 video/       pacing/ (cortes e ritmo), cuts, color, subtitles, codecs
 formats/     formatos de arquivo e protocolos
 scripts/     build_catalog.py (gerador do catálogo)
-docs/        metodologia, trilha, arsenal, referências, catalogo/
+docs/        metodologia, trilha, arsenal, referências, catalogo/, curadoria/
 writeups/    relatos de análises
 labs/        exercícios práticos
 tests/       testes (pytest)
@@ -58,7 +59,7 @@ pytest -q
 
 ## Roadmap
 
-- **Fase 0 — Catálogo** ✅: catálogo automático de repositórios open source de RE ([docs/catalogo](docs/catalogo/README.md)), atualizado mensalmente.
+- **Fase 0 — Catálogo** ✅: catálogo automático ([docs/catalogo](docs/catalogo/README.md)) + **curadoria LOCAL_OK** ([docs/curadoria](docs/curadoria/README.md): só ferramentas sem API/token/cadastro; fora listado em `fora.md`).
 - **Fase 1 — Medição** ✅ (v1): perfil de faixa, comparador, inspetor de mídia, cortes e ritmo, stems + perfil por stem.
 - **Fase 2 — Inversão de áudio:** estimar EQ/compressão/reverb com DSP diferenciável (dasp-pytorch, grafx) e validar re-renderizando (pedalboard via CLI); dataset ground-truth próprio.
 - **Fase 3 — Forense e transcrição:** fingerprint (Chromaprint), marca d'água (AudioSeal), detecção de música IA (SONICS), áudio→MIDI (basic-pitch).

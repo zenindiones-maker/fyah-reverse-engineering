@@ -1,0 +1,84 @@
+area,repo,estrelas,licenca,tier_origem_hint,roda_sem_api,motivo_api,motivo_curadoria
+binarios,morluto/rea,87489,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,análise local; agentes LLM externos opcionais,Agent RE com MCP
+binarios,mrexodia/ida-pro-mcp,12637,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,MCP local p/ IDA; LLM fica no cliente externo,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,firerpa/lamda,8567,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,framework Android local; agent NL via OpenAI-compat opcional,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,bethington/ghidra-mcp,5397,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,MCP local p/ Ghidra; LLM no cliente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+protocolos,emanuele-f/PCAPdroid,4895,GPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,útil p/ entender/recriar apps
+binarios,alexandreborges/malwoverview,4127,GPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,triagem PE local sem key; VT/AI opcional,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+protocolos,Mouseww/anything-analyzer,3760,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,MITM/browser local; LLM (OpenAI/Anthropic) só p/ análise AI,Análise de protocolo + MITM + AI
+binarios,zhizhuodemao/js-reverse-mcp,2931,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,debug Chrome local; API de modelo só p/ agente AI,MCP p/ RE de JS (CN)
+binarios,zinja-coder/jadx-ai-mcp,2875,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,MCP local p/ jadx; LLM no cliente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,duty1g/x64dbg-mcp-server,2441,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,MCP local; LLM no cliente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,CYB3RMX/Qu1cksc0pe,2066,GPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,análise local; VirusTotal/AI opcional (default ollama),"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+protocolos,vmoranv/jshookmcp,2035,AGPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,CAPTCHA_API_KEY opcional no .env,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+video,kingslay/KSPlayer,1676,GPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,útil p/ entender/recriar apps
+mobile_web,ClaudiuGeorgiu/Obfuscapk,1273,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,ofuscação local; VirusTotal API só se usar ofuscador VT,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,2akouwu/reverify,1268,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,tem driver mock / sem API key; cloud opcional,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,LING71671/open-reverselab,1249,GPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,labs locais; JSHOOK_OPENAI_API_KEY opcional p/ parte JS,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,weirdmachine64/GhidraGPT,824,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,aceita Ollama local; cloud API opcional,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,zinja-coder/jadx-mcp-server,794,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,MCP local p/ jadx; LLM no cliente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,symgraph/GhidrAssistMCP,768,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,MCP local; LLM no cliente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,symgraph/GhidrAssist,754,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,Ollama/LM Studio local; OpenAI/Anthropic opcional,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,zinja-coder/apktool-mcp-server,672,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,MCP local p/ apktool; LLM no cliente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+mobile_web,LUC4N3X/Levyra-deepsound,591,GPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,útil p/ entender/recriar apps
+video,HiMeditator/auto-caption,590,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,útil p/ entender/recriar apps
+binarios,lkimuk/ReArk,507,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,suporta Ollama local e endpoints OpenAI-compat,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+mobile_web,Keyfactor/signserver-ce,437,LGPL-2.1,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,útil p/ entender/recriar apps
+video,gantasmo/theDAW,211,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,DAW local; chat LLM opcional incl. Ollama,ER digital com sinal forte (áudio/MIR/DSP ou binário+áudio)
+binarios,f3rb123/beetle,182,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,útil p/ entender/recriar apps
+modelos_ml,zidniryi/unbagrnd,169,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,útil p/ entender/recriar apps
+audio,Angel2mp3/AudioAuditor,164,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,útil p/ análise de áudio/MIR (sinal moderado)
+protocolos,dslsdzc/rev-skills,139,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,skills locais; mencões Gemini no docs,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+formatos,UditAkhourii/cdaf,122,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,ER digital forte em formatos
+audio,Metacreation-Lab/MIDI-GPT,108,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,treino/inferência local; WANDB/HF_TOKEN opcionais,ER digital com sinal forte (áudio/MIR/DSP ou binário+áudio)
+binarios,Karib0u/kernagent,103,Apache-2.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+mobile_web,Orang-Studio/InstaDownload,94,GPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,útil p/ entender/recriar apps
+binarios,argus-sight/BinSight,33,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,aradhyacp/SecFlow,22,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,branover/hexgraph,21,AGPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,anpa1200/AIDebug,13,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,Muhib-Mehdi/AI-Java-Decompiler,6,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,doritoman90000/universal-game-modder,3,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+binarios,link0-o/BinSight,2,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+audio,davidamacey/OpenAudio,1,AGPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,HF_TOKEN mencionado (modelos; geralmente opcional),ER digital com sinal forte (áudio/MIR/DSP ou binário+áudio)
+mobile_web,earbona23/revtriage,1,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,possível open-core,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+audio,mmaitland300/Research-Radar,0,MIT,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,ER digital com sinal forte (áudio/MIR/DSP ou binário+áudio)
+binarios,deglyph-re/cli,0,GPL-3.0,tinha Essencial/Útil mas API opcional,OPTIONAL_API,modo local/opcional detectado,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+video,liuzhao1225/YouDub-webui,5638,Apache-2.0,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+binarios,JusticeRage/Gepetto,3477,GPL-3.0,exigia API/login/cloud,REQUIRES_API,plugin IDA cuja função principal exige API key OpenAI/Anthropic/Gemini,lixo: exige API/cloud/login — plugin IDA cuja função principal exige API key OpenAI/Anthropic/Gemini
+binarios,Dryxio/reagent,2060,MIT,exigia API/login/cloud,REQUIRES_API,reconstrução via LLM exige ANTHROPIC_API_KEY ou OPENAI_API_KEY,lixo: exige API/cloud/login — reconstrução via LLM exige ANTHROPIC_API_KEY ou OPENAI_API_KEY
+binarios,amruth-sn/kong,1219,Apache-2.0,exigia API/login/cloud,REQUIRES_API,LLM API key obrigatória (Anthropic/OpenAI) — setup wizard exige,lixo: exige API/cloud/login — LLM API key obrigatória (Anthropic/OpenAI) — setup wizard exige
+binarios,unbrowse-ai/unbrowse,783,MIT,exigia API/login/cloud,REQUIRES_API,exige login OAuth ou UNBROWSE_API_KEY,lixo: exige API/cloud/login — exige login OAuth ou UNBROWSE_API_KEY
+binarios,unknownhad/CloudIntel,251,MIT,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+binarios,RevEngiSquad/revengi-app,201,MIT,exigia API/login/cloud,REQUIRES_API,depende de RevEngi API key (serviço remoto),lixo: exige API/cloud/login — depende de RevEngi API key (serviço remoto)
+modelos_ml,NeptuneHub/audiomuse-ai-plugin,139,AGPL-3.0,exigia API/login/cloud,REQUIRES_API,config exige gemini_api_key,lixo: exige API/cloud/login — config exige gemini_api_key
+binarios,umpolungfish/byvalver,62,Unlicense,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+binarios,dynaroars/dig,57,MIT,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+binarios,mjbommar/glaurung,45,Apache-2.0,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+binarios,maosasagawa/blackbox-re-agent,33,Apache-2.0,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+binarios,syreal17/Cardinal,25,MIT,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+binarios,phishing-hunter/intelgpt,17,MIT,exigia API/login/cloud,REQUIRES_API,"chave de nuvem no setup: GOOGLE_API_KEY,OPENAI_API_KEY","lixo: exige API/cloud/login — chave de nuvem no setup: GOOGLE_API_KEY,OPENAI_API_KEY"
+formatos,PetitPotiron/python-convertio,12,GPL-3.0,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+audio,LudwigKienle/Buckswood-auto-Mashup,3,GPL-3.0,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+binarios,mrceha/ReversAI,3,MIT,exigia API/login/cloud,REQUIRES_API,"chave de nuvem no setup: ANTHROPIC_API_KEY,OPENAI_API_KEY","lixo: exige API/cloud/login — chave de nuvem no setup: ANTHROPIC_API_KEY,OPENAI_API_KEY"
+audio,GwriPennar/quantum-folk-lab,1,MIT,exigia API/login/cloud,REQUIRES_API,exige API/cloud segundo README,lixo: exige API/cloud/login — exige API/cloud segundo README
+audio,hycccc/songscore,0,MIT,exigia API/login/cloud,REQUIRES_API,chave de nuvem no setup: GEMINI_API_KEY,lixo: exige API/cloud/login — chave de nuvem no setup: GEMINI_API_KEY
+modelos_ml,DenisovAV/flutter_edge_ai,637,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,útil p/ entender/recriar apps
+binarios,zeroq/fakeDNS,9,GPL-3.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+audio,sideeffectdk/RT-MIR-OSC,8,AGPL-3.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital com sinal forte (áudio/MIR/DSP ou binário+áudio)
+binarios,isstac/spf-sca,5,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+mobile_web,haoliufanka/xuanjing-android-reverse-skill,4,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+formatos,kaitai-io/dicom.ksy,3,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital forte em formatos
+binarios,sutcl1ff/idacpp,3,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+formatos,Tr1NgleDev/ndtf,2,Apache-2.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital forte em formatos
+formatos,INTUA/bm3-specs,1,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital com sinal forte (áudio/MIR/DSP ou binário+áudio)
+formatos,DevTareq/Parz,1,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital forte em formatos
+audio,ifsm/HOTGAME-feature-extraction,0,CC0-1.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital com sinal forte (áudio/MIR/DSP ou binário+áudio)
+audio,LIMUNIMI/MIA,0,GPL-3.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital com sinal forte (áudio/MIR/DSP ou binário+áudio)
+formatos,Mathspy/disunity,0,Apache-2.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
+formatos,Rebiere-S/calculation-dimension-stl-export,0,Apache-2.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital forte em formatos
+formatos,Soft/haskell-mlocate,0,LGPL-3.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital forte em formatos
+formatos,YamamotoKaderate/ksy,0,CC0-1.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital forte em formatos
+formatos,gufranco/sms-rom-image-python,0,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital forte em formatos
+formatos,MzaxnaV/ksy-agent,0,MIT,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,ER digital forte em formatos
+binarios,TheZubairUsman/MalwareGuard-AI,0,Apache-2.0,tinha Essencial/Útil mas README incerto,UNCLEAR,README inacessível/ausente,"ER de apps/binários (decompilador, Frida, APK, protocolo)"
