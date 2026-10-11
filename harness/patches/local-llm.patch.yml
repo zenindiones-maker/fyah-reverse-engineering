@@ -1,0 +1,25 @@
+# Rota OpenAI-compatible local (llama.cpp). Placeholder LOCAL_LLM_KEY != chave de nuvem.
+# Desliga upload de session-log para DeepSeek. Substitui o adapter Anthropic-Messages do sdk-minimal.
+- remove:
+    - llm-deepseek
+- config:
+    session-log-deepseek:
+      enabled: false
+- insert:
+    - id: llm-pi-ai
+      name: '@deepseek-ai/dsh-llm-pi-ai'
+      config:
+        providers:
+          local-llamacpp:
+            displayName: Local llama.cpp (CPU)
+            apiKeyEnv: LOCAL_LLM_KEY
+            api: openai-completions
+            baseURL: http://127.0.0.1:8080/v1
+            compat:
+              supportsDeveloperRole: false
+              maxTokensField: max_tokens
+            models:
+              - id: qwen2.5-0.5b
+                name: Qwen2.5-0.5B-Instruct (GGUF Q4_K_M)
+                contextWindow: 8192
+                maxTokens: 1024

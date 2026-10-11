@@ -44,6 +44,7 @@ Abra **Actions** no app/site do GitHub → escolha o workflow → **Run workflow
 | `catalog-refresh` | — (mensal) | atualiza `docs/catalogo/` |
 | `er-analyze` | ferramenta + URL(s) | ponto único para todas as ferramentas acima |
 | `er-daily` | — (dias úteis 09:00 BRT) | diário de estudo em `docs/diario/` |
+| `er-harness` | tarefa + URL | DeepSeek Harness + llama.cpp local (CPU, sem API nuvem) |
 
 Detalhes da infraestrutura custo zero: [docs/maquina.md](docs/maquina.md).
 

@@ -423,9 +423,50 @@ def honeypots_():
     import honeypots; return f"honeypots {getattr(honeypots,'__version__','importado')}"
 
 
+
+def silero_vad_():
+    import torch
+    model, utils = torch.hub.load(repo_or_dir="snakers4/silero-vad", model="silero_vad", trust_repo=True)
+    (get_speech_timestamps, _, read_audio, *_) = utils
+    # sinal sintético 1s
+    wav = torch.randn(16000)
+    ts = get_speech_timestamps(wav, model, sampling_rate=16000)
+    return f"silero-vad: {len(ts)} segmentos em ruído sintético"
+
+def supervision_():
+    import supervision as sv, numpy as np
+    d = sv.Detections(xyxy=np.array([[0,0,10,10]], float), confidence=np.array([0.99]), class_id=np.array([0]))
+    return f"supervision {sv.__version__}: {len(d)} detecção(ões)"
+
+def torch_audiomentations_():
+    import torch, torch_audiomentations as ta
+    x = torch.randn(1, 1, 16000)
+    y = ta.Gain(min_gain_in_db=-6, max_gain_in_db=0, p=1.0)(x, sample_rate=16000)
+    return f"torch-audiomentations: shape {tuple(y.shape)}"
+
+def onnxoptimizer_():
+    import onnx, onnxoptimizer
+    m = onnx.helper.make_model(onnx.helper.make_graph([], "g", [], []))
+    out = onnxoptimizer.optimize(m)
+    return f"onnxoptimizer: {len(out.graph.node)} nós"
+
+def fyah_tools_cli_():
+    import tools.catalog as c
+    return f"tools catalog: {len(c.CATALOG)} ferramentas (contrato uniforme)"
+
+def harness_docs_():
+    from pathlib import Path
+    p = Path("harness/README.md")
+    if not p.exists(): raise RuntimeError("harness/README.md ausente")
+    t = p.read_text()
+    if "placeholder" not in t.lower() and "LOCAL_LLM_KEY" not in t:
+        raise RuntimeError("README do harness não documenta placeholder")
+    return "harness: README ok (placeholder LOCAL_LLM_KEY documentado)"
+
 CHECKS_EXTRA = {
-    "modelos_ml": [("onnx", onnx_), ("onnxruntime", onnxruntime_), ("onnxsim", onnxsim_), ("netron", netron_)],
+    "modelos_ml": [("onnx", onnx_), ("onnxruntime", onnxruntime_), ("onnxsim", onnxsim_), ("netron", netron_), ("onnxoptimizer", onnxoptimizer_)],
     "protocolos": [("scapy", scapy_), ("honeypots", honeypots_)],
+    "util": [("silero-vad", silero_vad_), ("supervision", supervision_), ("torch-audiomentations", torch_audiomentations_), ("fyah tools CLI", fyah_tools_cli_), ("harness docs", harness_docs_)],
 }
 CHECKS = {
     "audio": [("librosa", librosa_), ("pyloudnorm", pyloudnorm_), ("essentia", essentia_), ("pedalboard", pedalboard_),

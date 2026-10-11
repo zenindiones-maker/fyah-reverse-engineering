@@ -49,3 +49,11 @@ entrada (URL)
 
 ## Status
 Ver [STATUS.md](STATUS.md) (gerado pelo `er-toolcheck`).
+
+## Contrato uniforme (`python -m tools`)
+Todas as ferramentas/pipelines expostas ao harness seguem:
+```
+python -m tools run <nome> --input <URL|path> [--input2 …] --out out.json
+```
+Catálogo: `python -m tools list` · prompt: `python -m tools prompt`.
+Harness DSH (local): ver [harness/README.md](../../harness/README.md).

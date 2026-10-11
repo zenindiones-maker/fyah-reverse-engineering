@@ -1,0 +1,68 @@
+name: er-harness
+# Custo zero: DSH + llama.cpp local (CPU). Placeholder LOCAL_LLM_KEY hardcoded (não é secret).
+on:
+  workflow_dispatch:
+    inputs:
+      task: {description: "Tarefa para o E.R.", required: true, default: "Inspecione a mídia com media-inspect e resuma codecs/duração."}
+      url: {description: "URL do arquivo (próprio/licenciado/domínio público)", required: true, default: "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg"}
+permissions: {contents: read}
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      LOCAL_LLM_KEY: local-no-cloud-key
+      ER_TOOLS_DIR: ${{ github.workspace }}/.er-tools
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: {python-version: "3.11", cache: pip}
+      - name: apt
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg mediainfo
+      - name: pip (fyah + DSH)
+        run: |
+          pip install -q -e ".[audio]" "deepseek-harness-sdk==0.1.5rc1"
+      - uses: actions/cache@v6
+        with:
+          path: |
+            .er-tools/models
+            .er-tools/llama
+          key: er-llama-qwen25-05b-v1
+      - name: Start llama-server
+        run: |
+          bash harness/run_local_llm.sh > llama.log 2>&1 &
+          echo $! > llama.pid
+          for i in $(seq 1 120); do
+            curl -sf http://127.0.0.1:8080/v1/models && break
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:8080/v1/models | head -c 400
+          echo
+      - name: Run DSH headless
+        id: dsh
+        continue-on-error: true
+        run: |
+          mkdir -p out
+          python harness/run_dsh.py \
+            --task "${{ inputs.task }}" \
+            --file-url "${{ inputs.url }}" \
+            --workspace "$GITHUB_WORKSPACE" \
+            --dsh-home "$GITHUB_WORKSPACE/.er-dsh-home" \
+            --out out/harness.json || true
+          python -m tools run media-inspect --input "${{ inputs.url }}" --out out/media-inspect.json || true
+          {
+            echo "## er-harness"
+            echo
+            echo "Modelo: Qwen2.5-0.5B-Instruct GGUF Q4_K_M (local, CPU)"
+            echo
+            echo '```json'
+            head -c 4000 out/harness.json || true
+            echo
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Stop server
+        if: always()
+        run: kill "$(cat llama.pid)" 2>/dev/null || true
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with: {name: er-harness, path: out/, retention-days: 14}

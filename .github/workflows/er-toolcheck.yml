@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-er
-        with: {extras: "audio,video,apps,formats,binary,ml", torch: "true", jadx: "true", ghidra: "true", capa: "true", floss: "true", dextools: "true"}
+        with: {extras: "audio,video,apps,formats,binary,ml,util", torch: "true", jadx: "true", ghidra: "true", capa: "true", floss: "true", dextools: "true"}
       # audio-plus à parte (pode conflitar); falhas não derrubam o job
       - name: Extra audio-plus (best effort)
         run: pip install -q -c constraints.txt -e ".[audio-plus]" || echo "::warning::audio-plus parcial"

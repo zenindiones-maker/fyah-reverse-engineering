@@ -16,12 +16,13 @@ dependencies = []
 audio = ["librosa>=0.10", "pyloudnorm>=0.1.1", "soundfile>=0.12", "numpy>=1.24"]
 audio-plus = ["fyah-re[audio]", "essentia", "pedalboard", "audioflux", "matchering", "music21", "PyWavelets", "audiomentations", "mir_eval", "mirdata", "pretty_midi", "mido", "resampy", "pyacoustid", "python_speech_features", "fast_bss_eval", "beets"]
 ml = ["demucs", "torchcrepe", "dawdreamer", "beat_this @ git+https://github.com/CPJKU/beat_this", "onnx", "onnxruntime", "onnxsim", "ml_dtypes", "netron", "scapy", "honeypots"]
+util = ["supervision", "torch-audiomentations", "onnxoptimizer", "onnxmltools"]
 # isoladas em venvs próprias (scripts/er_venvs.sh): basic-pitch, spleeter, asteroid, transnetv2-pytorch, allin1
 video = ["scenedetect>=0.6.4", "opencv-python-headless", "colour-science", "pymediainfo", "av", "ffmpy", "pillow", "plotbitrate"]
 apps = ["androguard>=4", "frida-tools", "quark-engine", "apkleaks"]
 formats = ["kaitaistruct", "construct", "hachoir", "python-magic", "magika", "olefile", "exifread"]
 binary = ["r2pipe", "capstone", "lief", "pefile", "pyelftools", "pywhat", "yara-python", "slither-analyzer", "uncompyle6", "miasm"]
-all = ["fyah-re[audio-plus,ml,video,apps,formats,binary]"]
+all = ["fyah-re[audio-plus,ml,video,apps,formats,binary,util]"]
 dev = ["pytest>=8"]
 
 [project.scripts]
@@ -31,7 +32,7 @@ fyah-re = "fyah_re_cli:main"
 py-modules = ["fyah_re_cli"]
 
 [tool.setuptools.packages.find]
-include = ["audio*", "video*", "formats*", "apps*", "pipelines*"]
+include = ["audio*", "video*", "formats*", "apps*", "pipelines*", "tools*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
