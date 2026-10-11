@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fyah-re"
+version = "0.0.1"
+description = "Biblioteca central de engenharia reversa e análise de mídia da Fyah Records"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Fyah Records" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+fyah-re = "fyah_re_cli:main"
+
+[tool.setuptools]
+py-modules = ["fyah_re_cli"]
+
+[tool.setuptools.packages.find]
+include = ["audio*", "video*", "formats*", "integrations*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
