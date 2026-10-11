@@ -6,30 +6,28 @@ Como as ferramentas se alimentam. Só código próprio do repo + libs instaladas
 entrada (URL)
     │
     ├─ áudio ──► audio.profile ──► JSON (BPM, key, LUFS, espectro, timbre)
-    │               │
     │               ├─► beat_this ──► beats/downbeats
     │               ├─► basic-pitch (venv) ──► notas MIDI
     │               ├─► torchcrepe ──► f0
     │               ├─► demucs / spleeter (venv) ──► stems ──► audio.profile ×N
     │               ├─► allin1 (venv) ──► estrutura (segmentos)
-    │               └─► audio.compare �─► allin1 (venv) ──► estrutura (segmentos)
     │               └─► audio.compare ◄── 2ª faixa
     │
-    │           pipeline **audio-full** = profile + beat_this + basic-pitch + demucs + perfil por stem
+    │           pipeline audio-full = profile + beat_this + basic-pitch + demucs + perfil por stem
     │
     ├─ vídeo ──► ffprobe / mediainfo / pymediainfo ──► codecs/container
     │               ├─► PySceneDetect / TransNetV2 ──► cortes ──► video.pacing
     │               ├─► colour-science + Pillow/PyAV ──► paleta/cor
     │               └─► faixas de legenda (ffprobe streams)
     │
-    │           pipeline **video-full** = inspect + pacing + cor + legendas
+    │           pipeline video-full = inspect + pacing + cor + legendas
     │
     ├─ APK ──► androguard ──► manifesto/permissões
     │            ├─► jadx ──► Java
     │            ├─► apktool ──► smali/recursos
     │            └─► apkleaks ──► strings/URLs sensíveis (só APKs autorizados)
     │
-    │           pipeline **apk-full** = androguard + jadx + apktool
+    │           pipeline apk-full = androguard + jadx + apktool
     │
     ├─ formatos ──► kaitaistruct / construct / hachoir / python-magic / magika
     │

@@ -249,7 +249,7 @@ def apkleaks_():
     r = subprocess.run(["apkleaks", "-f", str(APK), "-o", str(T/"apkleaks.json")], capture_output=True, text=True, timeout=300)
     return f"apkleaks: rc={r.returncode}, saída {(T/'apkleaks.json').exists()}"
 def objection_():
-    return "objection " + sh("objection version")
+    return iso("objection", "import subprocess; print(subprocess.check_output(['objection','version'], text=True).strip())")
 def magika_():
     from magika import Magika; r = Magika().identify_path(APK if APK.exists() else WAV); return f"magika: {r.output.ct_label}"
 def olefile_():
@@ -265,11 +265,11 @@ def onnxsim_():
 def netron_():
     import netron; return f"netron {netron.__version__} (import; servidor/visualização sob demanda)"
 def angr_():
-    import angr; p = angr.Project(SAMPLE_BIN, auto_load_libs=False); return f"angr {angr.__version__}: entry {hex(p.entry)}"
+    return iso("angr", "import angr; p=angr.Project('/bin/ls', auto_load_libs=False); print(f'angr {angr.__version__}: entry {hex(p.entry)}')")
 def unicorn_():
-    from unicorn import Uc, UC_ARCH_X86, UC_MODE_64; Uc(UC_ARCH_X86, UC_MODE_64); import unicorn; return f"unicorn {unicorn.__version__}: x86_64"
+    return iso("angr", "from unicorn import Uc, UC_ARCH_X86, UC_MODE_64; Uc(UC_ARCH_X86, UC_MODE_64); import unicorn; print(f'unicorn {unicorn.__version__}: x86_64')")
 def keystone_():
-    from keystone import Ks, KS_ARCH_X86, KS_MODE_64; e, _ = Ks(KS_ARCH_X86, KS_MODE_64).asm(b"nop"); return f"keystone: {bytes(e).hex()}"
+    return iso("angr", "from keystone import Ks, KS_ARCH_X86, KS_MODE_64; e,_=Ks(KS_ARCH_X86, KS_MODE_64).asm(b'nop'); print(f'keystone: {bytes(e).hex()}')")
 def pywhat_():
     return "pyWhat " + sh("pywhat --version").splitlines()[0]
 def yara_():

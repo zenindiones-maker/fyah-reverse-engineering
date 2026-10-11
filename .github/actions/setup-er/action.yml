@@ -26,7 +26,9 @@ runs:
     - name: pip extras
       shell: bash
       env: {EXTRAS: "${{ inputs.extras }}"}
-      run: pip install -q -e ".[${EXTRAS}]"
+      run: |
+        pip install -q --only-binary=:all: "PyYAML>=6" || pip install -q "PyYAML>=6"
+        pip install -q -e ".[${EXTRAS}]"
     - name: versões de jadx/Ghidra
       id: rel
       if: inputs.jadx == 'true' || inputs.ghidra == 'true'
