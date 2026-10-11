@@ -1,11 +1,14 @@
 name: setup-er
-description: "Ambiente do E.R. em CPU (custo zero, sem API/token/cadastro). Instala Python, apt, extras pip e, opcionalmente, jadx/Ghidra de releases oficiais (sem commitar binários)."
+description: "Ambiente do E.R. em CPU (custo zero, sem API/token/cadastro). Instala Python, apt, extras pip e, opcionalmente, jadx/Ghidra/capa/FLOSS/dex2jar de releases oficiais (sem commitar binários)."
 inputs:
   extras: {description: "Extras do pyproject (ex.: audio,video)", default: "audio"}
   torch: {description: "Instalar torch/torchaudio CPU", default: "false"}
   apt: {description: "Pacotes apt extras", default: ""}
   jadx: {description: "Baixar jadx (release oficial)", default: "false"}
   ghidra: {description: "Baixar Ghidra (release oficial, headless)", default: "false"}
+  capa: {description: "Baixar capa (release oficial Mandiant)", default: "false"}
+  floss: {description: "Baixar FLOSS (release oficial Mandiant)", default: "false"}
+  dextools: {description: "Baixar dex2jar + smali (releases oficiais)", default: "false"}
   python-version: {default: "3.11"}
 runs:
   using: composite
@@ -17,7 +20,7 @@ runs:
       env: {EXTRA_APT: "${{ inputs.apt }}"}
       run: |
         sudo apt-get update -qq
-        pkgs="ffmpeg mediainfo libmagic1 default-jre-headless radare2 apktool unzip libchromaprint-tools $EXTRA_APT"
+        pkgs="ffmpeg mediainfo libmagic1 default-jre-headless radare2 rizin apktool unzip libchromaprint-tools $EXTRA_APT"
         for p in $pkgs; do sudo apt-get install -y -qq --no-install-recommends "$p" >/dev/null 2>&1 || echo "::warning::apt: $p indisponível"; done
     - name: torch CPU
       if: inputs.torch == 'true'
@@ -36,7 +39,6 @@ runs:
           echo ">>> pip install [$e]"
           pip install -q -c constraints.txt -e ".[$e]" || echo "::warning::extra $e falhou"
         done
-
     - name: versões de jadx/Ghidra
       id: rel
       if: inputs.jadx == 'true' || inputs.ghidra == 'true'
@@ -76,3 +78,15 @@ runs:
         sudo apt-get install -y -qq openjdk-21-jdk-headless >/dev/null 2>&1 || true
         echo "GHIDRA_HOME=$d/current" >> "$GITHUB_ENV"
         echo "$d/current/support" >> "$GITHUB_PATH"
+    - uses: actions/cache@v6
+      if: inputs.capa == 'true' || inputs.floss == 'true' || inputs.dextools == 'true'
+      with: {path: ~/.er-tools, key: "er-releases-v2"}
+    - name: Releases oficiais (capa/floss/dex2jar/smali)
+      if: inputs.capa == 'true' || inputs.floss == 'true' || inputs.dextools == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        ER_CAPA: ${{ inputs.capa == 'true' && '1' || '0' }}
+        ER_FLOSS: ${{ inputs.floss == 'true' && '1' || '0' }}
+        ER_DEXTOOLS: ${{ inputs.dextools == 'true' && '1' || '0' }}
+      run: bash scripts/er_releases.sh

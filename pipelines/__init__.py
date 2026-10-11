@@ -94,19 +94,54 @@ def apk_full(apk: str, outdir: str) -> dict:
         ad = out / "apktool"
         subprocess.run(["apktool", "d", "-q", "-f", "-o", str(ad), apk], capture_output=True)
         res["apktool"] = {"smali_files": sum(1 for _ in ad.rglob("*.smali")), "decoded": ad.exists()}
+    if shutil.which("d2j-dex2jar.sh"):
+        jar = out / "app.jar"
+        subprocess.run(["d2j-dex2jar.sh", "-f", "-o", str(jar), apk], capture_output=True)
+        res["dex2jar"] = {"jar_bytes": jar.stat().st_size if jar.exists() else 0}
+    if shutil.which("quark"):
+        qout = out / "quark.json"
+        r = subprocess.run(["quark", "-a", apk, "-o", str(qout)], capture_output=True, text=True, timeout=300)
+        res["quark"] = {"rc": r.returncode, "report": qout.exists()}
     (out / "apk_full.json").write_text(json.dumps(res, indent=2, ensure_ascii=False))
+    return res
+
+
+def binary_inspect(path: str, outdir: str) -> dict:
+    """radare2/rizin + capa + FLOSS + file magic — só arquivos próprios/autorizados."""
+    out = pathlib.Path(outdir); out.mkdir(parents=True, exist_ok=True)
+    res: dict = {"schema": "fyah-re/binary-inspect@1", "source": pathlib.Path(path).name}
+    import shutil, magic
+    res["magic"] = magic.from_file(path)
+    if shutil.which("rz-bin"):
+        r = subprocess.run(["rz-bin", "-I", "-j", path], capture_output=True, text=True)
+        try: res["rizin"] = json.loads(r.stdout)
+        except Exception: res["rizin"] = {"raw": r.stdout[:500]}
+    elif shutil.which("r2"):
+        r = subprocess.run(["r2", "-qq", "-c", "iIj", path], capture_output=True, text=True)
+        try: res["radare2"] = json.loads(r.stdout)
+        except Exception: res["radare2"] = {"raw": r.stdout[:500]}
+    if shutil.which("capa"):
+        r = subprocess.run(["capa", "-q", "-j", path], capture_output=True, text=True, timeout=300)
+        try: res["capa"] = {"rules": len(json.loads(r.stdout).get("rules", {}))}
+        except Exception: res["capa"] = {"rc": r.returncode}
+    if shutil.which("floss"):
+        r = subprocess.run(["floss", "-q", path], capture_output=True, text=True, timeout=300)
+        strings = [ln for ln in r.stdout.splitlines() if ln.strip()]
+        res["floss"] = {"strings": len(strings), "sample": strings[:10]}
+    (out / "binary_inspect.json").write_text(json.dumps(res, indent=2, ensure_ascii=False))
     return res
 
 
 def main(argv=None) -> int:
     import argparse
     ap = argparse.ArgumentParser(prog="python -m pipelines")
-    ap.add_argument("pipeline", choices=["audio-full", "video-full", "apk-full"])
+    ap.add_argument("pipeline", choices=["audio-full", "video-full", "apk-full", "binary-inspect"])
     ap.add_argument("input"); ap.add_argument("--out", default="out"); ap.add_argument("--venvs")
     a = ap.parse_args(argv)
     fn = {"audio-full": lambda: audio_full(a.input, a.out, a.venvs),
           "video-full": lambda: video_full(a.input, a.out),
-          "apk-full": lambda: apk_full(a.input, a.out)}[a.pipeline]
+          "apk-full": lambda: apk_full(a.input, a.out),
+          "binary-inspect": lambda: binary_inspect(a.input, a.out)}[a.pipeline]
     print(json.dumps(fn(), indent=2, ensure_ascii=False)[:2000])
     return 0
 

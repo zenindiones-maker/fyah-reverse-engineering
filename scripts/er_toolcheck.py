@@ -319,21 +319,113 @@ def ghidra_():
     return "Ghidra headless: import ok " + pathlib.Path(home).name
 
 
+
+# ---------------- lotes 4–6 (triagem) ----------------
+def python_speech_features_():
+    import python_speech_features as psf, numpy as np, soundfile as sf
+    y, sr = sf.read(WAV, dtype="float32"); mfcc = psf.mfcc(y, sr)
+    return f"python_speech_features: mfcc {mfcc.shape}"
+
+def fast_bss_eval_():
+    import fast_bss_eval, torch
+    # SI-SDR de um sinal consigo mesmo → +inf / grande
+    x = torch.randn(1, 8000); s = fast_bss_eval.sdr(x, x)
+    return f"fast_bss_eval: sdr self={float(s.mean()):.1f} dB"
+
+def beets_():
+    import beets; return f"beets {beets.__version__} (import CLI disponível)"
+
+def audioseal_():
+    return iso("audioseal", """
+import torch, torchaudio
+from audioseal import AudioSeal
+# detector só (pesos públicos anônimos)
+model = AudioSeal.load_detector("audioseal_detector_16bits")
+wav = torch.randn(1, 1, 16000)
+with torch.no_grad():
+    result = model(wav)
+print(f'audioseal detector: saída {type(result).__name__}')
+""", timeout=1200)
+
+def crepe_():
+    return iso("crepe", """
+import crepe, os, soundfile as sf, numpy as np
+y, sr = sf.read(os.environ['WAV'])
+time, frequency, confidence, _ = crepe.predict(y, sr, model_capacity='tiny', viterbi=False, verbose=0)
+print(f'crepe tiny: f0 mediano {float(np.median(frequency[confidence>0.5])) if (confidence>0.5).any() else float(np.median(frequency)):.0f} Hz')
+""", timeout=1200)
+
+def plotbitrate_():
+    # CLI: plotbitrate -h
+    return "plotbitrate " + sh("plotbitrate -h 2>&1 | head -1")
+
+def gopro2gpx_():
+    if not (VENVS / "gopro" / "bin" / "python").exists():
+        raise RuntimeError("venv gopro ausente (pip git falhou)")
+    return iso("gopro", "import importlib.util as u; print('gopro2gpx', bool(u.find_spec('gopro2gpx') or u.find_spec('gopro2gpx.gopro2gpx')))")
+
+def quark_():
+    return "quark " + sh("quark --version 2>&1 | head -1")
+
+def apk2url_():
+    if (VENVS/"apk2url"/"bin"/"python").exists():
+        return iso("apk2url", "import importlib; print('apk2url', importlib.util.find_spec('apk2url') is not None)")
+    # try CLI on PATH from pip
+    return sh("apk2url -h 2>&1 | head -1")
+
+def capa_():
+    return "capa " + sh("capa --version 2>&1 | head -1")
+
+def floss_():
+    out = sh(f"floss -q {SAMPLE_BIN} 2>&1 | head -5")
+    return f"floss: {len(out.splitlines())} linhas de saída em /bin/ls"
+
+def slither_():
+    return "slither " + sh("slither --version 2>&1 | head -1")
+
+def uncompyle6_():
+    import uncompyle6; return f"uncompyle6 {uncompyle6.__version__}"
+
+def miasm_():
+    from miasm.analysis.binary import Container
+    return f"miasm: Container importado"
+
+def qiling_():
+    return iso("qiling", "import qiling; print(f'qiling {qiling.__version__}')")
+
+def rizin_():
+    return sh("rizin -v 2>&1 | head -1") or sh("rz-bin -v 2>&1 | head -1")
+
+def dex2jar_():
+    return "dex2jar " + sh("d2j-dex2jar.sh 2>&1 | head -1")
+
+def smali_():
+    if shutil.which("smali"):
+        return "smali " + sh("smali --version 2>&1 | head -1")
+    raise RuntimeError("smali jar/wrapper ausente (release JesusFreke pode não ter asset)")
+
+def paddle2onnx_():
+    import paddle2onnx; return f"paddle2onnx {getattr(paddle2onnx,'__version__',ver('paddle2onnx'))}"
+
+def honeypots_():
+    import honeypots; return f"honeypots {getattr(honeypots,'__version__','importado')}"
+
+
 CHECKS_EXTRA = {
-    "modelos_ml": [("onnx", onnx_), ("onnxruntime", onnxruntime_), ("onnxsim", onnxsim_), ("netron", netron_)],
-    "protocolos": [("scapy", scapy_)],
+    "modelos_ml": [("onnx", onnx_), ("onnxruntime", onnxruntime_), ("onnxsim", onnxsim_), ("netron", netron_), ("paddle2onnx", paddle2onnx_)],
+    "protocolos": [("scapy", scapy_), ("honeypots", honeypots_)],
 }
 CHECKS = {
     "audio": [("librosa", librosa_), ("pyloudnorm", pyloudnorm_), ("essentia", essentia_), ("pedalboard", pedalboard_),
               ("audioflux", audioflux_), ("matchering", matchering_), ("music21", music21_), ("PyWavelets", pywt_),
               ("audiomentations", audiomentations_), ("mir_eval", mir_eval_), ("miditok", miditok_), ("mirdata", mirdata_),
-              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("chromaprint (fpcalc)", chromaprint_), ("msaf", msaf_), ("fyah audio.profile", fyah_profile_)],
+              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("chromaprint (fpcalc)", chromaprint_), ("msaf", msaf_), ("python_speech_features", python_speech_features_), ("fast_bss_eval", fast_bss_eval_), ("beets", beets_), ("audioseal", audioseal_), ("crepe", crepe_), ("fyah audio.profile", fyah_profile_)],
     "video": [("ffmpeg", ffmpeg_), ("ffprobe", ffprobe_), ("mediainfo", mediainfo_), ("pymediainfo", pymediainfo_),
-              ("PySceneDetect", scenedetect_), ("TransNetV2", transnet_), ("colour-science", colour_), ("PyAV", av_), ("ffmpy", ffmpy_), ("Pillow", pillow_)],
-    "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_), ("apkleaks", apkleaks_), ("objection", objection_)],
+              ("PySceneDetect", scenedetect_), ("TransNetV2", transnet_), ("colour-science", colour_), ("PyAV", av_), ("ffmpy", ffmpy_), ("Pillow", pillow_), ("plotbitrate", plotbitrate_), ("gopro2gpx", gopro2gpx_)],
+    "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_), ("apkleaks", apkleaks_), ("objection", objection_), ("quark-engine", quark_), ("dex2jar", dex2jar_), ("smali", smali_)],
     "formatos": [("kaitaistruct", kaitai_), ("construct", construct_), ("hachoir", hachoir_), ("python-magic", magic_), ("magika", magika_), ("olefile", olefile_), ("exifread", exifread_)],
     "binarios": [("radare2", radare2_), ("r2pipe", r2pipe_), ("capstone", capstone_), ("lief", lief_), ("pefile", pefile_),
-                 ("pyelftools", pyelftools_), ("Ghidra headless", ghidra_), ("angr", angr_), ("unicorn", unicorn_), ("keystone", keystone_), ("pyWhat", pywhat_), ("yara-python", yara_)],
+                 ("pyelftools", pyelftools_), ("Ghidra headless", ghidra_), ("angr", angr_), ("unicorn", unicorn_), ("keystone", keystone_), ("pyWhat", pywhat_), ("yara-python", yara_), ("capa", capa_), ("FLOSS", floss_), ("slither", slither_), ("uncompyle6", uncompyle6_), ("miasm", miasm_), ("qiling", qiling_), ("rizin", rizin_)],
 }
 
 

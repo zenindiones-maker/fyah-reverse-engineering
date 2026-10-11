@@ -1,30 +1,29 @@
 # Referência (não instaladas)
 
-Essencial LOCAL_OK da curadoria que **não** entram no `setup-er` / `er-toolcheck` porque são awesome lists, datasets, docs, GUIs, plugins de IDA/x64dbg, Windows-only, frameworks de cheat/bypass, ou repos de pesquisa sem pacote pip/CLI estável. Continuam no [catálogo](../curadoria/) e no [arsenal](../arsenal.md) como estudo.
+Triagem automática em `TRIAGEM.csv` (Essencial LOCAL_OK da curadoria).
+
+## Resultado da triagem (2026-10-11)
+| Classe | Qtd | Significado |
+|---|---|---|
+| instalado | ~51–69 | Já no `er-toolcheck` / STATUS |
+| instalável (Linux CLI) | ~19 | Pip, apt ou release oficial — lotes 4–6 |
+| **referência** | **~359** | Não entram no setup |
 
 ## Critérios de “referência”
-- Awesome list / coleção de links
+- Awesome list / coleção de links / learning hub / skill / guide
 - Dataset ou paper com código de treino (sem CLI de inferência leve)
-- App/GUI desktop (ImHex, Cutter, Recaf, Bytecode Viewer, APKLab, ClassyShark, …)
-- Plugin de IDA / Binary Ninja / x64dbg / Ghidra (só usáveis com a ferramenta hospedeira)
-- Windows-only (x64dbg, PE tools, FLARE-VM, …)
-- Runtime Frida que exige app alvo vivo (scripts, objection já está instalado; dumps de IPA/APK só com autorização)
-- Emuladores/frameworks pesados sem smoke test barato (Qiling, Unidbg, Speakeasy, …) — candidatos a lote futuro
+- App/GUI desktop (ImHex, Cutter, Recaf, Bytecode Viewer, APKLab, ClassyShark, Hex editors, …)
+- Plugin de IDA / Binary Ninja / x64dbg / Ghidra
+- Windows-only (x64dbg, PE tools, FLARE-VM, .NET deobfuscators nativos, …)
+- iOS / dump de IPA (só com autorização; precisa dispositivo)
+- Runtime Frida que exige app alvo vivo (scripts avulsos; `frida-tools`/`objection` já instalados)
+- Emuladores/frameworks pesados sem smoke barato restante, ou build difícil (Triton, BAP, …)
 - Wrappers de FFmpeg em outras linguagens (já temos ffmpeg/ffprobe/PyAV/ffmpy)
-- Ferramentas de patch/bypass (ReVanced, apk-mitm, …) — fora do escopo legal do repo
+- Ferramentas de patch/bypass (ReVanced, apk-mitm, …) — fora do escopo legal
+- Pesquisa áudio/vídeo sem pacote estável (omnizart, Wave-U-Net, AutoShot, …)
 
-## Contagem aproximada (429 Essencial LOCAL_OK)
-| Área | Essencial | Já instaladas/testadas (STATUS) | Referência / futuros |
-|---|---|---|---|
-| áudio | 78 | ~30 | datasets (FMA, Jamendo), awesome lists, GUIs (SpleeterGUI), papers sem CLI |
-| vídeo | 28 | ~10 | awesome-video, wrappers FFmpeg, AutoShot/OmniShotCut (pesquisa) |
-| apps/mobile | 17+ (muitos em binarios) | ~6 | GUIs, scripts Frida, dumpers |
-| formatos | 34 | ~6 | hex editors GUI, awesome-kaitai |
-| binários | 257 | ~12 | GUIs, plugins, Windows, dumpers, emuladores pesados |
-| modelos_ml | 11 | ~4 | VisualDL, demucs.onnx (wrapper) |
-| protocolos | 4 | 1 (scapy) | ecapture (precisa eBPF/root), honeypots |
+## Tentadas e descartadas
+- **nussl**: deps antigas (numpy/scipy)
+- **nnAudio**: removida do extra (conflito torch no main)
 
-Atualize esta lista ao promover uma ferramenta de referência → instalada.
-
-## Tentadas e descartadas da instalação
-- **nussl**: deps antigas (numpy/scipy) quebram em Python moderno; use demucs/spleeter.
+Atualize `TRIAGEM.csv` / este arquivo ao promover referência → instalada.

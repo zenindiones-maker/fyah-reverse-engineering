@@ -31,7 +31,8 @@ entrada (URL)
     │
     ├─ formatos ──► kaitaistruct / construct / hachoir / python-magic / magika
     │
-    └─ binários ──► radare2/r2pipe · capstone · lief · pyelftools · angr · unicorn · keystone · Ghidra headless
+    └─ binários ──► radare2/rizin · capa · FLOSS · capstone · lief · pyelftools · angr · unicorn · keystone · Ghidra headless
+                     pipeline binary-inspect = magic + rizin + capa + FLOSS
                      (só arquivos próprios/autorizados; sem DRM)
 ```
 
@@ -43,7 +44,8 @@ entrada (URL)
 | apk-inspect | APK | JSON + MD |
 | **audio-full** | áudio | profile + beats + notas + stems + perfil por stem |
 | **video-full** | vídeo | ffprobe + pacing + cor + legendas |
-| **apk-full** | APK | androguard + jadx + apktool |
+| **apk-full** | APK | androguard + jadx + apktool (+ dex2jar/quark se presentes) |
+| **binary-inspect** | binário | magic + rizin/radare2 + capa + FLOSS |
 
 ## Status
 Ver [STATUS.md](STATUS.md) (gerado pelo `er-toolcheck`).

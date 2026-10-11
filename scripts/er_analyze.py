@@ -42,6 +42,12 @@ elif tool == "stems":
 elif tool == "apk-inspect":
     run(py, "-m", "apps.apk", inp, "--out", "out/apk.json", "--md", "out/apk.md")
     summary.write(open("out/apk.md").read())
+elif tool == "binary-inspect":
+    run(py, "-m", "pipelines", "binary-inspect", inp, "--out", "out")
+    d = json.load(open("out/binary_inspect.json"))
+    summary.write(f"## Binary inspect\n\nMagic: `{d.get('magic')}`\n\n")
+    if "capa" in d: summary.write(f"capa rules: {d['capa']}\n")
+    if "floss" in d: summary.write(f"FLOSS strings: {d['floss'].get('strings')}\n")
 elif tool in ("audio-full", "video-full", "apk-full"):
     venvs = str(pathlib.Path.home() / ".er-venvs")
     run(py, "-m", "pipelines", tool, inp, "--out", "out", "--venvs", venvs)

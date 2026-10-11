@@ -6,7 +6,7 @@ on:
       tool:
         description: "Ferramenta ou pipeline"
         type: choice
-        options: [audio-profile, compare, media-inspect, cuts-pacing, stems, apk-inspect, audio-full, video-full, apk-full]
+        options: [audio-profile, compare, media-inspect, cuts-pacing, stems, apk-inspect, audio-full, video-full, apk-full, binary-inspect]
         default: media-inspect
       url: {description: "URL do arquivo (próprio/licenciado/domínio público; APK open source, ex.: F-Droid)", required: true}
       url2: {description: "Segunda URL (só para compare)", required: false, default: ""}
@@ -28,7 +28,8 @@ jobs:
             media-inspect) echo "extras=audio" >> "$GITHUB_OUTPUT" ;;
             cuts-pacing|video-full) echo "extras=audio,video" >> "$GITHUB_OUTPUT" ;;
             apk-inspect) echo "extras=apps" >> "$GITHUB_OUTPUT" ;;
-            apk-full) echo "extras=apps" >> "$GITHUB_OUTPUT"; echo "jadx=true" >> "$GITHUB_OUTPUT" ;;
+            apk-full) echo "extras=apps" >> "$GITHUB_OUTPUT"; echo "jadx=true" >> "$GITHUB_OUTPUT"; echo "dextools=true" >> "$GITHUB_OUTPUT" ;;
+            binary-inspect) echo "extras=formats,binary" >> "$GITHUB_OUTPUT"; echo "capa=true" >> "$GITHUB_OUTPUT"; echo "floss=true" >> "$GITHUB_OUTPUT" ;;
             stems|audio-full) echo "extras=audio,ml" >> "$GITHUB_OUTPUT"; echo "torch=true" >> "$GITHUB_OUTPUT" ;;
             *) echo "extras=audio" >> "$GITHUB_OUTPUT" ;;
           esac
@@ -37,6 +38,9 @@ jobs:
           extras: ${{ steps.deps.outputs.extras }}
           torch: ${{ steps.deps.outputs.torch || 'false' }}
           jadx: ${{ steps.deps.outputs.jadx || 'false' }}
+          capa: ${{ steps.deps.outputs.capa || 'false' }}
+          floss: ${{ steps.deps.outputs.floss || 'false' }}
+          dextools: ${{ steps.deps.outputs.dextools || 'false' }}
       - uses: actions/cache/restore@v6
         if: inputs.tool == 'audio-full'
         with: {path: ~/.er-venvs, key: "er-venvs-${{ hashFiles('scripts/er_venvs.sh') }}"}
