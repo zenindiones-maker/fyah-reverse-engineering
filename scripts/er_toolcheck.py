@@ -97,7 +97,7 @@ def mir_eval_():
     import mir_eval, numpy as np; f = mir_eval.beat.f_measure(np.array([1.0, 2.0]), np.array([1.0, 2.0])); return f"mir_eval {mir_eval.__version__}, F={f}"
 
 def miditok_():
-    return iso("musicxml", "import miditok; print(f'miditok {getattr(miditok,"__version__","importado")}')")
+    return iso("musicxml", "import miditok; print('miditok', getattr(miditok, '__version__', 'importado'))")
 
 def mirdata_():
     import mirdata; return f"mirdata {mirdata.__version__}, {len(mirdata.list_datasets())} datasets"
