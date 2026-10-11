@@ -17,6 +17,9 @@ on:
         description: "URL do arquivo (próprio/licenciado/domínio público)"
         required: true
         default: "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg"
+concurrency:
+  group: er-harness-${{ github.event.inputs.model || 'default' }}
+  cancel-in-progress: true
 permissions: {contents: read}
 jobs:
   harness:

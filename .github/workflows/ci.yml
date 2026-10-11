@@ -1,6 +1,17 @@
 name: ci
 # Custo zero: runner gratuito ubuntu-latest (repo público).
-on: {push: {branches: [main]}, pull_request: {}, workflow_dispatch: {}}
+# Ignora commits só de status/diário pra não spammar o Actions (e o Gmail).
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/ferramentas/STATUS.md"
+      - "docs/diario/**"
+  pull_request:
+    paths-ignore:
+      - "docs/ferramentas/STATUS.md"
+      - "docs/diario/**"
+  workflow_dispatch: {}
 permissions: {contents: read}
 jobs:
   test:
