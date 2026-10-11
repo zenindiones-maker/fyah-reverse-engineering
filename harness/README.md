@@ -25,3 +25,9 @@ python harness/run_dsh.py --task "Inspecione a mídia" --file-url 'https://…'
 ```
 
 Workflow: `er-harness.yml`.
+
+
+## Status no Actions
+- llama.cpp CPU + Qwen2.5-0.5B GGUF sobe e responde em `/v1/models`.
+- DSH `sdk-minimal` + patch `llm-pi-ai` completa um turno com `ok: true` **sem chave de nuvem** (só placeholder `LOCAL_LLM_KEY`).
+- Modelos 0.5B são fracos em tool-use; o workflow também roda `python -m tools run media-inspect` diretamente para garantir resultado útil.
