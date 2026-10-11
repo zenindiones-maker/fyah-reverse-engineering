@@ -19,3 +19,7 @@
 **Qwen2.5-3B:** licença Research, não Apache.
 
 Placeholder `LOCAL_LLM_KEY=local-no-cloud-key` (não é secret).
+
+
+## Nota de bench
+DSH+tools precisa de **ctx ≥ 8192** no llama-server; com 4096 o modelo devolve 1 token (`finish=length`). gpt-oss-20b (~11.5GB) fica fora do cache de 10GB.

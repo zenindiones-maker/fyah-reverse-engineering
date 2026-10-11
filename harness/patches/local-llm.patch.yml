@@ -21,24 +21,24 @@
               - id: qwen2.5-0.5b
                 name: Qwen2.5-0.5B-Instruct (GGUF Q4_K_M)
                 contextWindow: 8192
-                maxTokens: 512
+                maxTokens: 768
               - id: qwen2.5-7b
                 name: Qwen2.5-7B-Instruct (GGUF Q4_K_M)
                 contextWindow: 8192
-                maxTokens: 512
+                maxTokens: 768
               - id: qwen2.5-14b
-                name: Qwen2.5-14B-Instruct (GGUF Q3_K_M)
-                contextWindow: 4096
-                maxTokens: 512
+                name: Qwen2.5-14B-Instruct (GGUF Q4_K_M)
+                contextWindow: 8192
+                maxTokens: 768
               - id: qwen3-14b
-                name: Qwen3-14B (GGUF Q3_K_M)
-                contextWindow: 4096
-                maxTokens: 512
+                name: Qwen3-14B (GGUF Q4_K_M)
+                contextWindow: 8192
+                maxTokens: 768
               - id: qwen3-30b-a3b
-                name: Qwen3-30B-A3B-Instruct-2507 (GGUF UD-IQ1_M)
-                contextWindow: 4096
-                maxTokens: 512
+                name: Qwen3-30B-A3B-Instruct-2507 (GGUF UD-TQ1_0)
+                contextWindow: 8192
+                maxTokens: 768
               - id: r1-distill-qwen-14b
-                name: DeepSeek-R1-Distill-Qwen-14B (GGUF Q3_K_M)
-                contextWindow: 4096
-                maxTokens: 512
+                name: DeepSeek-R1-Distill-Qwen-14B (GGUF Q4_K_M)
+                contextWindow: 8192
+                maxTokens: 768

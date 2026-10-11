@@ -104,6 +104,47 @@ jobs:
           print("USAGE=", d.get("usage"))
           PY
 
+
+      - name: Smoke tools API (DSH-shaped)
+        run: |
+          set -e
+          python3 - <<'PY'
+          import json, urllib.request, os
+          mid=json.load(open("harness/models.json"))[os.environ["MODEL_PRESET"]]["id"]
+          body={
+            "model": mid,
+            "messages":[
+              {"role":"system","content":"You are E.R. Use the bash tool."},
+              {"role":"user","content":"Run: python -m tools run media-inspect --input https://example.com/a.ogg --out out/m.json"}
+            ],
+            "tools":[{
+              "type":"function",
+              "function":{
+                "name":"bash",
+                "description":"Run a bash command",
+                "parameters":{"type":"object","properties":{"command":{"type":"string"}},"required":["command"]}
+              }
+            }],
+            "tool_choice":"auto",
+            "max_tokens":256,
+            "temperature":0
+          }
+          req=urllib.request.Request(
+            "http://127.0.0.1:8080/v1/chat/completions",
+            data=json.dumps(body).encode(),
+            headers={"Content-Type":"application/json"},
+          )
+          raw=urllib.request.urlopen(req, timeout=900).read()
+          open("out/smoke_tools_api.json","wb").write(raw)
+          d=json.loads(raw)
+          ch=(d.get("choices") or [{}])[0]
+          msg=ch.get("message") or {}
+          print("TOOLS_CONTENT=", repr((msg.get("content") or "")[:400]))
+          print("TOOL_CALLS=", repr(msg.get("tool_calls"))[:1000])
+          print("FINISH=", ch.get("finish_reason"))
+          print("USAGE=", d.get("usage"))
+          PY
+
       - name: Run DSH headless (score tool-use BEFORE fallback)
         id: dsh
         continue-on-error: true

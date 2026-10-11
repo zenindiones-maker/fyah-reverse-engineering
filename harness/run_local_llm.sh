@@ -23,6 +23,7 @@ print(f"export MODEL_CTX={shlex.quote(str(m['ctx']))}")
 print(f"export MODEL_FILENAME={shlex.quote(m['file'])}")
 print(f"export MODEL_JINJA={shlex.quote('1' if m.get('jinja', True) else '0')}")
 print(f"export MODEL_NO_THINK={shlex.quote('1' if m.get('no_think') else '0')}")
+print(f"export MODEL_KV_Q8={shlex.quote('1' if m.get('kv_q8') else '0')}")
 PY
 )"
 
@@ -56,7 +57,11 @@ extra=(-np 1)
 if [ "$MODEL_JINJA" = "1" ]; then
   extra+=(--jinja)
 fi
-# Qwen3 thinking models: disable thinking in template when possible
+if [ "${MODEL_KV_Q8:-0}" = "1" ]; then
+  if "$BIN_DIR/llama-server" --help 2>&1 | grep -q -- '--cache-type-k'; then
+    extra+=(--cache-type-k q8_0 --cache-type-v q8_0)
+  fi
+fi
 if [ "$MODEL_NO_THINK" = "1" ]; then
   extra+=(--chat-template-kwargs '{"enable_thinking":false}')
 fi
