@@ -1,0 +1,30 @@
+name: catalog-refresh
+# Custo zero: runner gratuito; API do GitHub só leitura com GITHUB_TOKEN; commit de volta em docs/catalogo/.
+on:
+  workflow_dispatch:
+    inputs:
+      quick: {description: "Modo rápido (1 tópico/área, 1 página)", type: boolean, default: false}
+  schedule:
+    - cron: "0 6 1 * *"
+permissions:
+  contents: write
+concurrency: {group: catalog-refresh, cancel-in-progress: false}
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Gerar catálogo
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: python scripts/build_catalog.py ${{ inputs.quick && '--quick' || '' }}
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/catalogo
+          git diff --cached --quiet && echo "Sem mudanças" && exit 0
+          git commit -m "catalogo: atualização automática $(date -u +%F)"
+          git push
