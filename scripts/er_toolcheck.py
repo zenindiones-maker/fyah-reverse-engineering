@@ -110,12 +110,73 @@ def demucs_():
     import demucs; from demucs.pretrained import get_model
     return f"demucs {demucs.__version__} (import; pesos públicos baixados só no workflow stems)"
 
+VENVS = pathlib.Path.home() / ".er-venvs"
+
+
+def iso(venv: str, code: str, timeout=900) -> str:
+    py = VENVS / venv / "bin" / "python"
+    if not py.exists():
+        raise RuntimeError(f"venv {venv} não instalada")
+    env = {**os.environ, "WAV": str(WAV), "MP4": str(MP4), "T": str(T)}
+    r = subprocess.run([str(py), "-c", code], capture_output=True, text=True, timeout=timeout, env=env)
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or r.stdout).strip().splitlines()[-1][-200:])
+    return r.stdout.strip().splitlines()[-1]
+
 def basic_pitch_():
-    import basic_pitch
-    from basic_pitch.inference import Model, predict
-    onnx = pathlib.Path(basic_pitch.__file__).parent / "saved_models" / "icassp_2022" / "nmp.onnx"
-    _, midi, notes = predict(str(WAV), Model(onnx))  # força backend ONNX (CPU)
-    return f"basic-pitch (ONNX): {len(notes)} notas"
+    return iso("basicpitch", """
+import os, pathlib, basic_pitch
+from basic_pitch.inference import Model, predict
+onnx = pathlib.Path(basic_pitch.__file__).parent / 'saved_models' / 'icassp_2022' / 'nmp.onnx'
+_, midi, notes = predict(os.environ['WAV'], Model(onnx))
+print(f'basic-pitch (ONNX, venv isolada): {len(notes)} notas')""")
+
+def beat_this_():
+    from beat_this.inference import File2Beats
+    beats, down = File2Beats(checkpoint_path="final0", device="cpu", dbn=False)(str(WAV))
+    return f"beat_this: {len(beats)} beats, {len(down)} downbeats"
+
+def torchcrepe_():
+    import torch, torchcrepe, soundfile as sf
+    y, sr = sf.read(WAV, dtype="float32")
+    f0 = torchcrepe.predict(torch.tensor(y)[None], sr, 160, 50, 1000, "tiny", device="cpu", batch_size=512)
+    return f"torchcrepe tiny: f0 mediano {float(f0.median()):.0f} Hz (esperado ~220)"
+
+def dawdreamer_():
+    import dawdreamer as daw, soundfile as sf
+    y, sr = sf.read(WAV, dtype="float32")
+    eng = daw.RenderEngine(sr, 512); pb = eng.make_playback_processor("pb", y[None].repeat(2, 0))
+    eng.load_graph([(pb, [])]); eng.render(1.0)
+    return f"DawDreamer {daw.__version__ if hasattr(daw,'__version__') else ''}: render {eng.get_audio().shape}"
+
+def asteroid_():
+    return iso("asteroid", """
+import torch, asteroid
+from asteroid.models import ConvTasNet
+m = ConvTasNet(n_src=2).eval()
+with torch.no_grad(): out = m(torch.randn(1, 8000))
+print(f'asteroid {asteroid.__version__}: ConvTasNet forward {tuple(out.shape)} (pesos aleatórios)')""")
+
+def spleeter_():
+    return iso("spleeter", """
+import os, subprocess, sys, pathlib
+out = pathlib.Path(os.environ['T']) / 'spl'
+subprocess.run([sys.executable, '-m', 'spleeter', 'separate', '-p', 'spleeter:2stems', '-o', str(out), os.environ['WAV']], check=True, capture_output=True)
+print('spleeter 2stems: ' + ', '.join(sorted(p.name for p in out.rglob('*.wav'))))""", timeout=1200)
+
+def allin1_():
+    return iso("allin1", """
+import os, allin1
+r = allin1.analyze(os.environ['WAV'], device='cpu', keep_byproducts=False)
+print(f'allin1: BPM {r.bpm}, {len(r.beats)} beats, {len(r.segments)} segmentos')""", timeout=1800)
+
+def transnet_():
+    return iso("transnet", """
+import os, torch
+from transnetv2_pytorch import TransNetV2
+m = TransNetV2(); m.eval()
+r = m.detect_scenes(os.environ['MP4']) if hasattr(m,'detect_scenes') else None
+print(f'TransNetV2 (pytorch): {len(r) if r is not None else "modelo carregado"} cenas')""")
 
 def fyah_profile_():
     from audio.profile import profile_file; p = profile_file(str(WAV)); return f"fyah audio.profile BPM {p['tempo_bpm']}"
@@ -181,9 +242,9 @@ CHECKS = {
     "audio": [("librosa", librosa_), ("pyloudnorm", pyloudnorm_), ("essentia", essentia_), ("pedalboard", pedalboard_),
               ("audioflux", audioflux_), ("matchering", matchering_), ("music21", music21_), ("PyWavelets", pywt_),
               ("audiomentations", audiomentations_), ("mir_eval", mir_eval_), ("miditok", miditok_), ("mirdata", mirdata_),
-              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("fyah audio.profile", fyah_profile_)],
+              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("fyah audio.profile", fyah_profile_)],
     "video": [("ffmpeg", ffmpeg_), ("ffprobe", ffprobe_), ("mediainfo", mediainfo_), ("pymediainfo", pymediainfo_),
-              ("PySceneDetect", scenedetect_), ("colour-science", colour_), ("PyAV", av_)],
+              ("PySceneDetect", scenedetect_), ("TransNetV2", transnet_), ("colour-science", colour_), ("PyAV", av_)],
     "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_)],
     "formatos": [("kaitaistruct", kaitai_), ("construct", construct_), ("hachoir", hachoir_), ("python-magic", magic_)],
     "binarios": [("radare2", radare2_), ("r2pipe", r2pipe_), ("capstone", capstone_), ("lief", lief_), ("pefile", pefile_),

@@ -9,11 +9,15 @@ concurrency: {group: er-toolcheck, cancel-in-progress: false}
 jobs:
   toolcheck:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-er
         with: {extras: "all", torch: "true", jadx: "true", ghidra: "true"}
+      - uses: actions/cache@v6
+        with: {path: ~/.er-venvs, key: er-venvs-${{ hashFiles('scripts/er_venvs.sh') }}}
+      - name: Venvs isoladas
+        run: bash scripts/er_venvs.sh
       - name: Smoke test
         run: python scripts/er_toolcheck.py
       - name: Commit (só docs/ferramentas)
