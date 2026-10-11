@@ -1,0 +1,29 @@
+name: compare
+# Custo zero: runner gratuito ubuntu-latest (repo público), sem GPU, sem serviços pagos.
+on:
+  workflow_dispatch:
+    inputs:
+      track_a_url: {description: "Faixa A (ex.: geração Hazewave)", required: true}
+      track_b_url: {description: "Faixa B (referência licenciada)", required: true}
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pip install -e ".[audio]"
+      - env:
+          track_a_url: ${{ inputs.track_a_url }}
+          track_b_url: ${{ inputs.track_b_url }}
+        run: |
+          curl -L --fail -o a.audio "$track_a_url"
+          curl -L --fail -o b.audio "$track_b_url"
+      - run: python -m audio.compare a.audio b.audio --out out/compare.json --md out/compare.md
+      - run: cat out/compare.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with: {name: compare, path: out/}

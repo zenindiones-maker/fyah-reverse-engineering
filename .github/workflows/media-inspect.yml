@@ -1,0 +1,24 @@
+name: media-inspect
+# Custo zero: runner gratuito ubuntu-latest (repo público), sem GPU, sem serviços pagos.
+on:
+  workflow_dispatch:
+    inputs:
+      media_url: {description: "URL do vídeo/áudio", required: true}
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg mediainfo
+      - env: {media_url: "${{ inputs.media_url }}"}
+        run: curl -L --fail -o input.media "$media_url"
+      - run: |
+          mkdir -p out
+          ffprobe -v error -show_format -show_streams -of json input.media > out/ffprobe.json
+          mediainfo --Output=JSON input.media > out/mediainfo.json
+          python3 -c "import json;d=json.load(open('out/ffprobe.json'));print('|stream|codec|','|---|---|',*[f'|{s[\"index\"]}|{s.get(\"codec_name\")}|' for s in d['streams']],sep='\n')" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with: {name: media-inspect, path: out/}

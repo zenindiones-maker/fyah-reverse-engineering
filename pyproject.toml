@@ -13,6 +13,8 @@ authors = [{ name = "Fyah Records" }]
 dependencies = []
 
 [project.optional-dependencies]
+audio = ["librosa>=0.10", "pyloudnorm>=0.1.1", "soundfile>=0.12", "numpy>=1.24"]
+video = ["scenedetect[opencv-headless]>=0.6.4"]
 dev = ["pytest>=8"]
 
 [project.scripts]
@@ -22,7 +24,7 @@ fyah-re = "fyah_re_cli:main"
 py-modules = ["fyah_re_cli"]
 
 [tool.setuptools.packages.find]
-include = ["audio*", "video*", "formats*", "integrations*"]
+include = ["audio*", "video*", "formats*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

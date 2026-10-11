@@ -1,0 +1,24 @@
+name: audio-profile
+# Custo zero: runner gratuito ubuntu-latest (repo público), sem GPU, sem serviços pagos.
+on:
+  workflow_dispatch:
+    inputs:
+      audio_url: {description: "URL do áudio (próprio/licenciado)", required: true}
+      name: {description: "Nome da faixa", required: true, default: "faixa"}
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pip install -e ".[audio]"
+      - env: {audio_url: "${{ inputs.audio_url }}"}
+        run: curl -L --fail -o input.audio "$audio_url"
+      - run: python -m audio.profile input.audio --out "out/profile.json"
+      - uses: actions/upload-artifact@v4
+        with: {name: "profile-${{ inputs.name }}", path: out/, retention-days: 30}

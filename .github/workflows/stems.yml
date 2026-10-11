@@ -1,0 +1,27 @@
+name: stems
+# Custo zero: runner gratuito ubuntu-latest (repo público), sem GPU, sem serviços pagos.
+on:
+  workflow_dispatch:
+    inputs:
+      audio_url: {description: "URL do áudio (próprio/licenciado)", required: true}
+      model: {description: "Modelo Demucs", default: "htdemucs", type: choice, options: [htdemucs, htdemucs_ft, mdx_extra]}
+permissions:
+  contents: read
+jobs:
+  stems:
+    runs-on: ubuntu-latest   # CPU: ~1-3x a duração da faixa (htdemucs); htdemucs_ft ~4x mais lento
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - uses: actions/cache@v4
+        with: {path: ~/.cache/torch/hub/checkpoints, key: "demucs-${{ inputs.model }}-v1"}
+      - run: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu && pip install demucs -e ".[audio]"
+      - env: {audio_url: "${{ inputs.audio_url }}"}
+        run: curl -L --fail -o input.wav "$audio_url"
+      - run: python -m demucs -n ${{ inputs.model }} -o out --mp3 input.wav
+      - run: for s in out/*/input/*.mp3; do python -m audio.profile "$s" --out "${s%.mp3}.json" || true; done
+      - uses: actions/upload-artifact@v4
+        with: {name: stems, path: out/, retention-days: 7}

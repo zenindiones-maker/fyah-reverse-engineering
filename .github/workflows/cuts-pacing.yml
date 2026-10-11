@@ -1,0 +1,27 @@
+name: cuts-pacing
+# Custo zero: runner gratuito ubuntu-latest (repo público), sem GPU, sem serviços pagos.
+on:
+  workflow_dispatch:
+    inputs:
+      video_url: {description: "URL do vídeo (próprio/licenciado)", required: true}
+      threshold: {description: "Limiar ContentDetector", default: "27"}
+permissions:
+  contents: read
+jobs:
+  cuts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pip install -e ".[video]"
+      - env: {video_url: "${{ inputs.video_url }}"}
+        run: curl -L --fail -o input.mp4 "$video_url"
+      - run: |
+          mkdir -p out
+          python -m video.pacing input.mp4 --threshold "${{ inputs.threshold }}" --out out/pacing.json
+          python -c "import json;d=json.load(open('out/pacing.json'));print(f'## Ritmo de edição\n\nCortes: {d[\"cuts\"]} · cortes/min: {d[\"cuts_per_minute\"]} · plano médio: {d[\"shot_length_s\"][\"mean\"]} s')" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with: {name: cuts-pacing, path: out/}
