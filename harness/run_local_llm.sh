@@ -5,7 +5,7 @@ ROOT="${ER_TOOLS_DIR:-$HOME/.er-tools}"
 MODEL_DIR="$ROOT/models"
 BIN_DIR="$ROOT/llama"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PRESET="${MODEL_PRESET:-fast}"
+PRESET="${MODEL_PRESET:-qwen3-30b-a3b}"
 mkdir -p "$MODEL_DIR" "$BIN_DIR"
 
 eval "$(python3 - "$SCRIPT_DIR/models.json" "$PRESET" <<'PY'

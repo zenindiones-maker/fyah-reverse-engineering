@@ -23,3 +23,13 @@ Placeholder `LOCAL_LLM_KEY=local-no-cloud-key` (não é secret).
 
 ## Nota de bench
 DSH+tools precisa de **ctx ≥ 8192** no llama-server; com 4096 o modelo devolve 1 token (`finish=length`). gpt-oss-20b (~11.5GB) fica fora do cache de 10GB.
+
+## Resultado do bench (Actions, 4 vCPU/16 GB) — default = `qwen3-30b-a3b`
+| preset | DSH rodou media-inspect + audio-full? | tempo DSH | decode |
+|---|---|---|---|
+| fast (0.5B) | só media-inspect | 10 s | ~60 tok/s |
+| qwen25-7b Q4 | sim | 376 s | ~5–7 tok/s |
+| qwen25-14b Q4 | sim (finish=completed) | 610 s | ~4–5 tok/s |
+| **qwen3-30b-a3b TQ1_0 (MoE)** | **sim, tool_calls nativos** | **539 s** | ~4–12 tok/s |
+| qwen3-14b / r1-14b | ctx 4k falhou; retest 8k cancelado | — | — |
+gpt-oss-20b (~11.5 GB) não cabe no cache de 10 GB.

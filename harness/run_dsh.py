@@ -54,7 +54,7 @@ def main() -> int:
     ap.add_argument("--workspace", default=str(REPO))
     ap.add_argument("--dsh-home", default=str(pathlib.Path.home() / ".er-dsh-home"))
     ap.add_argument("--out", default="out/harness.json")
-    ap.add_argument("--model-preset", default=os.environ.get("MODEL_PRESET", "fast"),
+    ap.add_argument("--model-preset", default=os.environ.get("MODEL_PRESET", "qwen3-30b-a3b"),
                     choices=sorted(REGS))
     a = ap.parse_args()
 

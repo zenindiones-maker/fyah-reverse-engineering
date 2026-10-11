@@ -6,7 +6,7 @@ on:
       model:
         description: "Modelo (fast=0.5B rápido; maiores = mais fortes)"
         required: true
-        default: qwen25-14b
+        default: qwen3-30b-a3b
         type: choice
         options: [fast, qwen25-7b, qwen25-14b, qwen3-14b, qwen3-30b-a3b, r1-14b]
       task:
