@@ -190,6 +190,34 @@ print(f'TransNetV2 (pytorch): {len(r) if r is not None else "modelo carregado"} 
 def fyah_profile_():
     from audio.profile import profile_file; p = profile_file(str(WAV)); return f"fyah audio.profile BPM {p['tempo_bpm']}"
 
+
+# ---------------- lote 1 (áudio) ----------------
+def pretty_midi_():
+    import pretty_midi; pm = pretty_midi.PrettyMIDI(); inst = pretty_midi.Instrument(0)
+    inst.notes.append(pretty_midi.Note(100, 60, 0, 0.5)); pm.instruments.append(inst); p = T / "x.mid"; pm.write(str(p))
+    return f"pretty_midi: MIDI {pretty_midi.PrettyMIDI(str(p)).get_end_time():.1f}s"
+def mido_():
+    import mido; return f"mido {mido.__version__}: {len(mido.MidiFile(T / 'x.mid').tracks)} trilha(s)"
+def muspy_():
+    import muspy; m = muspy.read_midi(T / "x.mid"); return f"muspy {muspy.__version__}: {len(m.tracks)} trilha(s)"
+def partitura_():
+    import partitura as pt; perf = pt.load_performance_midi(str(T / "x.mid")); return f"partitura {pt.__version__ if hasattr(pt,'__version__') else ''}: {len(perf.note_array())} nota(s)"
+def resampy_():
+    import resampy, soundfile as sf; y, sr = sf.read(WAV); z = resampy.resample(y, sr, 16000); return f"resampy: {len(y)}→{len(z)} amostras"
+def nnaudio_():
+    import torch; from nnAudio import features; import soundfile as sf
+    y, sr = sf.read(WAV, dtype="float32"); spec = features.CQT(sr=sr, verbose=False)(torch.tensor(y)[None]); return f"nnAudio CQT {tuple(spec.shape)}"
+def chromaprint_():
+    import acoustid; dur, fp = acoustid.fingerprint_file(str(WAV)); return f"chromaprint/fpcalc: fingerprint {len(fp)} bytes, {dur:.1f}s (local, sem lookup)"
+def nussl_():
+    return iso("nussl", """
+import os, nussl
+sig = nussl.AudioSignal(os.environ['WAV']); r = nussl.separation.primitive.HPSS(sig)(); print(f'nussl {nussl.__version__}: HPSS {len(r)} fontes')""")
+def msaf_():
+    return iso("msaf", """
+import os, msaf
+b, l = msaf.process(os.environ['WAV'], boundaries_id='sf', labels_id='fmc2d'); print(f'msaf {msaf.__version__}: {len(b)} fronteiras')""", timeout=900)
+
 # ---------------- vídeo ----------------
 def ffmpeg_(): return sh("ffmpeg -version")
 def ffprobe_(): return sh(f"ffprobe -v error -show_entries format=duration -of csv=p=0 {MP4}") + " s (ffprobe)"
@@ -202,6 +230,52 @@ def colour_():
     import colour, numpy as np; lab = colour.XYZ_to_Lab(colour.sRGB_to_XYZ(np.array([1.0, 0, 0]))); return f"colour {colour.__version__}, Lab vermelho {lab.round(1).tolist()}"
 def av_():
     import av; c = av.open(str(MP4)); n = sum(1 for _ in c.decode(video=0)); return f"PyAV {av.__version__}, {n} frames"
+
+
+# ---------------- lote 2 (vídeo/apps) + lote 3 (formatos/binários/ML) ----------------
+def ffmpy_():
+    import ffmpy; return f"ffmpy {getattr(ffmpy,'__version__','importado')}"
+def pillow_():
+    from PIL import Image; import numpy as np
+    Image.fromarray(np.zeros((8,8,3),np.uint8)).save(T/"x.png"); return f"Pillow {Image.__version__}: PNG 8x8"
+def plotbitrate_():
+    # CLI leve: plotbitrate do pip (zeroepoch/plotbitrate)
+    try: return "plotbitrate " + sh("plotbitrate --version")
+    except Exception:
+        import importlib.util
+        if importlib.util.find_spec("plotbitrate"): return "plotbitrate importado"
+        raise
+def apkleaks_():
+    r = subprocess.run(["apkleaks", "-f", str(APK), "-o", str(T/"apkleaks.json")], capture_output=True, text=True, timeout=300)
+    return f"apkleaks: rc={r.returncode}, saída {(T/'apkleaks.json').exists()}"
+def objection_():
+    return "objection " + sh("objection version")
+def magika_():
+    from magika import Magika; r = Magika().identify_path(APK if APK.exists() else WAV); return f"magika: {r.output.ct_label}"
+def olefile_():
+    import olefile; return f"olefile {olefile.__version__} (import)"
+def exifread_():
+    import exifread; return f"exifread {exifread.__version__} (import)"
+def onnx_():
+    import onnx; m = onnx.helper.make_model(onnx.helper.make_graph([], "g", [], [])); onnx.checker.check_model(m); return f"onnx {onnx.__version__}: modelo vazio ok"
+def onnxruntime_():
+    import onnxruntime as ort; return f"onnxruntime {ort.__version__}: {ort.get_available_providers()}"
+def onnxsim_():
+    import onnxsim; return f"onnxsim {getattr(onnxsim,'__version__',ver('onnxsim'))}"
+def netron_():
+    import netron; return f"netron {netron.__version__} (import; servidor/visualização sob demanda)"
+def angr_():
+    import angr; p = angr.Project(SAMPLE_BIN, auto_load_libs=False); return f"angr {angr.__version__}: entry {hex(p.entry)}"
+def unicorn_():
+    from unicorn import Uc, UC_ARCH_X86, UC_MODE_64; Uc(UC_ARCH_X86, UC_MODE_64); import unicorn; return f"unicorn {unicorn.__version__}: x86_64"
+def keystone_():
+    from keystone import Ks, KS_ARCH_X86, KS_MODE_64; e, _ = Ks(KS_ARCH_X86, KS_MODE_64).asm(b"nop"); return f"keystone: {bytes(e).hex()}"
+def pywhat_():
+    return "pyWhat " + sh("pywhat --version").splitlines()[0]
+def yara_():
+    import yara; r = yara.compile(source='rule x { strings: $a="ELF" condition: $a }'); m = r.match(data=open(SAMPLE_BIN,"rb").read()); return f"yara-python: matches={len(m)}"
+def scapy_():
+    from scapy.all import IP, TCP; p = IP()/TCP(); return f"scapy: pacote {p.summary()}"
 
 # ---------------- apps ----------------
 def androguard_():
@@ -247,23 +321,27 @@ def ghidra_():
     return "Ghidra headless: import ok " + pathlib.Path(home).name
 
 
+CHECKS_EXTRA = {
+    "modelos_ml": [("onnx", onnx_), ("onnxruntime", onnxruntime_), ("onnxsim", onnxsim_), ("netron", netron_)],
+    "protocolos": [("scapy", scapy_)],
+}
 CHECKS = {
     "audio": [("librosa", librosa_), ("pyloudnorm", pyloudnorm_), ("essentia", essentia_), ("pedalboard", pedalboard_),
               ("audioflux", audioflux_), ("matchering", matchering_), ("music21", music21_), ("PyWavelets", pywt_),
               ("audiomentations", audiomentations_), ("mir_eval", mir_eval_), ("miditok", miditok_), ("mirdata", mirdata_),
-              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("fyah audio.profile", fyah_profile_)],
+              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("beat_this", beat_this_), ("torchcrepe", torchcrepe_), ("DawDreamer", dawdreamer_), ("asteroid", asteroid_), ("spleeter", spleeter_), ("allin1", allin1_), ("pretty_midi", pretty_midi_), ("mido", mido_), ("muspy", muspy_), ("partitura", partitura_), ("resampy", resampy_), ("nnAudio", nnaudio_), ("chromaprint (fpcalc)", chromaprint_), ("nussl", nussl_), ("msaf", msaf_), ("fyah audio.profile", fyah_profile_)],
     "video": [("ffmpeg", ffmpeg_), ("ffprobe", ffprobe_), ("mediainfo", mediainfo_), ("pymediainfo", pymediainfo_),
-              ("PySceneDetect", scenedetect_), ("TransNetV2", transnet_), ("colour-science", colour_), ("PyAV", av_)],
-    "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_)],
-    "formatos": [("kaitaistruct", kaitai_), ("construct", construct_), ("hachoir", hachoir_), ("python-magic", magic_)],
+              ("PySceneDetect", scenedetect_), ("TransNetV2", transnet_), ("colour-science", colour_), ("PyAV", av_), ("ffmpy", ffmpy_), ("Pillow", pillow_)],
+    "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_), ("apkleaks", apkleaks_), ("objection", objection_)],
+    "formatos": [("kaitaistruct", kaitai_), ("construct", construct_), ("hachoir", hachoir_), ("python-magic", magic_), ("magika", magika_), ("olefile", olefile_), ("exifread", exifread_)],
     "binarios": [("radare2", radare2_), ("r2pipe", r2pipe_), ("capstone", capstone_), ("lief", lief_), ("pefile", pefile_),
-                 ("pyelftools", pyelftools_), ("Ghidra headless", ghidra_)],
+                 ("pyelftools", pyelftools_), ("Ghidra headless", ghidra_), ("angr", angr_), ("unicorn", unicorn_), ("keystone", keystone_), ("pyWhat", pywhat_), ("yara-python", yara_)],
 }
 
 
 def main():
     prepare()
-    for area, items in CHECKS.items():
+    for area, items in {**CHECKS, **CHECKS_EXTRA}.items():
         for name, fn in items:
             check(area, name, fn)
     ok = sum(r[2] == "✅" for r in RESULTS)

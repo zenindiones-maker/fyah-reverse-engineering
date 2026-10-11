@@ -1,12 +1,12 @@
 name: er-analyze
-# Custo zero: ponto único de entrada (celular → Run workflow). Inputs via env (sem injeção).
+# Custo zero: ponto único de entrada (celular → Run workflow). Inputs via env (sem injeção). Sem API/token/cadastro.
 on:
   workflow_dispatch:
     inputs:
       tool:
-        description: "Ferramenta"
+        description: "Ferramenta ou pipeline"
         type: choice
-        options: [audio-profile, compare, media-inspect, cuts-pacing, stems, apk-inspect]
+        options: [audio-profile, compare, media-inspect, cuts-pacing, stems, apk-inspect, audio-full, video-full, apk-full]
         default: media-inspect
       url: {description: "URL do arquivo (próprio/licenciado/domínio público; APK open source, ex.: F-Droid)", required: true}
       url2: {description: "Segunda URL (só para compare)", required: false, default: ""}
@@ -14,28 +14,34 @@ permissions: {contents: read}
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     env:
       TOOL: ${{ inputs.tool }}
       URL: ${{ inputs.url }}
       URL2: ${{ inputs.url2 }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with: {python-version: "3.11", cache: pip}
-      - name: Dependências do sistema
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg mediainfo
-      - name: Dependências Python
+      - name: Escolher dependências
+        id: deps
         run: |
           case "$TOOL" in
-            media-inspect) ;;
-            apk-inspect) pip install -e ".[apps]" ;;
-            cuts-pacing) pip install -e ".[video]" ;;
-            stems) pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu && pip install demucs -e ".[audio]" ;;
-            *) pip install -e ".[audio]" ;;
+            media-inspect) echo "extras=audio" >> "$GITHUB_OUTPUT" ;;
+            cuts-pacing|video-full) echo "extras=audio,video" >> "$GITHUB_OUTPUT" ;;
+            apk-inspect) echo "extras=apps" >> "$GITHUB_OUTPUT" ;;
+            apk-full) echo "extras=apps" >> "$GITHUB_OUTPUT"; echo "jadx=true" >> "$GITHUB_OUTPUT" ;;
+            stems|audio-full) echo "extras=audio,ml" >> "$GITHUB_OUTPUT"; echo "torch=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "extras=audio" >> "$GITHUB_OUTPUT" ;;
           esac
+      - uses: ./.github/actions/setup-er
+        with:
+          extras: ${{ steps.deps.outputs.extras }}
+          torch: ${{ steps.deps.outputs.torch || 'false' }}
+          jadx: ${{ steps.deps.outputs.jadx || 'false' }}
+      - uses: actions/cache/restore@v6
+        if: inputs.tool == 'audio-full'
+        with: {path: ~/.er-venvs, key: "er-venvs-${{ hashFiles('scripts/er_venvs.sh') }}"}
       - uses: actions/cache@v6
-        if: inputs.tool == 'stems'
+        if: inputs.tool == 'stems' || inputs.tool == 'audio-full'
         with: {path: ~/.cache/torch/hub/checkpoints, key: demucs-htdemucs-v1}
       - name: Baixar entrada
         run: |
@@ -45,36 +51,7 @@ jobs:
             [ -n "$URL2" ] || { echo "compare exige url2" >&2; exit 1; }
             curl -L --fail -A "fyah-re (GitHub Actions)" -o input2.bin "$URL2"
           fi
-      - name: Rodar ferramenta
-        run: |
-          mkdir -p out
-          case "$TOOL" in
-            audio-profile)
-              python -m audio.profile input.bin --out out/profile.json > /dev/null
-              python -c "import json;d=json.load(open('out/profile.json'));print(f\"## Perfil de áudio\n\n| BPM | Tonalidade | LUFS | Duração |\n|---|---|---|---|\n| {d['tempo_bpm']} | {d['key']['tonic']} {d['key']['mode']} | {d['loudness']['integrated_lufs']} | {d['duration_s']} s |\")" >> "$GITHUB_STEP_SUMMARY" ;;
-            compare)
-              python -m audio.compare input.bin input2.bin --out out/compare.json --md out/compare.md > /dev/null
-              cat out/compare.md >> "$GITHUB_STEP_SUMMARY" ;;
-            media-inspect)
-              ffprobe -v error -show_format -show_streams -of json input.bin > out/ffprobe.json
-              mediainfo --Output=JSON input.bin > out/mediainfo.json
-              python3 -c "
-          import json;d=json.load(open('out/ffprobe.json'));f=d['format']
-          print('## Inspeção de mídia\n');print(f\"Container: **{f.get('format_long_name')}** · duração {f.get('duration')} s · bitrate {f.get('bit_rate')}\n\")
-          print('| # | tipo | codec | detalhes |\n|---|---|---|---|')
-          for s in d['streams']: print(f\"| {s['index']} | {s.get('codec_type')} | {s.get('codec_name')} | {s.get('sample_rate') or ''} {s.get('channels') or ''} {s.get('width') or ''}x{s.get('height') or ''} |\")
-          " >> "$GITHUB_STEP_SUMMARY" ;;
-            cuts-pacing)
-              ext=mp4; python -m video.pacing input.bin --out out/pacing.json > /dev/null
-              python -c "import json;d=json.load(open('out/pacing.json'));print(f\"## Cortes e ritmo\n\nCortes: {d['cuts']} · cortes/min: {d['cuts_per_minute']} · plano médio: {d['shot_length_s']['mean']} s\")" >> "$GITHUB_STEP_SUMMARY" ;;
-            apk-inspect)
-              python -m apps.apk input.bin --out out/apk.json --md out/apk.md > /dev/null
-              cat out/apk.md >> "$GITHUB_STEP_SUMMARY" ;;
-            stems)
-              ffmpeg -loglevel error -i input.bin input.wav
-              python -m demucs -n htdemucs -o out --mp3 input.wav
-              for s in out/htdemucs/input/*.mp3; do python -m audio.profile "$s" --out "${s%.mp3}.json" > /dev/null; done
-              echo "## Stems (htdemucs, CPU)" >> "$GITHUB_STEP_SUMMARY"; ls out/htdemucs/input >> "$GITHUB_STEP_SUMMARY" ;;
-          esac
+      - name: Rodar
+        run: python scripts/er_analyze.py "$TOOL" input.bin input2.bin
       - uses: actions/upload-artifact@v7
         with: {name: "er-${{ inputs.tool }}", path: out/, retention-days: 30}

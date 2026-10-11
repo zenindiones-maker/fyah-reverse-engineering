@@ -14,13 +14,13 @@ dependencies = []
 
 [project.optional-dependencies]
 audio = ["librosa>=0.10", "pyloudnorm>=0.1.1", "soundfile>=0.12", "numpy>=1.24"]
-audio-plus = ["fyah-re[audio]", "essentia", "pedalboard", "audioflux", "matchering", "music21", "PyWavelets", "audiomentations", "mir_eval", "miditok", "mirdata"]
-ml = ["demucs", "torchcrepe", "dawdreamer", "beat_this @ git+https://github.com/CPJKU/beat_this"]
+audio-plus = ["fyah-re[audio]", "essentia", "pedalboard", "audioflux", "matchering", "music21", "PyWavelets", "audiomentations", "mir_eval", "miditok", "mirdata", "pretty_midi", "mido", "muspy", "partitura", "resampy", "nnAudio", "pyacoustid"]
+ml = ["demucs", "torchcrepe", "dawdreamer", "beat_this @ git+https://github.com/CPJKU/beat_this", "onnx", "onnxruntime", "onnxsim", "netron", "scapy"]
 # isoladas em venvs próprias (scripts/er_venvs.sh): basic-pitch, spleeter, asteroid, transnetv2-pytorch, allin1
-video = ["scenedetect>=0.6.4", "opencv-python-headless", "colour-science", "pymediainfo", "av"]
-apps = ["androguard>=4", "frida-tools"]
-formats = ["kaitaistruct", "construct", "hachoir", "python-magic"]
-binary = ["r2pipe", "capstone", "lief", "pefile", "pyelftools"]
+video = ["scenedetect>=0.6.4", "opencv-python-headless", "colour-science", "pymediainfo", "av", "ffmpy", "pillow"]
+apps = ["androguard>=4", "frida-tools", "objection"]
+formats = ["kaitaistruct", "construct", "hachoir", "python-magic", "magika", "olefile", "exifread"]
+binary = ["r2pipe", "capstone", "lief", "pefile", "pyelftools", "angr", "unicorn", "keystone-engine", "pywhat", "apkleaks", "yara-python"]
 all = ["fyah-re[audio-plus,ml,video,apps,formats,binary]"]
 dev = ["pytest>=8"]
 
@@ -31,7 +31,7 @@ fyah-re = "fyah_re_cli:main"
 py-modules = ["fyah_re_cli"]
 
 [tool.setuptools.packages.find]
-include = ["audio*", "video*", "formats*", "apps*"]
+include = ["audio*", "video*", "formats*", "apps*", "pipelines*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

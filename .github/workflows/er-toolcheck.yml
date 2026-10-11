@@ -9,7 +9,7 @@ concurrency: {group: er-toolcheck, cancel-in-progress: false}
 jobs:
   toolcheck:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-er

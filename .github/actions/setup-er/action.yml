@@ -17,7 +17,7 @@ runs:
       env: {EXTRA_APT: "${{ inputs.apt }}"}
       run: |
         sudo apt-get update -qq
-        pkgs="ffmpeg mediainfo libmagic1 default-jre-headless radare2 apktool unzip $EXTRA_APT"
+        pkgs="ffmpeg mediainfo libmagic1 default-jre-headless radare2 apktool unzip libchromaprint-tools $EXTRA_APT"
         for p in $pkgs; do sudo apt-get install -y -qq --no-install-recommends "$p" >/dev/null 2>&1 || echo "::warning::apt: $p indisponível"; done
     - name: torch CPU
       if: inputs.torch == 'true'
