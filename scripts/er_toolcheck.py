@@ -111,10 +111,11 @@ def demucs_():
     return f"demucs {demucs.__version__} (import; pesos públicos baixados só no workflow stems)"
 
 def basic_pitch_():
-    from basic_pitch.inference import predict
-    from basic_pitch import ICASSP_2022_MODEL_PATH
-    _, midi, notes = predict(str(WAV), ICASSP_2022_MODEL_PATH)
-    return f"basic-pitch: {len(notes)} notas"
+    import basic_pitch
+    from basic_pitch.inference import Model, predict
+    onnx = pathlib.Path(basic_pitch.__file__).parent / "saved_models" / "icassp_2022" / "nmp.onnx"
+    _, midi, notes = predict(str(WAV), Model(onnx))  # força backend ONNX (CPU)
+    return f"basic-pitch (ONNX): {len(notes)} notas"
 
 def fyah_profile_():
     from audio.profile import profile_file; p = profile_file(str(WAV)); return f"fyah audio.profile BPM {p['tempo_bpm']}"
