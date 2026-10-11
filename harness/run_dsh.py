@@ -10,13 +10,15 @@ REPO = ROOT.parent
 
 def wait_server(url: str, timeout: float = 180) -> None:
     t0 = time.time()
+    last = ""
     while time.time() - t0 < timeout:
         try:
             urllib.request.urlopen(url, timeout=2)
             return
-        except Exception:
+        except Exception as e:
+            last = str(e)
             time.sleep(1)
-    raise SystemExit(f"llama-server não respondeu em {url}")
+    raise TimeoutError(f"llama-server não respondeu em {url}: {last}")
 
 
 def main() -> int:
@@ -27,8 +29,6 @@ def main() -> int:
     ap.add_argument("--dsh-home", default=str(pathlib.Path.home() / ".er-dsh-home"))
     ap.add_argument("--out", default="out/harness.json")
     a = ap.parse_args()
-
-    wait_server("http://127.0.0.1:8080/v1/models")
 
     # Placeholder — NÃO é chave de nuvem; llama.cpp ignora Authorization.
     os.environ.setdefault("LOCAL_LLM_KEY", "local-no-cloud-key")

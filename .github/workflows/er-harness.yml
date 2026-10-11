@@ -30,14 +30,20 @@ jobs:
           key: er-llama-qwen25-05b-v1
       - name: Start llama-server
         run: |
+          set -e
           bash harness/run_local_llm.sh > llama.log 2>&1 &
           echo $! > llama.pid
-          for i in $(seq 1 120); do
-            curl -sf http://127.0.0.1:8080/v1/models && break
+          ok=0
+          for i in $(seq 1 180); do
+            if curl -sf http://127.0.0.1:8080/v1/models >/tmp/models.json; then ok=1; break; fi
+            if ! kill -0 "$(cat llama.pid)" 2>/dev/null; then
+              echo "llama-server morreu; log:"; tail -100 llama.log; exit 1
+            fi
             sleep 2
           done
-          curl -sf http://127.0.0.1:8080/v1/models | head -c 400
-          echo
+          if [ "$ok" != 1 ]; then echo "timeout"; tail -100 llama.log; exit 1; fi
+          head -c 500 /tmp/models.json; echo
+          cp llama.log out-llama/ 2>/dev/null || mkdir -p out && cp llama.log out/
       - name: Run DSH headless
         id: dsh
         continue-on-error: true
@@ -65,4 +71,10 @@ jobs:
         run: kill "$(cat llama.pid)" 2>/dev/null || true
       - uses: actions/upload-artifact@v7
         if: always()
-        with: {name: er-harness, path: out/, retention-days: 14}
+        with:
+          name: er-harness
+          path: |
+            out/
+            llama.log
+          retention-days: 14
+          if-no-files-found: warn
