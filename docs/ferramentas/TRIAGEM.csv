@@ -1,430 +1,430 @@
 area,repo,estrelas,licenca,classe,motivo
-audio,deezer/spleeter,28479,MIT,instalado,STATUS.md
-audio,librosa/librosa,8665,ISC,instalado,STATUS.md
-audio,spotify/pedalboard,6347,GPL-3.0,instalado,STATUS.md
-audio,MTG/essentia,3767,AGPL-3.0,instalado,STATUS.md
-audio,libAudioFlux/audioFlux,3372,MIT,instalado,STATUS.md
-audio,pytorch/audio,2955,BSD-2-Clause,instalado,STATUS.md
-audio,sergree/matchering,2654,GPL-3.0,instalado,STATUS.md
-audio,cuthbertLab/music21,2596,BSD-3-Clause,instalado,STATUS.md
-audio,asteroid-team/asteroid,2594,MIT,instalado,STATUS.md
-audio,PyWavelets/pywt,2409,MIT,instalado,STATUS.md
-audio,iver56/audiomentations,2323,MIT,instalado,STATUS.md
-audio,DBraun/DawDreamer,1322,GPL-3.0,instalado,STATUS.md
-audio,Natooz/MidiTok,904,MIT,instalado,STATUS.md
-audio,mir-aidj/all-in-one,857,MIT,instalado,STATUS.md
-audio,mir-evaluation/mir_eval,715,MIT,instalado,STATUS.md
-audio,urinieto/msaf,560,MIT,instalado,STATUS.md
-audio,salu133445/muspy,524,MIT,instalado,STATUS.md
-audio,mir-dataset-loaders/mirdata,415,BSD-3-Clause,instalado,STATUS.md
-audio,CPJKU/beat_this,414,MIT,instalado,STATUS.md
-audio,CPJKU/partitura,377,Apache-2.0,instalado,STATUS.md
-audio,LCAV/FRIDA,112,MIT,instalado,STATUS.md
-audio,jo-hoe/chromaprint,3,MIT,instalado,STATUS.md
-audio,facebookresearch/demucs,0,MIT,instalado,STATUS.md
-audio,spotify/basic-pitch,0,Apache-2.0,instalado,STATUS.md
-binarios,NationalSecurityAgency/ghidra,83078,Apache-2.0,instalado,STATUS.md
-binarios,skylot/jadx,50830,Apache-2.0,instalado,STATUS.md
-binarios,iBotPeaches/Apktool,25806,Apache-2.0,instalado,STATUS.md
-binarios,sensepost/objection,9436,GPL-3.0,instalado,STATUS.md
-binarios,unicorn-engine/unicorn,9420,GPL-2.0,instalado,STATUS.md
-binarios,angr/angr,9139,BSD-2-Clause,instalado,STATUS.md
-binarios,bee-san/pyWhat,7326,MIT,instalado,STATUS.md
-binarios,androguard/androguard,6343,Apache-2.0,instalado,STATUS.md
-binarios,dwisiswant0/apkleaks,6340,Apache-2.0,instalado,STATUS.md
-binarios,lief-project/LIEF,5583,Apache-2.0,instalado,STATUS.md
-binarios,keystone-engine/keystone,2643,GPL-2.0,instalado,STATUS.md
-binarios,frida/frida,0,wxWindows Library License-ish / OSI,instalado,STATUS.md
-binarios,radareorg/radare2,0,LGPL-3.0,instalado,STATUS.md
-binarios,capstone-engine/capstone,0,BSD-3-Clause,instalado,STATUS.md
-formatos,kaitai-io/kaitai_struct,0,GPL-3.0,instalado,STATUS.md
-modelos_ml,lutzroeder/netron,33560,MIT,instalado,STATUS.md
-modelos_ml,microsoft/onnxruntime,22049,MIT,instalado,STATUS.md
-modelos_ml,onnx/onnx,21575,Apache-2.0,instalado,STATUS.md
-modelos_ml,google/magika,18706,Apache-2.0,instalado,STATUS.md
-modelos_ml,onnxsim/onnxsim,4414,Apache-2.0,instalado,STATUS.md
-protocolos,secdev/scapy,12599,GPL-2.0,instalado,STATUS.md
-video,Breakthrough/PySceneDetect,5228,BSD-3-Clause,instalado,STATUS.md
-video,MediaArea/MediaInfo,2030,BSD-2-Clause,instalado,STATUS.md
-video,soCzech/TransNetV2,1053,MIT,instalado,STATUS.md
-video,Ch00k/ffmpy,522,MIT,instalado,STATUS.md
-video,FFmpeg/FFmpeg,0,LGPL-2.1,instalado,STATUS.md
-video,colour-science/colour,0,BSD-3-Clause,instalado,STATUS.md
-audio,jameslyons/python_speech_features,2425,MIT,instalavel,pip/CLI Linux
-audio,marl/crepe,1419,MIT,instalavel,pip/CLI Linux
-audio,fakufaku/fast_bss_eval,150,MIT,instalavel,pip/CLI Linux
-binarios,pxb1988/dex2jar,13143,Apache-2.0,instalavel,pip/CLI Linux
-binarios,crytic/slither,6373,AGPL-3.0,instalavel,pip/CLI Linux
-binarios,mandiant/capa,6224,Apache-2.0,instalavel,pip/CLI Linux
-binarios,qilingframework/qiling,6123,GPL-2.0,instalavel,pip/CLI Linux
-binarios,rocky/python-uncompyle6,4331,GPL-3.0,instalavel,pip/CLI Linux
-binarios,mandiant/flare-floss,4179,Apache-2.0,instalavel,pip/CLI Linux
-binarios,cea-sec/miasm,3987,GPL-2.0,instalavel,pip/CLI Linux
-binarios,rizinorg/rizin,3951,LGPL-3.0,instalavel,pip/CLI Linux
-binarios,ev-flow/quark-engine,1734,GPL-3.0,instalavel,pip/CLI Linux
-binarios,JesusFreke/smali,0,BSD-3-Clause,instalavel,pip/CLI Linux
-mobile_web,n0mi1k/apk2url,880,MIT,instalavel,pip/CLI Linux
-modelos_ml,PaddlePaddle/Paddle2ONNX,946,Apache-2.0,instalavel,pip/CLI Linux
-protocolos,qeeqbox/honeypots,991,AGPL-3.0,instalavel,pip/CLI Linux
-video,facebookresearch/audioseal,796,MIT,instalavel,pip/CLI Linux
-video,zeroepoch/plotbitrate,348,BSD-2-Clause,instalavel,pip/CLI Linux
-video,juanmcasillas/gopro2gpx,257,GPL-3.0,instalavel,pip/CLI Linux
-audio,ybayle/awesome-deep-learning-music,2993,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,mdeff/fma,2676,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,Music-and-Culture-Technology-Lab/omnizart,1986,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,meyda/meyda,1670,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,BillyDM/awesome-audio-dsp,1447,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,musicinformationretrieval/musicinformationretrieval.com,1290,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,f90/Wave-U-Net,946,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,MTG/essentia.js,870,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,kaituoxu/Conv-TasNet,772,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,openvpi/SOME,706,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,nussl/nussl,643,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,aetaric/checkrr,581,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,JeffreyCA/spleeter-web,559,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,RetroCirce/HTS-Audio-Transformer,511,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,MTG/DeepConvSep,484,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,google/speaker-id,464,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,JorenSix/Olaf,421,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,MTG/mtg-jamendo-dataset,410,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,adamstark/Gist,400,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,fabiogra/moseca,397,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,apacha/OMR-Datasets,396,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,sevagh/free-music-demixer,358,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,Spijkervet/CLMR,337,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,AppleHolic/source_separation,319,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,fgnt/pb_bss,305,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,ilaria-manco/multimodal-ml-music,301,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,openvpi/GAME,286,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,JorenSix/Panako,269,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,thooore/SpleeterGUI,256,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,kuielab/mdx-net,248,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,francesclluis/source-separation-wavenet,227,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,ankrypht/AudioScape,224,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,xuchenglin28/speaker_extraction,218,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,mimbres/neural-audio-fp,213,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,RetroCirce/Zero_Shot_Audio_Source_Separation,211,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,ZitengWang/MASP,211,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,Hguimaraes/gtzan.keras,207,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,Polochon-street/bliss-rs,167,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,nikhilunni/demucs-rs,150,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,seanghay/uvr-mdx-infer,125,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,snejus/beetcamp,121,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,manoskary/graphmuse,113,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,chefkjd/MixSplitR,89,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,alexanderlerch/ACA-Code,88,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,mikezzb/lyrics-sync,79,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,a1ex90/MusicalKeyCNN,66,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,marcobn/musicntwrk,65,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,Samik081/beets-beatport4,62,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,SonyResearch/mimo-audio-separation,55,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,FelixNgFender/mu2mi,55,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-audio,olilarkin/librosa.cpp,53,ISC,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,MobSF/Mobile-Security-Framework-MobSF,21917,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,rizinorg/cutter,19979,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Konloch/bytecode-viewer,15664,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,horsicq/Detect-It-Easy,11669,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Perfare/Il2CppDumper,9487,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mandiant/flare-vm,9118,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,de4dot/de4dot,7428,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Col-E/Recaf,7419,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,facebook/redex,6306,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mentebinaria/retoolkit,5310,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,zhkl0228/unidbg,5260,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,niklashigi/apk-mitm,5123,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,charles2gan/GDA-android-reversing-Tool,4851,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,vaibhavpandeyvpz/apkstudio,4676,LGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,zrax/pycdc,4643,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ReVanced/revanced-patches-template,4609,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,JetBrains/fernflower,4420,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,x64dbg/ScyllaHide,4327,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,JonathanSalwan/Triton,4324,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,google/orbit,4313,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ConsenSysDiligence/mythril,4272,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,HyperDbg/HyperDbg,4122,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,APKLab/APKLab,4005,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,oldmanpushcart/greys-anatomy,4000,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,AloneMonkey/frida-ios-dump,3945,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,a0rtega/pafish,3940,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,hasherezade/pe-sieve,3913,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,trailofbits/manticore,3854,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ax/apk.sh,3842,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,hasherezade/pe-bear,3835,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,e-m-b-a/emba,3696,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ReVanced/revanced-patcher,3518,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Perfare/Zygisk-Il2CppDumper,3335,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,horsicq/DIE-engine,3300,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,google/bindiff,3204,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,WrBug/dumpDex,3161,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,m0bilesecurity/RMS-Runtime-Mobile-Security,3110,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,plasma-disassembler/plasma,3070,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,djkaty/Il2CppInspector,3053,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,jbevain/cecil,3005,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ac-pm/Inspeckage,2987,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,eteran/edb-debugger,2974,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,SamboyCoding/Cpp2IL,2938,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,google/binnavi,2885,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,lifting-bits/mcsema,2788,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,decompiler-explorer/decompiler-explorer,2703,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,gaasedelen/lighthouse,2604,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mandiant/flare-ida,2450,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,find-sec-bugs/find-sec-bugs,2448,LGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,hasherezade/hollows_hunter,2417,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,bootleg/ret-sync,2395,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,BinaryAnalysisPlatform/bap,2262,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mandiant/flare-fakenet-ng,2206,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mandiant/speakeasy,2070,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,KasperskyLab/hrtng,1940,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,JustasMasiulis/lazy_importer,1928,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,federicodotta/Brida,1899,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,keystone-engine/keypatch,1877,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,chame1eon/jnitrace,1865,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,redasm-dev/redasm,1821,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Jakeschincariol/replica-skill,1758,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,polymorf/findcrypt-yara,1740,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,hasherezade/tiny_tracer,1708,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,kovidomi/game-reversing,1707,Unlicense,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,KeenSecurityLab/BinAbsInspector,1678,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,0xdea/frida-scripts,1668,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,dpnishant/appmon,1633,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mytechnotalent/Hacking-Windows,1632,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Jon-Becker/heimdall-rs,1621,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,dstmath/frida-unpack,1615,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,m4b/goblin,1554,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,gaasedelen/tenet,1546,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,BlackSnufkin/LitterBox,1545,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,NotPrab/.NET-Deobfuscator,1522,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,x64dbg/x64dbgpy,1510,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ChiChou/bagbak,1507,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ergrelet/unlicense,1494,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mandiant/flare-learning-hub,1491,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,nccgroup/house,1469,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,programa-stic/barf-project,1455,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,nowsecure/r2frida,1448,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,das-labor/panopticon,1447,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,L4ys/LazyIDA,1445,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,syssec-utd/pylingual,1417,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,0xgalz/Virtuailor,1403,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,OpenDriver2/REDRIVER2,1395,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,grayhatacademy/ida,1368,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,fkie-cad/cwe_checker,1361,LGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,DERE-ad2001/Frida-Labs,1327,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Vector35/binaryninja-api,1324,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,iGio90/Dwarf,1322,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,amimo/dcc,1317,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,gaasedelen/patching,1290,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,rocky/python-decompile3,1276,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,SychicBoy/NETReactorSlayer,1271,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ThunderCls/xAnalyzer,1238,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,codilime/veles,1238,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,google/binexport,1212,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,P1sec/hermes-dec,1207,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,x64dbg/GleeBug,1202,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,yazgx97/frida-ios-hook,1188,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,strazzere/android-unpacker,1181,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,AliveToolkit/alive2,1179,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,reversenseorg/dexcalibur,1178,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ghidraninja/ghidra_scripts,1177,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,naim94a/lumen,1162,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,GJDuck/e9patch,1156,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,anestisb/vdexExtractor,1142,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,REhints/efiXplorer,1136,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mildsunrise/protobuf-inspector,1128,ISC,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Washi1337/AsmResolver,1127,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Misaka-Mikoto-Tech/MonoHook,1064,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,GoSecure/malboxes,1047,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,SaadAhla/FilelessPELoader,1041,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,gcarmix/HexWalk,1026,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,rizinorg/rz-ghidra,990,LGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,x64dbg/docs,967,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mirkosertic/Bytecoder,961,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,AngoraFuzzer/Angora,957,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mandiant/flare-emu,955,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,certsocietegenerale/fame,948,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,suifei/fridare,944,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,InQuest/malware-samples,944,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,zyantific/IDASkins,936,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,hzqst/unicorn_pe,924,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,CheckPointSW/Karta,912,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,HackOvert/GhidraSnippets,893,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,vulhunt-re/vulhunt,890,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mrexodia/dumpulator,888,BSL-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,seekbytes/IPA,882,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,GrammaTech/ddisasm,874,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,hluwa/Wallbreaker,870,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,cyberkaida/reverse-engineering-assistant,864,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,trailofbits/deepstate,863,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,loerting/JByteMod-Beta,859,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,angr/angr-doc,849,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,hasherezade/mal_unpack,842,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,decaf-project/DECAF,841,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,dyninst/dyninst,837,LGPL-2.1,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,wecooperate/iMonitor,835,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,SimonKagstrom/kcov,833,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,WithSecureOpenSource/see,821,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Cisco-Talos/GhIDA,820,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,HackOvert/AntiDBG,815,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,avast/retdec-idaplugin,798,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mentebinaria/readpe,789,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,unipacker/unipacker,782,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,nsmfoo/antivmdetection,781,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,asLody/AndHook,781,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,skidfuscatordev/skidfuscator-java-obfuscator,775,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,danigargu/heap-viewer,773,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,echowei/DeepTraffic,771,MPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mandiant/stringsifter,765,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Svenskithesource/PyArmor-Unpacker,760,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Mahlet-Inc/hobbits,754,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,binsync/binsync,750,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,secrary/makin,742,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ReversingID/Awesome-Reversing,738,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,endgameinc/xori,722,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,yhs0602/Android-Disassembler,717,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,secrary/Andromeda,713,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,0xb0bb/pwndra,709,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,n1tr00-10/tiktok-web-signature,709,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,cristianzsh/forensictools,705,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,horsicq/XAPKDetector,694,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ossillate-inc/packj,694,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,maddiestone/IDAPythonEmbeddedToolkit,689,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Soulghost/iblessing,687,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,aozhimin/iOS-Debug-Hacks,682,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,chainguard-dev/malcontent,678,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,gaasedelen/lucid,678,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,SentineLabs/AlphaGolang,675,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,tmr232/Sark,672,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,IDArlingTeam/IDArling,670,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,strazzere/golang_loader_assist,661,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,OpenRakis/Spice86,660,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mohitmishra786/reversingBits,659,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Vu1nT0tal/Vehicle-Security-Toolkit,655,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,astrelsky/Ghidra-Cpp-Class-Analyzer,650,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,nologic/idaref,649,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,bongtrop/hbctool,643,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,secana/PeNet,636,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,McGill-DMaS/Kam1n0-Community,627,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Nalen98/AngryGhidra,624,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,boricj/ghidra-delinker-extension,607,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,c3rb3ru5d3d53c/binlex,605,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,airbus-cert/ttddbg,595,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,falconre/falcon,594,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ChiChou/vscode-frida,593,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,DissectMalware/XLMMacroDeobfuscator,590,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,nikolaydubina/go-binsize-treemap,588,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,quarkslab/binbloom,586,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,horsicq/Nauz-File-Detector,584,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Noelo-Lab/kuna,581,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,avatartwo/avatar2,579,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,zackelia/ghidra-dark,577,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,cseagle/sk3wldbg,563,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,BitCrackers/AmongUsMenu,555,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,CybercentreCanada/assemblyline,553,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,B2R2-org/B2R2,552,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ex0dus-0x/fuzzable,548,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,d3v1l401/FindCrypt-Ghidra,547,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,CreditTone/android-reverse-engineering-skill,540,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,struppigel/PortEx,538,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,carbonblack/binee,531,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,airbus-cert/Yagi,510,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,CalebFenton/dex-oracle,504,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Evil0ctal/AndroidReverse101,421,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,TheQmaks/phantom-frida,390,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,z3n70/Frida-Script-Runner,381,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ejfkdev/ddc,374,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,hack0z/luject,359,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,g0aty/SickoMenu,311,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Pithus/bazaar,301,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Karmaz95/Snake_Apple,300,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,Jadis0x/il2cpp-reverse-engineering-guide,300,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,zahidaz/jezail,277,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,jkennethcarino/adobo,277,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,loerting/dalvikus,272,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,nbauma109/jd-gui-duo,265,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,mpast/mobileAudit,228,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,developer-krushna/Dex-Editor-Android,212,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,chenxvb/Unicorn-Trace,208,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,as0ler/r2flutch,184,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ReverseApple/gxpc,167,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,AdvDebug/Brovan,166,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,huuck/Katalina,162,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,index-login/MobileRE-Skill,160,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,ZSA233/frida-analykit,155,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,omeraydindev/Dexter,153,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,asLody/dexdec,111,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,avast/retdec,0,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-binarios,x64dbg/x64dbg,0,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,WerWolv/ImHex,55047,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,orhun/binsider,4474,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,layervault/psd.rb,3115,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,itchyny/bed,1343,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,petoolse/petools,1201,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,adamstark/AudioFile,1150,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,keichi/binary-parser,956,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,facebookincubator/nimble,740,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,wxMEdit/wxMEdit,731,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,jotaen/klog,686,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,evanmiller/hecate,676,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,kaitai-io/kaitai_struct_compiler,664,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,dmendel/bindata,653,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,EUA/wxHexEditor,620,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,adonais/skylark,586,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,raysan5/rres,563,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,ndd7xv/heh,504,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,haven1433/HexManiacAdvance,484,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,ef1500/libbbf,414,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,Dax89/QHexView,404,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,tbeu/matio,402,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,crumblingstatue/hexerator,372,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,thomasjungblut/go-sstables,368,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,kaitai-io/kaitai_struct_visualizer,345,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,Etto48/HexPatch,336,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,kaitai-io/kaitai_struct_webide,318,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,scikit-hep/uproot3,313,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,VelocityRa/awesome-game-file-format-reversing,222,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,kaitai-io/awesome-kaitai,222,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,vaenshine/VansonMod,206,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,exbin/bined-android,122,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,deckflow/deckprobe,117,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-formatos,isaccanedo/ImHex,3,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,google/android-classyshark,7552,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,kelvinBen/AppInfoScanner,3570,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,Ch0pin/medusa,2353,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,lelinhtinh/de4js,1579,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,Margular/frida-skeleton,882,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,s0md3v/Diggy,873,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,venshine/decompile-apk,823,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,alexzaitsev/apk-dependency-graph,760,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,kkguo/apkshellext,700,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,abhi-r3v0/Adhrit,543,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,ksg97031/frida-gadget,464,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,f3rb123/kill_flutter,313,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,Fausto-404/ai-mobile-reverse-skills,167,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,deemoun/PulseAPK-Core,127,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,iamtorsten/SherlockElf,118,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-mobile_web,huanfeng/ApkInfoTool,108,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-modelos_ml,PaddlePaddle/VisualDL,4879,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-modelos_ml,ZhangGe6/onnx-modifier,1629,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-modelos_ml,inisis/OnnxSlim,520,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-modelos_ml,elliotwaite/pytorch-to-javascript-with-onnx-js,385,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-modelos_ml,sevagh/demucs.onnx,68,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-protocolos,gojue/ecapture,15492,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-protocolos,fkie-cad/friTap,555,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,YaoFANGUK/video-subtitle-extractor,9582,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,wxbool/video-srt-windows,5041,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,krzemienski/awesome-video,1925,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,bravobit/FFmpeg-Android,766,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,HaveAGitGat/HBBatchBeast,711,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,hongzimao/pensieve,580,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,kokorin/Jaffree,551,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,yahoo/hecate,496,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,char0n/ffmpeg-php,494,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,wader/static-ffmpeg,410,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,ptr727/PlexCleaner,343,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,UVA-Computer-Vision-Lab/OmniShotCut,322,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,DolbyLaboratories/dlb_mp4base,281,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,wentaozhu/AutoShot,261,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,vansante/go-ffprobe,223,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,LeiShi1313/Differential,180,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,federicocarboni/setup-ffmpeg,143,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,DolbyLaboratories/dlb_mp4demux,120,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
-video,Gaurox/FrameShift,94,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa
+audio,deezer/spleeter,28479,MIT,instalado,STATUS / setup-er
+audio,librosa/librosa,8665,ISC,instalado,STATUS / setup-er
+audio,spotify/pedalboard,6347,GPL-3.0,instalado,STATUS / setup-er
+audio,MTG/essentia,3767,AGPL-3.0,instalado,STATUS / setup-er
+audio,libAudioFlux/audioFlux,3372,MIT,instalado,STATUS / setup-er
+audio,ybayle/awesome-deep-learning-music,2993,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,pytorch/audio,2955,BSD-2-Clause,instalado,STATUS / setup-er
+audio,mdeff/fma,2676,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,sergree/matchering,2654,GPL-3.0,instalado,STATUS / setup-er
+audio,cuthbertLab/music21,2596,BSD-3-Clause,instalado,STATUS / setup-er
+audio,asteroid-team/asteroid,2594,MIT,instalado,STATUS / setup-er
+audio,jameslyons/python_speech_features,2425,MIT,instalado,STATUS / setup-er
+audio,PyWavelets/pywt,2409,MIT,instalado,STATUS / setup-er
+audio,iver56/audiomentations,2323,MIT,instalado,STATUS / setup-er
+audio,Music-and-Culture-Technology-Lab/omnizart,1986,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,meyda/meyda,1670,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,BillyDM/awesome-audio-dsp,1447,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,marl/crepe,1419,MIT,referencia,build TF falha; use torchcrepe
+audio,DBraun/DawDreamer,1322,GPL-3.0,instalado,STATUS / setup-er
+audio,musicinformationretrieval/musicinformationretrieval.com,1290,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,f90/Wave-U-Net,946,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,Natooz/MidiTok,904,MIT,instalado,STATUS / setup-er
+audio,MTG/essentia.js,870,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,mir-aidj/all-in-one,857,MIT,instalado,STATUS / setup-er
+audio,kaituoxu/Conv-TasNet,772,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,mir-evaluation/mir_eval,715,MIT,instalado,STATUS / setup-er
+audio,openvpi/SOME,706,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,nussl/nussl,643,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,aetaric/checkrr,581,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,urinieto/msaf,560,MIT,instalado,STATUS / setup-er
+audio,JeffreyCA/spleeter-web,559,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,salu133445/muspy,524,MIT,instalado,STATUS / setup-er
+audio,RetroCirce/HTS-Audio-Transformer,511,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,MTG/DeepConvSep,484,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,google/speaker-id,464,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,JorenSix/Olaf,421,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,mir-dataset-loaders/mirdata,415,BSD-3-Clause,instalado,STATUS / setup-er
+audio,CPJKU/beat_this,414,MIT,instalado,STATUS / setup-er
+audio,MTG/mtg-jamendo-dataset,410,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,adamstark/Gist,400,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,fabiogra/moseca,397,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,apacha/OMR-Datasets,396,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,CPJKU/partitura,377,Apache-2.0,instalado,STATUS / setup-er
+audio,sevagh/free-music-demixer,358,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,Spijkervet/CLMR,337,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,AppleHolic/source_separation,319,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,fgnt/pb_bss,305,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,ilaria-manco/multimodal-ml-music,301,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,openvpi/GAME,286,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,JorenSix/Panako,269,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,thooore/SpleeterGUI,256,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,kuielab/mdx-net,248,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,francesclluis/source-separation-wavenet,227,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,ankrypht/AudioScape,224,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,xuchenglin28/speaker_extraction,218,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,mimbres/neural-audio-fp,213,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,RetroCirce/Zero_Shot_Audio_Source_Separation,211,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,ZitengWang/MASP,211,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,Hguimaraes/gtzan.keras,207,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,Polochon-street/bliss-rs,167,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,fakufaku/fast_bss_eval,150,MIT,instalado,STATUS / setup-er
+audio,nikhilunni/demucs-rs,150,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,seanghay/uvr-mdx-infer,125,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,snejus/beetcamp,121,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,manoskary/graphmuse,113,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,LCAV/FRIDA,112,MIT,instalado,STATUS / setup-er
+audio,chefkjd/MixSplitR,89,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,alexanderlerch/ACA-Code,88,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,mikezzb/lyrics-sync,79,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,a1ex90/MusicalKeyCNN,66,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,marcobn/musicntwrk,65,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,Samik081/beets-beatport4,62,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,SonyResearch/mimo-audio-separation,55,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,FelixNgFender/mu2mi,55,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,olilarkin/librosa.cpp,53,ISC,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+audio,jo-hoe/chromaprint,3,MIT,instalado,STATUS / setup-er
+audio,facebookresearch/demucs,0,MIT,instalado,STATUS / setup-er
+audio,spotify/basic-pitch,0,Apache-2.0,instalado,STATUS / setup-er
+binarios,NationalSecurityAgency/ghidra,83078,Apache-2.0,instalado,STATUS / setup-er
+binarios,skylot/jadx,50830,Apache-2.0,instalado,STATUS / setup-er
+binarios,iBotPeaches/Apktool,25806,Apache-2.0,instalado,STATUS / setup-er
+binarios,MobSF/Mobile-Security-Framework-MobSF,21917,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,rizinorg/cutter,19979,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Konloch/bytecode-viewer,15664,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,pxb1988/dex2jar,13143,Apache-2.0,instalado,STATUS / setup-er
+binarios,horsicq/Detect-It-Easy,11669,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Perfare/Il2CppDumper,9487,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,sensepost/objection,9436,GPL-3.0,instalado,STATUS / setup-er
+binarios,unicorn-engine/unicorn,9420,GPL-2.0,instalado,STATUS / setup-er
+binarios,angr/angr,9139,BSD-2-Clause,instalado,STATUS / setup-er
+binarios,mandiant/flare-vm,9118,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,de4dot/de4dot,7428,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Col-E/Recaf,7419,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,bee-san/pyWhat,7326,MIT,instalado,STATUS / setup-er
+binarios,crytic/slither,6373,AGPL-3.0,instalado,STATUS / setup-er
+binarios,androguard/androguard,6343,Apache-2.0,instalado,STATUS / setup-er
+binarios,dwisiswant0/apkleaks,6340,Apache-2.0,instalado,STATUS / setup-er
+binarios,facebook/redex,6306,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mandiant/capa,6224,Apache-2.0,instalado,STATUS / setup-er
+binarios,qilingframework/qiling,6123,GPL-2.0,instalado,STATUS / setup-er
+binarios,lief-project/LIEF,5583,Apache-2.0,instalado,STATUS / setup-er
+binarios,mentebinaria/retoolkit,5310,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,zhkl0228/unidbg,5260,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,niklashigi/apk-mitm,5123,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,charles2gan/GDA-android-reversing-Tool,4851,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,vaibhavpandeyvpz/apkstudio,4676,LGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,zrax/pycdc,4643,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ReVanced/revanced-patches-template,4609,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,JetBrains/fernflower,4420,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,rocky/python-uncompyle6,4331,GPL-3.0,instalado,STATUS / setup-er
+binarios,x64dbg/ScyllaHide,4327,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,JonathanSalwan/Triton,4324,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,google/orbit,4313,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ConsenSysDiligence/mythril,4272,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mandiant/flare-floss,4179,Apache-2.0,instalado,STATUS / setup-er
+binarios,HyperDbg/HyperDbg,4122,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,APKLab/APKLab,4005,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,oldmanpushcart/greys-anatomy,4000,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,cea-sec/miasm,3987,GPL-2.0,instalado,STATUS / setup-er
+binarios,rizinorg/rizin,3951,LGPL-3.0,instalado,STATUS / setup-er
+binarios,AloneMonkey/frida-ios-dump,3945,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,a0rtega/pafish,3940,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,hasherezade/pe-sieve,3913,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,trailofbits/manticore,3854,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ax/apk.sh,3842,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,hasherezade/pe-bear,3835,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,e-m-b-a/emba,3696,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ReVanced/revanced-patcher,3518,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Perfare/Zygisk-Il2CppDumper,3335,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,horsicq/DIE-engine,3300,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,google/bindiff,3204,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,WrBug/dumpDex,3161,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,m0bilesecurity/RMS-Runtime-Mobile-Security,3110,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,plasma-disassembler/plasma,3070,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,djkaty/Il2CppInspector,3053,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,jbevain/cecil,3005,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ac-pm/Inspeckage,2987,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,eteran/edb-debugger,2974,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,SamboyCoding/Cpp2IL,2938,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,google/binnavi,2885,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,lifting-bits/mcsema,2788,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,decompiler-explorer/decompiler-explorer,2703,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,keystone-engine/keystone,2643,GPL-2.0,instalado,STATUS / setup-er
+binarios,gaasedelen/lighthouse,2604,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mandiant/flare-ida,2450,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,find-sec-bugs/find-sec-bugs,2448,LGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,hasherezade/hollows_hunter,2417,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,bootleg/ret-sync,2395,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,BinaryAnalysisPlatform/bap,2262,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mandiant/flare-fakenet-ng,2206,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mandiant/speakeasy,2070,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,KasperskyLab/hrtng,1940,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,JustasMasiulis/lazy_importer,1928,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,federicodotta/Brida,1899,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,keystone-engine/keypatch,1877,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,chame1eon/jnitrace,1865,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,redasm-dev/redasm,1821,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Jakeschincariol/replica-skill,1758,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,polymorf/findcrypt-yara,1740,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ev-flow/quark-engine,1734,GPL-3.0,instalado,STATUS / setup-er
+binarios,hasherezade/tiny_tracer,1708,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,kovidomi/game-reversing,1707,Unlicense,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,KeenSecurityLab/BinAbsInspector,1678,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,0xdea/frida-scripts,1668,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,dpnishant/appmon,1633,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mytechnotalent/Hacking-Windows,1632,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Jon-Becker/heimdall-rs,1621,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,dstmath/frida-unpack,1615,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,m4b/goblin,1554,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,gaasedelen/tenet,1546,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,BlackSnufkin/LitterBox,1545,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,NotPrab/.NET-Deobfuscator,1522,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,x64dbg/x64dbgpy,1510,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ChiChou/bagbak,1507,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ergrelet/unlicense,1494,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mandiant/flare-learning-hub,1491,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,nccgroup/house,1469,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,programa-stic/barf-project,1455,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,nowsecure/r2frida,1448,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,das-labor/panopticon,1447,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,L4ys/LazyIDA,1445,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,syssec-utd/pylingual,1417,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,0xgalz/Virtuailor,1403,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,OpenDriver2/REDRIVER2,1395,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,grayhatacademy/ida,1368,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,fkie-cad/cwe_checker,1361,LGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,DERE-ad2001/Frida-Labs,1327,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Vector35/binaryninja-api,1324,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,iGio90/Dwarf,1322,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,amimo/dcc,1317,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,gaasedelen/patching,1290,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,rocky/python-decompile3,1276,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,SychicBoy/NETReactorSlayer,1271,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ThunderCls/xAnalyzer,1238,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,codilime/veles,1238,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,google/binexport,1212,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,P1sec/hermes-dec,1207,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,x64dbg/GleeBug,1202,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,yazgx97/frida-ios-hook,1188,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,strazzere/android-unpacker,1181,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,AliveToolkit/alive2,1179,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,reversenseorg/dexcalibur,1178,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ghidraninja/ghidra_scripts,1177,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,naim94a/lumen,1162,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,GJDuck/e9patch,1156,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,anestisb/vdexExtractor,1142,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,REhints/efiXplorer,1136,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mildsunrise/protobuf-inspector,1128,ISC,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Washi1337/AsmResolver,1127,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Misaka-Mikoto-Tech/MonoHook,1064,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,GoSecure/malboxes,1047,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,SaadAhla/FilelessPELoader,1041,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,gcarmix/HexWalk,1026,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,rizinorg/rz-ghidra,990,LGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,x64dbg/docs,967,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mirkosertic/Bytecoder,961,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,AngoraFuzzer/Angora,957,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mandiant/flare-emu,955,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,certsocietegenerale/fame,948,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,suifei/fridare,944,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,InQuest/malware-samples,944,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,zyantific/IDASkins,936,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,hzqst/unicorn_pe,924,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,CheckPointSW/Karta,912,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,HackOvert/GhidraSnippets,893,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,vulhunt-re/vulhunt,890,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mrexodia/dumpulator,888,BSL-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,seekbytes/IPA,882,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,GrammaTech/ddisasm,874,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,hluwa/Wallbreaker,870,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,cyberkaida/reverse-engineering-assistant,864,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,trailofbits/deepstate,863,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,loerting/JByteMod-Beta,859,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,angr/angr-doc,849,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,hasherezade/mal_unpack,842,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,decaf-project/DECAF,841,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,dyninst/dyninst,837,LGPL-2.1,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,wecooperate/iMonitor,835,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,SimonKagstrom/kcov,833,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,WithSecureOpenSource/see,821,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Cisco-Talos/GhIDA,820,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,HackOvert/AntiDBG,815,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,avast/retdec-idaplugin,798,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mentebinaria/readpe,789,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,unipacker/unipacker,782,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,nsmfoo/antivmdetection,781,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,asLody/AndHook,781,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,skidfuscatordev/skidfuscator-java-obfuscator,775,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,danigargu/heap-viewer,773,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,echowei/DeepTraffic,771,MPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mandiant/stringsifter,765,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Svenskithesource/PyArmor-Unpacker,760,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Mahlet-Inc/hobbits,754,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,binsync/binsync,750,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,secrary/makin,742,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ReversingID/Awesome-Reversing,738,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,endgameinc/xori,722,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,yhs0602/Android-Disassembler,717,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,secrary/Andromeda,713,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,0xb0bb/pwndra,709,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,n1tr00-10/tiktok-web-signature,709,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,cristianzsh/forensictools,705,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,horsicq/XAPKDetector,694,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ossillate-inc/packj,694,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,maddiestone/IDAPythonEmbeddedToolkit,689,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Soulghost/iblessing,687,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,aozhimin/iOS-Debug-Hacks,682,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,chainguard-dev/malcontent,678,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,gaasedelen/lucid,678,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,SentineLabs/AlphaGolang,675,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,tmr232/Sark,672,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,IDArlingTeam/IDArling,670,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,strazzere/golang_loader_assist,661,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,OpenRakis/Spice86,660,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mohitmishra786/reversingBits,659,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Vu1nT0tal/Vehicle-Security-Toolkit,655,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,astrelsky/Ghidra-Cpp-Class-Analyzer,650,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,nologic/idaref,649,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,bongtrop/hbctool,643,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,secana/PeNet,636,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,McGill-DMaS/Kam1n0-Community,627,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Nalen98/AngryGhidra,624,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,boricj/ghidra-delinker-extension,607,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,c3rb3ru5d3d53c/binlex,605,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,airbus-cert/ttddbg,595,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,falconre/falcon,594,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ChiChou/vscode-frida,593,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,DissectMalware/XLMMacroDeobfuscator,590,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,nikolaydubina/go-binsize-treemap,588,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,quarkslab/binbloom,586,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,horsicq/Nauz-File-Detector,584,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Noelo-Lab/kuna,581,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,avatartwo/avatar2,579,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,zackelia/ghidra-dark,577,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,cseagle/sk3wldbg,563,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,BitCrackers/AmongUsMenu,555,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,CybercentreCanada/assemblyline,553,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,B2R2-org/B2R2,552,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ex0dus-0x/fuzzable,548,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,d3v1l401/FindCrypt-Ghidra,547,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,CreditTone/android-reverse-engineering-skill,540,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,struppigel/PortEx,538,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,carbonblack/binee,531,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,airbus-cert/Yagi,510,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,CalebFenton/dex-oracle,504,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Evil0ctal/AndroidReverse101,421,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,TheQmaks/phantom-frida,390,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,z3n70/Frida-Script-Runner,381,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ejfkdev/ddc,374,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,hack0z/luject,359,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,g0aty/SickoMenu,311,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Pithus/bazaar,301,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Karmaz95/Snake_Apple,300,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,Jadis0x/il2cpp-reverse-engineering-guide,300,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,zahidaz/jezail,277,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,jkennethcarino/adobo,277,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,loerting/dalvikus,272,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,nbauma109/jd-gui-duo,265,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,mpast/mobileAudit,228,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,developer-krushna/Dex-Editor-Android,212,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,chenxvb/Unicorn-Trace,208,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,as0ler/r2flutch,184,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ReverseApple/gxpc,167,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,AdvDebug/Brovan,166,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,huuck/Katalina,162,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,index-login/MobileRE-Skill,160,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,ZSA233/frida-analykit,155,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,omeraydindev/Dexter,153,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,asLody/dexdec,111,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,frida/frida,0,wxWindows Library License-ish / OSI,instalado,STATUS / setup-er
+binarios,radareorg/radare2,0,LGPL-3.0,instalado,STATUS / setup-er
+binarios,capstone-engine/capstone,0,BSD-3-Clause,instalado,STATUS / setup-er
+binarios,avast/retdec,0,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,x64dbg/x64dbg,0,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+binarios,JesusFreke/smali,0,BSD-3-Clause,instalado,STATUS / setup-er
+formatos,WerWolv/ImHex,55047,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,orhun/binsider,4474,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,layervault/psd.rb,3115,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,itchyny/bed,1343,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,petoolse/petools,1201,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,adamstark/AudioFile,1150,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,keichi/binary-parser,956,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,facebookincubator/nimble,740,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,wxMEdit/wxMEdit,731,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,jotaen/klog,686,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,evanmiller/hecate,676,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,kaitai-io/kaitai_struct_compiler,664,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,dmendel/bindata,653,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,EUA/wxHexEditor,620,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,adonais/skylark,586,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,raysan5/rres,563,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,ndd7xv/heh,504,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,haven1433/HexManiacAdvance,484,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,ef1500/libbbf,414,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,Dax89/QHexView,404,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,tbeu/matio,402,BSD-2-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,crumblingstatue/hexerator,372,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,thomasjungblut/go-sstables,368,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,kaitai-io/kaitai_struct_visualizer,345,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,Etto48/HexPatch,336,AGPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,kaitai-io/kaitai_struct_webide,318,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,scikit-hep/uproot3,313,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,VelocityRa/awesome-game-file-format-reversing,222,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,kaitai-io/awesome-kaitai,222,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,vaenshine/VansonMod,206,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,exbin/bined-android,122,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,deckflow/deckprobe,117,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,isaccanedo/ImHex,3,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+formatos,kaitai-io/kaitai_struct,0,GPL-3.0,instalado,STATUS / setup-er
+mobile_web,google/android-classyshark,7552,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,kelvinBen/AppInfoScanner,3570,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,Ch0pin/medusa,2353,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,lelinhtinh/de4js,1579,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,Margular/frida-skeleton,882,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,n0mi1k/apk2url,880,MIT,referencia,pip git instável
+mobile_web,s0md3v/Diggy,873,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,venshine/decompile-apk,823,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,alexzaitsev/apk-dependency-graph,760,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,kkguo/apkshellext,700,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,abhi-r3v0/Adhrit,543,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,ksg97031/frida-gadget,464,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,f3rb123/kill_flutter,313,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,Fausto-404/ai-mobile-reverse-skills,167,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,deemoun/PulseAPK-Core,127,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,iamtorsten/SherlockElf,118,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+mobile_web,huanfeng/ApkInfoTool,108,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+modelos_ml,lutzroeder/netron,33560,MIT,instalado,STATUS / setup-er
+modelos_ml,microsoft/onnxruntime,22049,MIT,instalado,STATUS / setup-er
+modelos_ml,onnx/onnx,21575,Apache-2.0,instalado,STATUS / setup-er
+modelos_ml,google/magika,18706,Apache-2.0,instalado,STATUS / setup-er
+modelos_ml,PaddlePaddle/VisualDL,4879,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+modelos_ml,onnxsim/onnxsim,4414,Apache-2.0,instalado,STATUS / setup-er
+modelos_ml,ZhangGe6/onnx-modifier,1629,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+modelos_ml,PaddlePaddle/Paddle2ONNX,946,Apache-2.0,referencia,exige paddlepaddle (GB)
+modelos_ml,inisis/OnnxSlim,520,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+modelos_ml,elliotwaite/pytorch-to-javascript-with-onnx-js,385,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+modelos_ml,sevagh/demucs.onnx,68,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+protocolos,gojue/ecapture,15492,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+protocolos,secdev/scapy,12599,GPL-2.0,instalado,STATUS / setup-er
+protocolos,qeeqbox/honeypots,991,AGPL-3.0,instalado,STATUS / setup-er
+protocolos,fkie-cad/friTap,555,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,YaoFANGUK/video-subtitle-extractor,9582,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,Breakthrough/PySceneDetect,5228,BSD-3-Clause,instalado,STATUS / setup-er
+video,wxbool/video-srt-windows,5041,GPL-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,MediaArea/MediaInfo,2030,BSD-2-Clause,instalado,STATUS / setup-er
+video,krzemienski/awesome-video,1925,CC0-1.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,soCzech/TransNetV2,1053,MIT,instalado,STATUS / setup-er
+video,facebookresearch/audioseal,796,MIT,instalado,STATUS / setup-er
+video,bravobit/FFmpeg-Android,766,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,HaveAGitGat/HBBatchBeast,711,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,hongzimao/pensieve,580,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,kokorin/Jaffree,551,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,Ch00k/ffmpy,522,MIT,instalado,STATUS / setup-er
+video,yahoo/hecate,496,Apache-2.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,char0n/ffmpeg-php,494,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,wader/static-ffmpeg,410,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,zeroepoch/plotbitrate,348,BSD-2-Clause,instalado,STATUS / setup-er
+video,ptr727/PlexCleaner,343,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,UVA-Computer-Vision-Lab/OmniShotCut,322,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,DolbyLaboratories/dlb_mp4base,281,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,wentaozhu/AutoShot,261,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,juanmcasillas/gopro2gpx,257,GPL-3.0,instalado,STATUS / setup-er
+video,vansante/go-ffprobe,223,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,LeiShi1313/Differential,180,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,federicocarboni/setup-ffmpeg,143,MIT,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,DolbyLaboratories/dlb_mp4demux,120,BSD-3-Clause,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,Gaurox/FrameShift,94,GPL-3.0,referencia,GUI/Windows/plugin/lista/dataset/pesquisa/não-CLI
+video,FFmpeg/FFmpeg,0,LGPL-2.1,instalado,STATUS / setup-er
+video,colour-science/colour,0,BSD-3-Clause,instalado,STATUS / setup-er
