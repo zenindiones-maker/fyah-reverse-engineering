@@ -29,6 +29,8 @@ jobs:
             .er-tools/llama
           key: er-llama-qwen25-05b-v1
       - name: Start llama-server
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
           bash harness/run_local_llm.sh > llama.log 2>&1 &

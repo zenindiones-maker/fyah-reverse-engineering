@@ -14,7 +14,8 @@ if [ ! -f "$MODEL_FILE" ]; then
 fi
 ls -lh "$MODEL_FILE"
 if [ ! -x "$BIN_DIR/llama-server" ]; then
-  tag=$(gh api repos/ggml-org/llama.cpp/releases --jq '[.[] | select([.assets[].name] | any(test("bin-ubuntu-x64.tar.gz$")))][0].tag_name')
+  tag=$(gh api repos/ggml-org/llama.cpp/releases --jq '[.[] | select([.assets[].name] | any(test("bin-ubuntu-x64.tar.gz$")))][0].tag_name' 2>/dev/null || true)
+  tag=${tag:-b11558}
   echo "llama.cpp release: $tag"
   tmp=$(mktemp -d)
   gh release download "$tag" -R ggml-org/llama.cpp -p "llama-*-bin-ubuntu-x64.tar.gz" -D "$tmp" --clobber
