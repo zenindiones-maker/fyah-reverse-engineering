@@ -140,10 +140,24 @@ def main() -> int:
                     pass
         combined = final + "\n" + session_blob
         score = score_tool_use(combined, workspace)
+        # Persist raw events for tool-call diagnosis
+        events = getattr(result, "events", []) or []
+        notes = []
+        for n in (getattr(result, "notifications", []) or [])[:200]:
+            try:
+                notes.append({"method": n.method, "payload": n.payload})
+            except Exception:
+                notes.append({"raw": str(n)[:500]})
+        (workspace / "out" / "dsh_events.json").write_text(
+            json.dumps({"events": events, "notifications": notes}, indent=2, ensure_ascii=False, default=str)[:2_000_000]
+        )
         result_payload.update({
             "ok": True,
             "elapsed_sec": elapsed,
             "final_response": final,
+            "finish_reason": getattr(result, "finish_reason", None),
+            "n_events": len(events),
+            "event_types": [e.get("type") for e in events if isinstance(e, dict)][:80],
             "tool_use": score,
         })
     except Exception as e:  # noqa: BLE001

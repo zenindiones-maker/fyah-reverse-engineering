@@ -52,4 +52,4 @@ case "$PRESET" in
   qwen3-*) extra+=(--jinja) ;;
 esac
 exec "$BIN_DIR/llama-server" -m "$GGUF" --host 127.0.0.1 --port 8080 \
-  -c "$MODEL_CTX" -t "$(nproc)" --alias "$MODEL_ID" "${extra[@]}"
+  -c "$MODEL_CTX" -t "$(nproc)" -np 1 --alias "$MODEL_ID" "${extra[@]}"

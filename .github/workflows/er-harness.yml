@@ -73,6 +73,33 @@ jobs:
           head -c 800 /tmp/models.json; echo
           cp llama.log out/ || true
           cat out/timing_server.txt || true
+
+      - name: Smoke chat/completions
+        run: |
+          set -e
+          MODEL_ID=$(python3 -c "import json,os; print(json.load(open('harness/models.json'))[os.environ['MODEL_PRESET']]['id'])")
+          echo "model_id=$MODEL_ID"
+          # A) trivial completion
+          curl -sS http://127.0.0.1:8080/v1/chat/completions             -H 'Content-Type: application/json'             -d "{\"model\":\"$MODEL_ID\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply with exactly PONG and nothing else.\"}],\"max_tokens\":32,\"temperature\":0}"             | tee out/smoke_pong.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open("out/smoke_pong.json"))
+          msg=(d.get("choices") or [{}])[0].get("message") or {}
+          print("PONG_CONTENT=", repr(msg.get("content")))
+          print("FINISH=", (d.get("choices") or [{}])[0].get("finish_reason"))
+          print("USAGE=", d.get("usage"))
+          PY
+          # B) tool-ish instruction (no DSH)
+          curl -sS http://127.0.0.1:8080/v1/chat/completions             -H 'Content-Type: application/json'             -d "{\"model\":\"$MODEL_ID\",\"messages\":[{\"role\":\"system\",\"content\":\"You are a helpful assistant. Output one bash command only.\"},{\"role\":\"user\",\"content\":\"Print the command to run: python -m tools run media-inspect --input u.ogg --out out/m.json\"}],\"max_tokens\":128,\"temperature\":0}"             | tee out/smoke_tool.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open("out/smoke_tool.json"))
+          msg=(d.get("choices") or [{}])[0].get("message") or {}
+          print("TOOL_CONTENT=", repr((msg.get("content") or "")[:500]))
+          print("FINISH=", (d.get("choices") or [{}])[0].get("finish_reason"))
+          print("USAGE=", d.get("usage"))
+          PY
+
       - name: Run DSH headless (score tool-use BEFORE fallback)
         id: dsh
         continue-on-error: true
@@ -144,5 +171,6 @@ jobs:
           path: |
             out/
             llama.log
+            .er-dsh-home/
           retention-days: 14
           if-no-files-found: warn

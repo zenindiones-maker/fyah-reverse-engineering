@@ -20,7 +20,7 @@
     "license": "Apache-2.0",
     "approx_gb": 2.5,
     "ctx": 4096,
-    "max_tokens": 2048,
+    "max_tokens": 1024,
     "cache_key": "er-llama-qwen3-4b-i2507-v1",
     "notes": "Instruct-2507 (non-thinking). Qwen2.5-3B skipped: Research License, not Apache."
   },
@@ -33,7 +33,7 @@
     "license": "Apache-2.0",
     "approx_gb": 4.68,
     "ctx": 4096,
-    "max_tokens": 2048,
+    "max_tokens": 1024,
     "cache_key": "er-llama-qwen25-7b-v1"
   },
   "qwen3-8b": {
@@ -45,7 +45,7 @@
     "license": "Apache-2.0",
     "approx_gb": 5.03,
     "ctx": 3072,
-    "max_tokens": 1536,
+    "max_tokens": 1024,
     "cache_key": "er-llama-qwen3-8b-v1",
     "notes": "Tight on 16 GB RAM; lower ctx. Prefer /no_think in prompt if thinking burns tokens."
   }
