@@ -7,6 +7,7 @@ on:
       threshold: {description: "Limiar ContentDetector", default: "27"}
 permissions:
   contents: read
+concurrency: {group: "cuts-pacing-${{ github.ref }}", cancel-in-progress: true}
 jobs:
   cuts:
     runs-on: ubuntu-latest

@@ -8,7 +8,7 @@ on:
     - cron: "0 6 1 * *"
 permissions:
   contents: write
-concurrency: {group: catalog-refresh, cancel-in-progress: false}
+concurrency: {group: catalog-refresh, cancel-in-progress: true}
 jobs:
   refresh:
     runs-on: ubuntu-latest

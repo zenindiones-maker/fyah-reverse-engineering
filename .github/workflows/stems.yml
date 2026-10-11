@@ -7,6 +7,7 @@ on:
       model: {description: "Modelo Demucs", default: "htdemucs", type: choice, options: [htdemucs, htdemucs_ft, mdx_extra]}
 permissions:
   contents: read
+concurrency: {group: "stems-${{ github.ref }}", cancel-in-progress: true}
 jobs:
   stems:
     runs-on: ubuntu-latest   # CPU: ~1-3x a duração da faixa (htdemucs); htdemucs_ft ~4x mais lento

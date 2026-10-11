@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       model:
-        description: "Modelo (fast=0.5B; qwen3-4b; qwen25-7b; qwen3-8b)"
+        description: "Modelo (fast=0.5B rápido; maiores = mais fortes)"
         required: true
         default: qwen25-14b
         type: choice

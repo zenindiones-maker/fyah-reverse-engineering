@@ -5,7 +5,7 @@ on:
     - cron: "0 12 * * 1-5"
   workflow_dispatch: {}
 permissions: {contents: write}
-concurrency: {group: er-daily, cancel-in-progress: false}
+concurrency: {group: er-daily, cancel-in-progress: true}
 jobs:
   daily:
     runs-on: ubuntu-latest

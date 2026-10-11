@@ -6,6 +6,7 @@ on:
       media_url: {description: "URL do vídeo/áudio", required: true}
 permissions:
   contents: read
+concurrency: {group: "media-inspect-${{ github.ref }}", cancel-in-progress: true}
 jobs:
   inspect:
     runs-on: ubuntu-latest

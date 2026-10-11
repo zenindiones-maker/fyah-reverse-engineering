@@ -7,6 +7,7 @@ on:
       name: {description: "Nome da faixa", required: true, default: "faixa"}
 permissions:
   contents: read
+concurrency: {group: "audio-profile-${{ github.ref }}", cancel-in-progress: true}
 jobs:
   profile:
     runs-on: ubuntu-latest

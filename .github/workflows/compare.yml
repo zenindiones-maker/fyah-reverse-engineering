@@ -7,6 +7,7 @@ on:
       track_b_url: {description: "Faixa B (referência licenciada)", required: true}
 permissions:
   contents: read
+concurrency: {group: "compare-${{ github.ref }}", cancel-in-progress: true}
 jobs:
   compare:
     runs-on: ubuntu-latest

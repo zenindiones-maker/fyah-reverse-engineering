@@ -11,6 +11,7 @@ on:
       url: {description: "URL do arquivo (próprio/licenciado/domínio público; APK open source, ex.: F-Droid)", required: true}
       url2: {description: "Segunda URL (só para compare)", required: false, default: ""}
 permissions: {contents: read}
+concurrency: {group: "er-analyze-${{ github.ref }}", cancel-in-progress: true}
 jobs:
   analyze:
     runs-on: ubuntu-latest
