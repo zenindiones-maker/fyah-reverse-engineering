@@ -12,16 +12,16 @@ jobs:
     runs-on: ubuntu-latest   # CPU: ~1-3x a duração da faixa (htdemucs); htdemucs_ft ~4x mais lento
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: {python-version: "3.11", cache: pip}
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with: {path: ~/.cache/torch/hub/checkpoints, key: "demucs-${{ inputs.model }}-v1"}
       - run: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu && pip install demucs -e ".[audio]"
       - env: {audio_url: "${{ inputs.audio_url }}"}
         run: curl -L --fail -o input.wav "$audio_url"
       - run: python -m demucs -n ${{ inputs.model }} -o out --mp3 input.wav
       - run: for s in out/*/input/*.mp3; do python -m audio.profile "$s" --out "${s%.mp3}.json" || true; done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with: {name: stems, path: out/, retention-days: 7}

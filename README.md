@@ -24,6 +24,7 @@ scripts/     build_catalog.py (gerador do catálogo)
 docs/        metodologia, trilha, arsenal, referências, catalogo/
 writeups/    relatos de análises
 labs/        exercícios práticos
+kaggle/      jobs de GPU grátis (Kaggle)
 tests/       testes (pytest)
 .github/workflows/  ci, catalog-refresh e as 5 ferramentas
 ```
@@ -40,6 +41,11 @@ Abra **Actions** no app/site do GitHub → escolha o workflow → **Run workflow
 | `cuts-pacing` | URL de vídeo | `pacing.json` (cortes, cortes/min, duração dos planos) |
 | `stems` | URL de áudio | stems Demucs (CPU) + perfil de cada stem |
 | `catalog-refresh` | — (mensal) | atualiza `docs/catalogo/` |
+| `er-analyze` | ferramenta + URL(s) | ponto único para todas as ferramentas acima |
+| `er-daily` | — (dias úteis 09:00 BRT) | diário de estudo em `docs/diario/` |
+| `er-gpu-kaggle` | pasta em `kaggle/` + URL | GPU grátis do Kaggle (precisa de secrets) |
+
+Detalhes da infraestrutura custo zero: [docs/maquina.md](docs/maquina.md).
 
 ## Uso local
 

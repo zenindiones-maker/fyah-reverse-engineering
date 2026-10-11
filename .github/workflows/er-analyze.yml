@@ -1,0 +1,76 @@
+name: er-analyze
+# Custo zero: ponto único de entrada (celular → Run workflow). Inputs via env (sem injeção).
+on:
+  workflow_dispatch:
+    inputs:
+      tool:
+        description: "Ferramenta"
+        type: choice
+        options: [audio-profile, compare, media-inspect, cuts-pacing, stems]
+        default: media-inspect
+      url: {description: "URL do arquivo (próprio/licenciado/domínio público)", required: true}
+      url2: {description: "Segunda URL (só para compare)", required: false, default: ""}
+permissions: {contents: read}
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      TOOL: ${{ inputs.tool }}
+      URL: ${{ inputs.url }}
+      URL2: ${{ inputs.url2 }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: {python-version: "3.11", cache: pip}
+      - name: Dependências do sistema
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg mediainfo
+      - name: Dependências Python
+        run: |
+          case "$TOOL" in
+            media-inspect) ;;
+            cuts-pacing) pip install -e ".[video]" ;;
+            stems) pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu && pip install demucs -e ".[audio]" ;;
+            *) pip install -e ".[audio]" ;;
+          esac
+      - uses: actions/cache@v6
+        if: inputs.tool == 'stems'
+        with: {path: ~/.cache/torch/hub/checkpoints, key: demucs-htdemucs-v1}
+      - name: Baixar entrada
+        run: |
+          case "$URL" in http://*|https://*) ;; *) echo "URL inválida" >&2; exit 1;; esac
+          curl -L --fail --max-filesize 2000000000 -A "fyah-re (GitHub Actions)" -o input.bin "$URL"
+          if [ "$TOOL" = compare ]; then
+            [ -n "$URL2" ] || { echo "compare exige url2" >&2; exit 1; }
+            curl -L --fail -A "fyah-re (GitHub Actions)" -o input2.bin "$URL2"
+          fi
+      - name: Rodar ferramenta
+        run: |
+          mkdir -p out
+          case "$TOOL" in
+            audio-profile)
+              python -m audio.profile input.bin --out out/profile.json > /dev/null
+              python -c "import json;d=json.load(open('out/profile.json'));print(f\"## Perfil de áudio\n\n| BPM | Tonalidade | LUFS | Duração |\n|---|---|---|---|\n| {d['tempo_bpm']} | {d['key']['tonic']} {d['key']['mode']} | {d['loudness']['integrated_lufs']} | {d['duration_s']} s |\")" >> "$GITHUB_STEP_SUMMARY" ;;
+            compare)
+              python -m audio.compare input.bin input2.bin --out out/compare.json --md out/compare.md > /dev/null
+              cat out/compare.md >> "$GITHUB_STEP_SUMMARY" ;;
+            media-inspect)
+              ffprobe -v error -show_format -show_streams -of json input.bin > out/ffprobe.json
+              mediainfo --Output=JSON input.bin > out/mediainfo.json
+              python3 -c "
+          import json;d=json.load(open('out/ffprobe.json'));f=d['format']
+          print('## Inspeção de mídia\n');print(f\"Container: **{f.get('format_long_name')}** · duração {f.get('duration')} s · bitrate {f.get('bit_rate')}\n\")
+          print('| # | tipo | codec | detalhes |\n|---|---|---|---|')
+          for s in d['streams']: print(f\"| {s['index']} | {s.get('codec_type')} | {s.get('codec_name')} | {s.get('sample_rate') or ''} {s.get('channels') or ''} {s.get('width') or ''}x{s.get('height') or ''} |\")
+          " >> "$GITHUB_STEP_SUMMARY" ;;
+            cuts-pacing)
+              ext=mp4; python -m video.pacing input.bin --out out/pacing.json > /dev/null
+              python -c "import json;d=json.load(open('out/pacing.json'));print(f\"## Cortes e ritmo\n\nCortes: {d['cuts']} · cortes/min: {d['cuts_per_minute']} · plano médio: {d['shot_length_s']['mean']} s\")" >> "$GITHUB_STEP_SUMMARY" ;;
+            stems)
+              ffmpeg -loglevel error -i input.bin input.wav
+              python -m demucs -n htdemucs -o out --mp3 input.wav
+              for s in out/htdemucs/input/*.mp3; do python -m audio.profile "$s" --out "${s%.mp3}.json" > /dev/null; done
+              echo "## Stems (htdemucs, CPU)" >> "$GITHUB_STEP_SUMMARY"; ls out/htdemucs/input >> "$GITHUB_STEP_SUMMARY" ;;
+          esac
+      - uses: actions/upload-artifact@v7
+        with: {name: "er-${{ inputs.tool }}", path: out/, retention-days: 30}

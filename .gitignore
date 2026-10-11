@@ -218,3 +218,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Nunca commitar binários/mídia de terceiros
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.mp4
+*.mkv
+*.webm
+*.exe
+*.dll
+*.so
+*.bin
+*.apk
+*.th
+*.pt
+*.ckpt
+*.onnx
+*.safetensors
