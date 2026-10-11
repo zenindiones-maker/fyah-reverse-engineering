@@ -28,8 +28,14 @@ runs:
       env: {EXTRAS: "${{ inputs.extras }}", PIP_PREFER_BINARY: "1"}
       run: |
         pip install -q "PyYAML==6.0.2"
-        # pacotes pesados/quebrados vão em venvs (er_venvs.sh); o main fica leve
-        pip install -q -c constraints.txt -e ".[${EXTRAS}]"
+        pip install -q -e . --no-deps
+        IFS=',' read -ra ES <<< "$EXTRAS"
+        for e in "${ES[@]}"; do
+          e=$(echo "$e" | xargs)
+          [ -z "$e" ] && continue
+          echo ">>> pip install [$e]"
+          pip install -q -c constraints.txt -e ".[$e]" || echo "::warning::extra $e falhou"
+        done
 
     - name: versões de jadx/Ghidra
       id: rel

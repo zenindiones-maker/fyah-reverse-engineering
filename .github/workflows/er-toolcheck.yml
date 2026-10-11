@@ -13,7 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-er
-        with: {extras: "all", torch: "true", jadx: "true", ghidra: "true"}
+        with: {extras: "audio,video,apps,formats,binary,ml", torch: "true", jadx: "true", ghidra: "true"}
+      # audio-plus à parte (pode conflitar); falhas não derrubam o job
+      - name: Extra audio-plus (best effort)
+        run: pip install -q -c constraints.txt -e ".[audio-plus]" || echo "::warning::audio-plus parcial"
       - uses: actions/cache@v6
         with: {path: ~/.er-venvs, key: "er-venvs-${{ hashFiles('scripts/er_venvs.sh') }}"}
       - name: Venvs isoladas

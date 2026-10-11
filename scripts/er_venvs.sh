@@ -26,4 +26,5 @@ mk nussl 3.10 nussl "numpy<1.24" "setuptools<81"
 mk msaf 3.10 msaf "numpy<1.24" "setuptools<81"
 mk angr 3.11 $TORCH_CPU angr unicorn keystone-engine "PyYAML"
 mk objection 3.11 objection frida-tools
+mk musicxml 3.11 miditok muspy partitura pretty_midi mido
 ls "$V"

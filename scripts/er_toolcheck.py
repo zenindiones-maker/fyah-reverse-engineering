@@ -97,7 +97,7 @@ def mir_eval_():
     import mir_eval, numpy as np; f = mir_eval.beat.f_measure(np.array([1.0, 2.0]), np.array([1.0, 2.0])); return f"mir_eval {mir_eval.__version__}, F={f}"
 
 def miditok_():
-    import miditok; return f"miditok {ver('miditok')}"
+    return iso("musicxml", "import miditok; print(f'miditok {getattr(miditok,"__version__","importado")}')")
 
 def mirdata_():
     import mirdata; return f"mirdata {mirdata.__version__}, {len(mirdata.list_datasets())} datasets"
@@ -199,9 +199,9 @@ def pretty_midi_():
 def mido_():
     import mido; return f"mido {mido.__version__}: {len(mido.MidiFile(T / 'x.mid').tracks)} trilha(s)"
 def muspy_():
-    import muspy; m = muspy.read_midi(T / "x.mid"); return f"muspy {muspy.__version__}: {len(m.tracks)} trilha(s)"
+    return iso("musicxml", "import muspy, pathlib, os; m=muspy.read_midi(pathlib.Path(os.environ['T'])/'x.mid'); print(f'muspy {muspy.__version__}: {len(m.tracks)} trilha(s)')")
 def partitura_():
-    import partitura as pt; perf = pt.load_performance_midi(str(T / "x.mid")); return f"partitura {pt.__version__ if hasattr(pt,'__version__') else ''}: {len(perf.note_array())} nota(s)"
+    return iso("musicxml", "import partitura as pt, pathlib, os; perf=pt.load_performance_midi(str(pathlib.Path(os.environ['T'])/'x.mid')); print(f'partitura: {len(perf.note_array())} nota(s)')")
 def resampy_():
     import resampy, soundfile as sf; y, sr = sf.read(WAV); z = resampy.resample(y, sr, 16000); return f"resampy: {len(y)}→{len(z)} amostras"
 def nnaudio_():
