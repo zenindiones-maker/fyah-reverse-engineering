@@ -9,9 +9,16 @@ mk() { # nome python pacotes...
   uv venv -q -p "$py" "$V/$n" && VIRTUAL_ENV="$V/$n" uv pip install -q "$@" || { echo "::warning::venv $n falhou"; rm -rf "$V/$n"; }
 }
 TORCH_CPU="--extra-index-url https://download.pytorch.org/whl/cpu"
-mk basicpitch 3.11 "basic-pitch[onnx]" "numpy<2" && VIRTUAL_ENV="$V/basicpitch" uv pip uninstall -q tflite-runtime ai-edge-litert tensorflow tensorflow-cpu coremltools 2>/dev/null || true
+mk basicpitch 3.11 "basic-pitch[onnx]" "numpy<2" "setuptools<81" && VIRTUAL_ENV="$V/basicpitch" uv pip uninstall -q tflite-runtime ai-edge-litert tensorflow tensorflow-cpu coremltools 2>/dev/null || true
 mk spleeter 3.10 spleeter
-mk asteroid 3.11 $TORCH_CPU torch torchaudio asteroid
+mk asteroid 3.11 $TORCH_CPU torch torchaudio asteroid requests
 mk transnet 3.11 $TORCH_CPU torch transnetv2-pytorch ffmpeg-python
-mk allin1 3.11 $TORCH_CPU "torch==2.4.*" torchaudio "natten==0.17.1+torch240cpu" -f https://shi-labs.com/natten/wheels/ allin1 "madmom @ git+https://github.com/CPJKU/madmom"
+# allin1 precisa de natten<0.18 (sem wheel CPU disponível): compila do PyPI em CPU
+if [ ! -x "$V/allin1/bin/python" ]; then
+  uv venv -q -p 3.11 "$V/allin1" && export VIRTUAL_ENV="$V/allin1" && \
+  uv pip install -q $TORCH_CPU "torch==2.4.*" "torchaudio==2.4.*" setuptools wheel cmake ninja "numpy<2" cython && \
+  uv pip install -q --no-build-isolation "natten==0.17.1" && \
+  uv pip install -q --no-build-isolation "madmom @ git+https://github.com/CPJKU/madmom" allin1 || { echo "::warning::venv allin1 falhou"; rm -rf "$V/allin1"; }
+  unset VIRTUAL_ENV
+fi
 ls "$V"

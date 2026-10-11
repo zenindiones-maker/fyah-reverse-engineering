@@ -161,7 +161,8 @@ def spleeter_():
     return iso("spleeter", """
 import os, subprocess, sys, pathlib
 out = pathlib.Path(os.environ['T']) / 'spl'
-subprocess.run([sys.executable, '-m', 'spleeter', 'separate', '-p', 'spleeter:2stems', '-o', str(out), os.environ['WAV']], check=True, capture_output=True)
+r = subprocess.run([str(pathlib.Path(sys.executable).parent / 'spleeter'), 'separate', '-p', 'spleeter:2stems', '-o', str(out), os.environ['WAV']], capture_output=True, text=True)
+if r.returncode: raise SystemExit('spleeter: ' + (r.stderr or r.stdout).strip().splitlines()[-1][-180:])
 print('spleeter 2stems: ' + ', '.join(sorted(p.name for p in out.rglob('*.wav'))))""", timeout=1200)
 
 def allin1_():
