@@ -3,8 +3,20 @@ name: er-harness
 on:
   workflow_dispatch:
     inputs:
-      task: {description: "Tarefa para o E.R.", required: true, default: "Inspecione a mídia com media-inspect e resuma codecs/duração."}
-      url: {description: "URL do arquivo (próprio/licenciado/domínio público)", required: true, default: "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg"}
+      model:
+        description: "Modelo (fast=0.5B; qwen3-4b; qwen25-7b; qwen3-8b)"
+        required: true
+        default: qwen3-4b
+        type: choice
+        options: [fast, qwen3-4b, qwen25-7b, qwen3-8b]
+      task:
+        description: "Tarefa para o E.R."
+        required: true
+        default: "Inspecione a mídia (media-inspect) e rode audio-full no clip. Use bash."
+      url:
+        description: "URL do arquivo (próprio/licenciado/domínio público)"
+        required: true
+        default: "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg"
 permissions: {contents: read}
 jobs:
   harness:
@@ -13,6 +25,7 @@ jobs:
     env:
       LOCAL_LLM_KEY: local-no-cloud-key
       ER_TOOLS_DIR: ${{ github.workspace }}/.er-tools
+      MODEL_PRESET: ${{ inputs.model }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -22,50 +35,103 @@ jobs:
       - name: pip (fyah + DSH)
         run: |
           pip install -q -e ".[audio]" "deepseek-harness-sdk==0.1.5rc1"
+      - name: Resolve cache key
+        id: meta
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          m = json.load(open("harness/models.json"))[os.environ["MODEL_PRESET"]]
+          print(f"cache_key={m['cache_key']}")
+          print(f"model_id={m['id']}")
+          print(f"model_name={m['name']}")
+          PY
       - uses: actions/cache@v6
         with:
           path: |
             .er-tools/models
             .er-tools/llama
-          key: er-llama-qwen25-05b-v1
+          key: ${{ steps.meta.outputs.cache_key }}
       - name: Start llama-server
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          bash harness/run_local_llm.sh > llama.log 2>&1 &
-          echo $! > llama.pid
-          ok=0
-          for i in $(seq 1 180); do
-            if curl -sf http://127.0.0.1:8080/v1/models >/tmp/models.json; then ok=1; break; fi
-            if ! kill -0 "$(cat llama.pid)" 2>/dev/null; then
-              echo "llama-server morreu; log:"; tail -100 llama.log; exit 1
-            fi
-            sleep 2
-          done
-          if [ "$ok" != 1 ]; then echo "timeout"; tail -100 llama.log; exit 1; fi
-          head -c 500 /tmp/models.json; echo
-          cp llama.log out-llama/ 2>/dev/null || mkdir -p out && cp llama.log out/
-      - name: Run DSH headless
+          mkdir -p out
+          /usr/bin/time -f 'llama_ready_wall_sec=%e' -o out/timing_server.txt bash -c '
+            bash harness/run_local_llm.sh > llama.log 2>&1 &
+            echo $! > llama.pid
+            ok=0
+            for i in $(seq 1 300); do
+              if curl -sf http://127.0.0.1:8080/v1/models >/tmp/models.json; then ok=1; break; fi
+              if ! kill -0 "$(cat llama.pid)" 2>/dev/null; then
+                echo "llama-server morreu; log:"; tail -120 llama.log; exit 1
+              fi
+              sleep 2
+            done
+            if [ "$ok" != 1 ]; then echo "timeout"; tail -120 llama.log; exit 1; fi
+          '
+          head -c 800 /tmp/models.json; echo
+          cp llama.log out/ || true
+          cat out/timing_server.txt || true
+      - name: Run DSH headless (score tool-use BEFORE fallback)
         id: dsh
         continue-on-error: true
         run: |
           mkdir -p out
-          python harness/run_dsh.py \
-            --task "${{ inputs.task }}" \
-            --file-url "${{ inputs.url }}" \
-            --workspace "$GITHUB_WORKSPACE" \
-            --dsh-home "$GITHUB_WORKSPACE/.er-dsh-home" \
-            --out out/harness.json || true
+          /usr/bin/time -f 'dsh_wall_sec=%e' -o out/timing_dsh.txt \
+            python harness/run_dsh.py \
+              --model-preset "$MODEL_PRESET" \
+              --task "${{ inputs.task }}" \
+              --file-url "${{ inputs.url }}" \
+              --workspace "$GITHUB_WORKSPACE" \
+              --dsh-home "$GITHUB_WORKSPACE/.er-dsh-home" \
+              --out out/harness.json || true
+          # Snapshot artifacts produced by DSH alone
+          python3 - <<'PY'
+          import json, pathlib, shutil
+          out = pathlib.Path("out")
+          snap = out / "dsh_only"
+          snap.mkdir(exist_ok=True)
+          for name in ("media-inspect.json", "audio-full.json", "harness.json"):
+              p = out / name
+              if p.exists():
+                  shutil.copy2(p, snap / name)
+          h = json.loads((out/"harness.json").read_text()) if (out/"harness.json").exists() else {}
+          score = (h.get("tool_use") or {})
+          print(json.dumps({"preset": h.get("model_preset"), "ok": h.get("ok"), "elapsed_sec": h.get("elapsed_sec"), "tool_use": score}, indent=2))
+          pathlib.Path("out/score.json").write_text(json.dumps({
+              "model_preset": h.get("model_preset"),
+              "model": h.get("model"),
+              "model_name": h.get("model_name"),
+              "ok": h.get("ok"),
+              "elapsed_sec": h.get("elapsed_sec"),
+              "tool_use": score,
+              "dsh_produced_media_inspect": (snap/"media-inspect.json").exists(),
+              "dsh_produced_audio_full": (snap/"audio-full.json").exists(),
+          }, indent=2))
+          PY
+          # Fallback (does NOT count toward tool_use score): ensure JSON still lands
           python -m tools run media-inspect --input "${{ inputs.url }}" --out out/media-inspect.json || true
+          python -m tools run audio-full --input "${{ inputs.url }}" --out out/audio-full.json || true
           {
             echo "## er-harness"
             echo
-            echo "Modelo: Qwen2.5-0.5B-Instruct GGUF Q4_K_M (local, CPU)"
+            echo "Preset: \`$MODEL_PRESET\` — ${{ steps.meta.outputs.model_name }}"
             echo
+            echo '### score'
+            echo '```json'
+            cat out/score.json || true
+            echo '```'
+            echo
+            echo '### harness (trunc)'
             echo '```json'
             head -c 4000 out/harness.json || true
             echo
+            echo '```'
+            echo
+            echo '### timings'
+            echo '```'
+            cat out/timing_server.txt out/timing_dsh.txt 2>/dev/null || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Stop server
@@ -74,7 +140,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: er-harness
+          name: er-harness-${{ inputs.model }}
           path: |
             out/
             llama.log

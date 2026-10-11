@@ -2,10 +2,11 @@
 """Roda DeepSeek Harness headless contra llama.cpp local (placeholder LOCAL_LLM_KEY)."""
 from __future__ import annotations
 
-import argparse, json, os, pathlib, sys, time, urllib.request
+import argparse, json, os, pathlib, re, sys, time, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent
 REPO = ROOT.parent
+REGS = json.loads((ROOT / "models.json").read_text())
 
 
 def wait_server(url: str, timeout: float = 180) -> None:
@@ -21,6 +22,31 @@ def wait_server(url: str, timeout: float = 180) -> None:
     raise TimeoutError(f"llama-server não respondeu em {url}: {last}")
 
 
+def score_tool_use(text: str, workspace: pathlib.Path) -> dict:
+    """Detect whether DSH actually invoked the expected tools (not invented names)."""
+    t = text or ""
+    low = t.lower()
+    media_cmd = bool(re.search(r"python\s+-m\s+tools\s+run\s+media-inspect", low))
+    audio_cmd = bool(re.search(r"python\s+-m\s+tools\s+run\s+audio-full", low))
+    # Artifacts written during the session (before workflow fallback)
+    media_json = workspace / "out" / "media-inspect.json"
+    audio_json = workspace / "out" / "audio-full.json"
+    media_exists = media_json.is_file() and media_json.stat().st_size > 20
+    audio_exists = audio_json.is_file() and audio_json.stat().st_size > 20
+    # Heuristic: bash/tool markers in DSH transcript
+    bash_markers = len(re.findall(r"\bbash\b|tool_call|function_call|run_terminal", low))
+    invented = bool(re.search(r"media.inspect.*(not found|missing|não exist|unknown)", low))
+    return {
+        "mentioned_media_inspect_cmd": media_cmd,
+        "mentioned_audio_full_cmd": audio_cmd,
+        "media_inspect_json_present": media_exists,
+        "audio_full_json_present": audio_exists,
+        "bash_or_tool_markers": bash_markers,
+        "likely_invented_missing_tool": invented,
+        "tool_use_score": int(media_cmd) + int(audio_cmd) + int(media_exists) + int(audio_exists),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--task", required=True)
@@ -28,78 +54,117 @@ def main() -> int:
     ap.add_argument("--workspace", default=str(REPO))
     ap.add_argument("--dsh-home", default=str(pathlib.Path.home() / ".er-dsh-home"))
     ap.add_argument("--out", default="out/harness.json")
+    ap.add_argument("--model-preset", default=os.environ.get("MODEL_PRESET", "fast"),
+                    choices=sorted(REGS))
     a = ap.parse_args()
 
-    # Placeholder — NÃO é chave de nuvem; llama.cpp ignora Authorization.
+    meta = REGS[a.model_preset]
+    model_id = meta["id"]
+
     os.environ.setdefault("LOCAL_LLM_KEY", "local-no-cloud-key")
-    # Evita qualquer fallback para api.deepseek.com
     os.environ.pop("DEEPSEEK_API_KEY", None)
     os.environ.pop("DEEPSEEK_BASE_URL", None)
 
     from tools.catalog import list_for_prompt
     system = (ROOT / "prompts" / "system.txt").read_text() + "\n" + list_for_prompt()
+    # Qwen3 base (non-Instruct-2507) may think; Instruct-2507 usually won't need this.
+    if a.model_preset == "qwen3-8b":
+        system = "/no_think\n" + system
     os.environ["DSH_SYSTEM_PROMPT"] = system
-    os.environ["DSH_CONTEXT_WINDOW"] = "8192"
+    os.environ["DSH_CONTEXT_WINDOW"] = str(meta["ctx"] * 2)
 
     task = a.task
     if a.file_url:
-        task += f"\n\nArquivo de entrada (URL): {a.file_url}\nBaixe com curl se precisar e rode a ferramenta adequada via python -m tools run …"
+        task += (
+            f"\n\nArquivo de entrada (URL): {a.file_url}\n"
+            "Passos obrigatórios (use a ferramenta bash, um comando por vez):\n"
+            "1) python -m tools run media-inspect --input '<URL>' --out out/media-inspect.json && cat out/media-inspect.json\n"
+            "2) python -m tools run audio-full --input '<URL>' --out out/audio-full.json && cat out/audio-full.json\n"
+            "Substitua <URL> pela URL acima. Não invente nomes de ferramentas."
+        )
 
     patch = str((ROOT / "patches" / "local-llm.patch.yml").resolve())
     workspace = pathlib.Path(a.workspace).resolve()
     dsh_home = pathlib.Path(a.dsh_home).resolve()
     dsh_home.mkdir(parents=True, exist_ok=True)
-    out = pathlib.Path(a.out); out.parent.mkdir(parents=True, exist_ok=True)
+    (workspace / "out").mkdir(parents=True, exist_ok=True)
+    out = pathlib.Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
 
+    # Clear prior tool artifacts so score reflects this DSH run only
+    for p in (workspace / "out" / "media-inspect.json", workspace / "out" / "audio-full.json"):
+        if p.exists():
+            p.unlink()
+
+    result_payload = {
+        "ok": False,
+        "provider": "local-llamacpp",
+        "model_preset": a.model_preset,
+        "model": model_id,
+        "model_name": meta["name"],
+        "license": meta.get("license"),
+    }
     try:
         from deepseek_harness import DeepSeekHarness
     except ImportError:
-        out.write_text(json.dumps({
-            "ok": False,
+        result_payload.update({
             "error": "deepseek-harness-sdk não instalado",
             "hint": "pip install deepseek-harness-sdk deepseek-harness-runtime-bin",
-        }, indent=2))
+        })
+        out.write_text(json.dumps(result_payload, indent=2, ensure_ascii=False))
         return 2
 
-    result_payload = {"ok": False, "provider": "local-llamacpp", "model": "qwen2.5-0.5b"}
+    t0 = time.time()
     try:
         with DeepSeekHarness(
             provider="local-llamacpp",
-            model="qwen2.5-0.5b",
-            max_tokens=1024,
+            model=model_id,
+            max_tokens=int(meta["max_tokens"]),
             cwd=str(workspace),
             dsh_home=str(dsh_home),
             profile="sdk-minimal",
             patches=(patch,),
-            api_key="local-no-cloud-key",  # placeholder exigido pelo cliente OpenAI-compat do pi-ai
-            base_url="http://127.0.0.1:8080/v1",  # pode ser ignorado se o patch llm-pi-ai mandar
+            api_key="local-no-cloud-key",
+            base_url="http://127.0.0.1:8080/v1",
         ) as harness:
-            result = harness.run(task, session_id="fyah-er-001")
+            result = harness.run(task, session_id=f"fyah-er-{a.model_preset}")
+        elapsed = round(time.time() - t0, 2)
+        final = getattr(result, "final_response", str(result))[:8000]
+        # Also scrape session dir for command traces
+        session_blob = ""
+        for p in sorted(dsh_home.rglob("*"))[:200]:
+            if p.is_file() and p.suffix in {".json", ".jsonl", ".log", ".txt", ".md"} and p.stat().st_size < 2_000_000:
+                try:
+                    session_blob += "\n" + p.read_text(errors="ignore")[:50_000]
+                except Exception:
+                    pass
+        combined = final + "\n" + session_blob
+        score = score_tool_use(combined, workspace)
         result_payload.update({
             "ok": True,
-            "final_response": getattr(result, "final_response", str(result))[:8000],
+            "elapsed_sec": elapsed,
+            "final_response": final,
+            "tool_use": score,
         })
     except Exception as e:  # noqa: BLE001
+        elapsed = round(time.time() - t0, 2)
         result_payload["ok"] = False
+        result_payload["elapsed_sec"] = elapsed
         result_payload["error"] = f"{type(e).__name__}: {e}"
-        # Diagnóstico crítico para a regra do Luiz
+        result_payload["tool_use"] = score_tool_use("", workspace)
         msg = str(e).lower()
         if "missing_credential" in msg or "api key" in msg or "apikey" in msg:
             result_payload["blocker"] = (
-                "DSH/pi-ai exige um valor de credencial (apiKeyEnv) mesmo para servidor local "
-                "OpenAI-compatible; usamos o placeholder LOCAL_LLM_KEY=local-no-cloud-key "
-                "(não é chave de nuvem). Se ainda falhou, o patch llm-pi-ai pode não estar "
-                "disponível no wheel sdk-minimal (só llm-deepseek Anthropic-Messages)."
+                "DSH/pi-ai exige placeholder LOCAL_LLM_KEY=local-no-cloud-key "
+                "(não é chave de nuvem)."
             )
         if "unknown_model" in msg or "duplicate" in msg or "not found" in msg or "cannot find" in msg:
             result_payload["blocker"] = result_payload.get("blocker") or (
-                "sdk-minimal embute só @deepseek-ai/dsh-llm-deepseek-api-key (protocolo Anthropic Messages). "
-                "llama.cpp fala OpenAI Chat Completions — é preciso montar llm-pi-ai via patch; "
-                "se o pacote não vier no runtime wheel, DSH não consegue usar endpoint OpenAI-compat local."
+                "Modelo não registrado no patch llm-pi-ai ou alias llama-server divergente."
             )
 
     out.write_text(json.dumps(result_payload, indent=2, ensure_ascii=False))
-    print(out.read_text()[:2000])
+    print(out.read_text()[:3000])
     return 0 if result_payload.get("ok") else 1
 
 

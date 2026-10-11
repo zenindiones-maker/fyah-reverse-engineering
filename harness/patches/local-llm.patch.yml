@@ -21,5 +21,17 @@
             models:
               - id: qwen2.5-0.5b
                 name: Qwen2.5-0.5B-Instruct (GGUF Q4_K_M)
-                contextWindow: 8192
+                contextWindow: 4096
                 maxTokens: 1024
+              - id: qwen3-4b-instruct
+                name: Qwen3-4B-Instruct-2507 (GGUF Q4_K_M)
+                contextWindow: 4096
+                maxTokens: 2048
+              - id: qwen2.5-7b
+                name: Qwen2.5-7B-Instruct (GGUF Q4_K_M)
+                contextWindow: 4096
+                maxTokens: 2048
+              - id: qwen3-8b
+                name: Qwen3-8B (GGUF Q4_K_M)
+                contextWindow: 4096
+                maxTokens: 1536
