@@ -6,9 +6,9 @@ on:
       tool:
         description: "Ferramenta"
         type: choice
-        options: [audio-profile, compare, media-inspect, cuts-pacing, stems]
+        options: [audio-profile, compare, media-inspect, cuts-pacing, stems, apk-inspect]
         default: media-inspect
-      url: {description: "URL do arquivo (próprio/licenciado/domínio público)", required: true}
+      url: {description: "URL do arquivo (próprio/licenciado/domínio público; APK open source, ex.: F-Droid)", required: true}
       url2: {description: "Segunda URL (só para compare)", required: false, default: ""}
 permissions: {contents: read}
 jobs:
@@ -29,6 +29,7 @@ jobs:
         run: |
           case "$TOOL" in
             media-inspect) ;;
+            apk-inspect) pip install -e ".[apps]" ;;
             cuts-pacing) pip install -e ".[video]" ;;
             stems) pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu && pip install demucs -e ".[audio]" ;;
             *) pip install -e ".[audio]" ;;
@@ -66,6 +67,9 @@ jobs:
             cuts-pacing)
               ext=mp4; python -m video.pacing input.bin --out out/pacing.json > /dev/null
               python -c "import json;d=json.load(open('out/pacing.json'));print(f\"## Cortes e ritmo\n\nCortes: {d['cuts']} · cortes/min: {d['cuts_per_minute']} · plano médio: {d['shot_length_s']['mean']} s\")" >> "$GITHUB_STEP_SUMMARY" ;;
+            apk-inspect)
+              python -m apps.apk input.bin --out out/apk.json --md out/apk.md > /dev/null
+              cat out/apk.md >> "$GITHUB_STEP_SUMMARY" ;;
             stems)
               ffmpeg -loglevel error -i input.bin input.wav
               python -m demucs -n htdemucs -o out --mp3 input.wav

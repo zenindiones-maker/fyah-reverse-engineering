@@ -14,7 +14,13 @@ dependencies = []
 
 [project.optional-dependencies]
 audio = ["librosa>=0.10", "pyloudnorm>=0.1.1", "soundfile>=0.12", "numpy>=1.24"]
-video = ["scenedetect[opencv-headless]>=0.6.4"]
+audio-plus = ["fyah-re[audio]", "essentia", "pedalboard", "audioflux", "matchering", "music21", "PyWavelets", "audiomentations", "mir_eval", "miditok", "mirdata"]
+ml = ["demucs", "basic-pitch[onnx]"]
+video = ["scenedetect[opencv-headless]>=0.6.4", "colour-science", "pymediainfo", "av"]
+apps = ["androguard>=4", "frida-tools"]
+formats = ["kaitaistruct", "construct", "hachoir", "python-magic"]
+binary = ["r2pipe", "capstone", "lief", "pefile", "pyelftools"]
+all = ["fyah-re[audio-plus,ml,video,apps,formats,binary]"]
 dev = ["pytest>=8"]
 
 [project.scripts]
@@ -24,7 +30,7 @@ fyah-re = "fyah_re_cli:main"
 py-modules = ["fyah_re_cli"]
 
 [tool.setuptools.packages.find]
-include = ["audio*", "video*", "formats*"]
+include = ["audio*", "video*", "formats*", "apps*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

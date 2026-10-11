@@ -71,3 +71,12 @@ def test_pacing_on_synthetic_video(tmp_path):
     cuts, dur = detect_cuts(f)
     p = pacing_from_cuts(cuts, dur)
     assert p["cuts"] == 3 and abs(dur - 8) < 0.5
+
+
+def test_apk_markdown():
+    from apps.apk import to_markdown
+    d = {"app_name": "X", "package": "a.b", "version_name": "1", "version_code": "1", "min_sdk": "21", "target_sdk": "34",
+         "size_bytes": 10, "dex_files": ["classes.dex"], "native_abis": [], "permissions": ["android.permission.RECORD_AUDIO"],
+         "activities": [], "services": [], "receivers": [], "providers": []}
+    md = to_markdown(d)
+    assert "a.b" in md and "RECORD_AUDIO" in md

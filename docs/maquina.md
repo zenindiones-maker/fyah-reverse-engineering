@@ -24,3 +24,8 @@ Nenhum workflow usa secrets. O único token é o `GITHUB_TOKEN` automático do p
 - **Nunca commitar binários de terceiros** nem mídia analisada; entradas chegam por URL e saem como artefato temporário.
 - Só material próprio, licenciado ou de domínio público; sem DRM.
 - Opções descartadas por custo ou fim do plano grátis: larger runners, Gitpod, Firebase Studio, créditos AWS. Oracle Always Free só com cartão (fora da regra por padrão).
+
+## Ferramentas instaladas (custo zero)
+- Ação reutilizável `.github/actions/setup-er`: Python, apt (ffmpeg, mediainfo, radare2, apktool, Java), extras do `pyproject.toml` e, opcionalmente, jadx e Ghidra baixados das **releases oficiais** em tempo de execução (com cache; nenhum binário entra no repo).
+- Extras: `[audio]`, `[audio-plus]`, `[ml]`, `[video]`, `[apps]`, `[formats]`, `[binary]`, `[all]`.
+- `er-toolcheck` (manual + domingo): instala tudo e testa cada ferramenta → [ferramentas/STATUS.md](ferramentas/STATUS.md).

@@ -1,0 +1,68 @@
+name: setup-er
+description: "Ambiente do E.R. em CPU (custo zero, sem API/token/cadastro). Instala Python, apt, extras pip e, opcionalmente, jadx/Ghidra de releases oficiais (sem commitar binários)."
+inputs:
+  extras: {description: "Extras do pyproject (ex.: audio,video)", default: "audio"}
+  torch: {description: "Instalar torch/torchaudio CPU", default: "false"}
+  apt: {description: "Pacotes apt extras", default: ""}
+  jadx: {description: "Baixar jadx (release oficial)", default: "false"}
+  ghidra: {description: "Baixar Ghidra (release oficial, headless)", default: "false"}
+  python-version: {default: "3.11"}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with: {python-version: "${{ inputs.python-version }}", cache: pip}
+    - name: apt
+      shell: bash
+      env: {EXTRA_APT: "${{ inputs.apt }}"}
+      run: |
+        sudo apt-get update -qq
+        pkgs="ffmpeg mediainfo libmagic1 default-jre-headless radare2 apktool unzip $EXTRA_APT"
+        for p in $pkgs; do sudo apt-get install -y -qq --no-install-recommends "$p" >/dev/null 2>&1 || echo "::warning::apt: $p indisponível"; done
+    - name: torch CPU
+      if: inputs.torch == 'true'
+      shell: bash
+      run: pip install -q torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+    - name: pip extras
+      shell: bash
+      env: {EXTRAS: "${{ inputs.extras }}"}
+      run: pip install -q -e ".[${EXTRAS}]"
+    - name: versões de jadx/Ghidra
+      id: rel
+      if: inputs.jadx == 'true' || inputs.ghidra == 'true'
+      shell: bash
+      env: {GH_TOKEN: "${{ github.token }}"}
+      run: |
+        echo "jadx=$(gh api repos/skylot/jadx/releases/latest --jq .tag_name)" >> "$GITHUB_OUTPUT"
+        echo "ghidra=$(gh api repos/NationalSecurityAgency/ghidra/releases/latest --jq .tag_name)" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v6
+      if: inputs.jadx == 'true'
+      with: {path: ~/.er-tools/jadx, key: "jadx-${{ steps.rel.outputs.jadx }}"}
+    - name: jadx
+      if: inputs.jadx == 'true'
+      shell: bash
+      env: {GH_TOKEN: "${{ github.token }}", TAG: "${{ steps.rel.outputs.jadx }}"}
+      run: |
+        d=~/.er-tools/jadx
+        if [ ! -x "$d/bin/jadx" ]; then
+          mkdir -p "$d" /tmp/jx && gh release download "$TAG" -R skylot/jadx -p "jadx-${TAG#v}.zip" -D /tmp/jx --clobber
+          unzip -q -o /tmp/jx/*.zip -d "$d"
+        fi
+        chmod +x "$d/bin/"*; echo "$d/bin" >> "$GITHUB_PATH"
+    - uses: actions/cache@v6
+      if: inputs.ghidra == 'true'
+      with: {path: ~/.er-tools/ghidra, key: "ghidra-${{ steps.rel.outputs.ghidra }}"}
+    - name: Ghidra (headless)
+      if: inputs.ghidra == 'true'
+      shell: bash
+      env: {GH_TOKEN: "${{ github.token }}", TAG: "${{ steps.rel.outputs.ghidra }}"}
+      run: |
+        d=~/.er-tools/ghidra
+        if [ ! -d "$d/current" ]; then
+          sudo apt-get install -y -qq openjdk-21-jdk-headless >/dev/null 2>&1 || true
+          mkdir -p "$d" /tmp/gh && gh release download "$TAG" -R NationalSecurityAgency/ghidra -p "ghidra_*_PUBLIC_*.zip" -D /tmp/gh --clobber
+          unzip -q /tmp/gh/*.zip -d "$d" && mv "$d"/ghidra_* "$d/current"
+        fi
+        sudo apt-get install -y -qq openjdk-21-jdk-headless >/dev/null 2>&1 || true
+        echo "GHIDRA_HOME=$d/current" >> "$GITHUB_ENV"
+        echo "$d/current/support" >> "$GITHUB_PATH"

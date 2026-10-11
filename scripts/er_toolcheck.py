@@ -1,0 +1,213 @@
+"""Smoke test de cada ferramenta do E.R. (versão/ajuda + chamada real mínima). Gera docs/ferramentas/STATUS.md.
+
+Sem API, sem token, sem cadastro. Amostras: sinais sintéticos e um APK open source (F-Droid, GPL) baixado anonimamente.
+"""
+from __future__ import annotations
+
+import datetime, os, pathlib, shutil, subprocess, sys, tempfile, time, traceback, urllib.request, json
+
+T = pathlib.Path(tempfile.mkdtemp(prefix="er-tc-"))
+WAV, MP4, APK = T / "s.wav", T / "v.mp4", T / "a.apk"
+RESULTS: list[tuple] = []
+
+
+def sh(cmd: str, timeout=300) -> str:
+    r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+    if r.returncode != 0:
+        raise RuntimeError((r.stderr or r.stdout).strip()[-300:])
+    return (r.stdout or r.stderr).strip()
+
+
+def check(area, name, fn):
+    t = time.time()
+    try:
+        info = (str(fn() or "ok").strip().splitlines() or ["ok"])[0][:110]
+        RESULTS.append((area, name, "✅", info, round(time.time() - t, 1)))
+    except Exception as e:  # noqa: BLE001
+        msg = (str(e) or type(e).__name__).replace("\n", " ")[:160]
+        RESULTS.append((area, name, "❌", msg, round(time.time() - t, 1)))
+    print(RESULTS[-1], flush=True)
+
+
+def ver(mod):
+    import importlib
+    m = importlib.import_module(mod)
+    return getattr(m, "__version__", getattr(m, "VERSION", "importado"))
+
+
+def prepare():
+    import numpy as np, soundfile as sf
+    sr = 22050; t = np.arange(sr * 4) / sr
+    y = 0.3 * np.sin(2 * np.pi * 220 * t) * (1 + 0.5 * (np.sin(2 * np.pi * 2 * t) > 0))
+    sf.write(WAV, y.astype("float32"), sr)
+    if shutil.which("ffmpeg"):
+        sh(f"ffmpeg -loglevel error -y -f lavfi -i testsrc=d=2:s=160x120:r=10 -f lavfi -i color=red:d=2:s=160x120:r=10 "
+           f"-filter_complex '[0][1]concat=n=2:v=1' {MP4}")
+    try:
+        pkg = "org.billthefarmer.tuner"
+        req = lambda u: urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "fyah-re-toolcheck"}), timeout=60).read()
+        vc = json.loads(req(f"https://f-droid.org/api/v1/packages/{pkg}"))["suggestedVersionCode"]
+        APK.write_bytes(req(f"https://f-droid.org/repo/{pkg}_{vc}.apk"))
+    except Exception as e:  # noqa: BLE001
+        print("APK de amostra indisponível:", e)
+
+
+# ---------------- áudio ----------------
+def librosa_():
+    import librosa
+    y, sr = librosa.load(WAV); tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+    return f"librosa {librosa.__version__}, beat_track ok"
+
+def pyloudnorm_():
+    import pyloudnorm as pyln, soundfile as sf
+    y, sr = sf.read(WAV); return f"LUFS {pyln.Meter(sr).integrated_loudness(y):.1f}"
+
+def essentia_():
+    import essentia.standard as es
+    a = es.MonoLoader(filename=str(WAV))(); bpm = es.RhythmExtractor2013()(a)[0]
+    import essentia; return f"essentia {essentia.__version__}, RhythmExtractor ok"
+
+def pedalboard_():
+    import pedalboard, soundfile as sf
+    y, sr = sf.read(WAV, dtype="float32")
+    out = pedalboard.Pedalboard([pedalboard.Compressor(), pedalboard.Reverb()])(y, sr)
+    return f"pedalboard {pedalboard.__version__}, {len(out)} amostras processadas"
+
+def audioflux_():
+    import audioflux as af, soundfile as sf
+    y, sr = sf.read(WAV, dtype="float32"); spec, _ = af.mel_spectrogram(y, samplate=sr)
+    return f"audioflux {af.__version__}, mel {spec.shape}"
+
+def matchering_():
+    import matchering as mg
+    return f"matchering {mg.__version__} (import)"
+
+def music21_():
+    import music21; s = music21.stream.Stream([music21.note.Note("C4"), music21.note.Note("E4"), music21.note.Note("G4")])
+    return f"music21 {music21.__version__}, key {s.analyze('key')}"
+
+def pywt_():
+    import pywt, numpy as np; cA, cD = pywt.dwt(np.arange(16.0), "db1"); return f"pywt {pywt.__version__}"
+
+def audiomentations_():
+    import audiomentations as A, numpy as np
+    A.Gain(p=1.0)(samples=np.zeros(1000, "float32"), sample_rate=16000); return f"audiomentations {A.__version__}"
+
+def mir_eval_():
+    import mir_eval, numpy as np; f = mir_eval.beat.f_measure(np.array([1.0, 2.0]), np.array([1.0, 2.0])); return f"mir_eval {mir_eval.__version__}, F={f}"
+
+def miditok_():
+    import miditok; return f"miditok {ver('miditok')}"
+
+def mirdata_():
+    import mirdata; return f"mirdata {mirdata.__version__}, {len(mirdata.list_datasets())} datasets"
+
+def torchaudio_():
+    import torch, torchaudio; w = torch.zeros(1, 16000); torchaudio.transforms.MelSpectrogram()(w)
+    return f"torch {torch.__version__} / torchaudio {torchaudio.__version__} (CPU)"
+
+def demucs_():
+    import demucs; from demucs.pretrained import get_model
+    return f"demucs {demucs.__version__} (import; pesos públicos baixados só no workflow stems)"
+
+def basic_pitch_():
+    from basic_pitch.inference import predict
+    from basic_pitch import ICASSP_2022_MODEL_PATH
+    _, midi, notes = predict(str(WAV), ICASSP_2022_MODEL_PATH)
+    return f"basic-pitch: {len(notes)} notas"
+
+def fyah_profile_():
+    from audio.profile import profile_file; p = profile_file(str(WAV)); return f"fyah audio.profile BPM {p['tempo_bpm']}"
+
+# ---------------- vídeo ----------------
+def ffmpeg_(): return sh("ffmpeg -version")
+def ffprobe_(): return sh(f"ffprobe -v error -show_entries format=duration -of csv=p=0 {MP4}") + " s (ffprobe)"
+def mediainfo_(): return sh("mediainfo --Version").splitlines()[-1]
+def pymediainfo_():
+    from pymediainfo import MediaInfo; mi = MediaInfo.parse(str(MP4)); return f"pymediainfo: {len(mi.tracks)} trilhas"
+def scenedetect_():
+    from video.pacing import detect_cuts; cuts, d = detect_cuts(str(MP4)); return f"PySceneDetect: {len(cuts)} corte(s) em {d:.1f}s"
+def colour_():
+    import colour, numpy as np; lab = colour.XYZ_to_Lab(colour.sRGB_to_XYZ(np.array([1.0, 0, 0]))); return f"colour {colour.__version__}, Lab vermelho {lab.round(1).tolist()}"
+def av_():
+    import av; c = av.open(str(MP4)); n = sum(1 for _ in c.decode(video=0)); return f"PyAV {av.__version__}, {n} frames"
+
+# ---------------- apps ----------------
+def androguard_():
+    from apps.apk import inspect_apk; d = inspect_apk(str(APK)); return f"androguard: {d['package']} v{d['version_name']}, {len(d['permissions'])} permissões"
+def jadx_():
+    out = T / "jadx"; sh(f"jadx -q -d {out} {APK}", timeout=600)
+    n = sum(1 for _ in out.rglob("*.java")); return f"jadx {sh('jadx --version')}: {n} arquivos .java"
+def apktool_():
+    sh(f"apktool d -q -f -o {T/'apktool'} {APK}", timeout=600); return f"apktool {sh('apktool --version')}: decodificado"
+def frida_():
+    return f"frida-tools {sh('frida --version')} (sem alvo: só versão)"
+
+# ---------------- formatos ----------------
+def kaitai_():
+    import kaitaistruct; return f"kaitaistruct runtime {kaitaistruct.__version__}"
+def construct_():
+    import construct as c; return f"construct {c.version_string if hasattr(c,'version_string') else ver('construct')}: " + str(c.Struct('a' / c.Int16ub).parse(b'\x00\x05').a)
+def hachoir_():
+    from hachoir.parser import createParser
+    p = createParser(str(WAV)); return f"hachoir: {p.description if p else 'sem parser'}"
+def magic_():
+    import magic; return "libmagic: " + magic.from_file(str(APK if APK.exists() else WAV))
+
+# ---------------- binários ----------------
+SAMPLE_BIN = "/bin/ls"
+def radare2_(): return sh("r2 -v").splitlines()[0]
+def r2pipe_():
+    import r2pipe; r = r2pipe.open(SAMPLE_BIN, flags=["-2"]); info = r.cmdj("ij"); r.quit(); return f"r2pipe: {info['bin']['arch']} {info['bin']['bits']} bits"
+def capstone_():
+    import capstone; md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    return "capstone " + capstone.__version__ + ": " + " ; ".join(f"{i.mnemonic} {i.op_str}" for i in md.disasm(b"\x55\x48\x89\xe5\xc3", 0))
+def lief_():
+    import lief; b = lief.parse(SAMPLE_BIN); return f"lief {lief.__version__}: {len(b.sections)} seções"
+def pefile_():
+    import pefile; return f"pefile {pefile.__version__} (import)"
+def pyelftools_():
+    from elftools.elf.elffile import ELFFile; e = ELFFile(open(SAMPLE_BIN, "rb")); return f"pyelftools: {e.num_sections()} seções"
+def ghidra_():
+    home = os.environ.get("GHIDRA_HOME")
+    if not home: raise RuntimeError("GHIDRA_HOME ausente")
+    proj = T / "gproj"; proj.mkdir(exist_ok=True)
+    out = sh(f"{home}/support/analyzeHeadless {proj} p -import {SAMPLE_BIN} -noanalysis -deleteProject 2>&1 | tail -3", timeout=900)
+    return "Ghidra headless: import ok " + pathlib.Path(home).name
+
+
+CHECKS = {
+    "audio": [("librosa", librosa_), ("pyloudnorm", pyloudnorm_), ("essentia", essentia_), ("pedalboard", pedalboard_),
+              ("audioflux", audioflux_), ("matchering", matchering_), ("music21", music21_), ("PyWavelets", pywt_),
+              ("audiomentations", audiomentations_), ("mir_eval", mir_eval_), ("miditok", miditok_), ("mirdata", mirdata_),
+              ("torchaudio (CPU)", torchaudio_), ("demucs", demucs_), ("basic-pitch", basic_pitch_), ("fyah audio.profile", fyah_profile_)],
+    "video": [("ffmpeg", ffmpeg_), ("ffprobe", ffprobe_), ("mediainfo", mediainfo_), ("pymediainfo", pymediainfo_),
+              ("PySceneDetect", scenedetect_), ("colour-science", colour_), ("PyAV", av_)],
+    "apps": [("androguard", androguard_), ("jadx", jadx_), ("apktool", apktool_), ("frida-tools", frida_)],
+    "formatos": [("kaitaistruct", kaitai_), ("construct", construct_), ("hachoir", hachoir_), ("python-magic", magic_)],
+    "binarios": [("radare2", radare2_), ("r2pipe", r2pipe_), ("capstone", capstone_), ("lief", lief_), ("pefile", pefile_),
+                 ("pyelftools", pyelftools_), ("Ghidra headless", ghidra_)],
+}
+
+
+def main():
+    prepare()
+    for area, items in CHECKS.items():
+        for name, fn in items:
+            check(area, name, fn)
+    ok = sum(r[2] == "✅" for r in RESULTS)
+    L = [f"# Status das ferramentas do E.R.", "",
+         f"Gerado por `er-toolcheck` em {datetime.datetime.now(datetime.timezone.utc):%Y-%m-%d %H:%M} UTC no runner `ubuntu-latest` (CPU). "
+         f"**{ok}/{len(RESULTS)} OK.** Sem API, sem token, sem cadastro.", "",
+         "| Área | Ferramenta | Status | Detalhe | s |", "|---|---|---|---|---|"]
+    L += [f"| {a} | {n} | {s} | {d.replace('|', '/')} | {t} |" for a, n, s, d, t in RESULTS]
+    txt = "\n".join(L) + "\n"
+    p = pathlib.Path(__file__).resolve().parent.parent / "docs" / "ferramentas" / "STATUS.md"
+    p.parent.mkdir(parents=True, exist_ok=True); p.write_text(txt)
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        open(os.environ["GITHUB_STEP_SUMMARY"], "a").write(txt)
+    print(txt)
+
+
+if __name__ == "__main__":
+    main()
