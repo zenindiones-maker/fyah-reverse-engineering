@@ -160,7 +160,15 @@ print(f'asteroid {asteroid.__version__}: ConvTasNet forward {tuple(out.shape)} (
 def spleeter_():
     return iso("spleeter", """
 import os, subprocess, sys, pathlib
+import tarfile, urllib.request
 out = pathlib.Path(os.environ['T']) / 'spl'
+mp = pathlib.Path(os.environ['T']) / 'pretrained_models'; md = mp / '2stems'
+if not (md / '.probe').exists():  # pesos públicos da release oficial v1.4.0 (download anônimo)
+    md.mkdir(parents=True, exist_ok=True)
+    tgz = mp / '2stems.tar.gz'
+    urllib.request.urlretrieve('https://github.com/deezer/spleeter/releases/download/v1.4.0/2stems.tar.gz', tgz)
+    tarfile.open(tgz).extractall(md); (md / '.probe').write_text('OK')
+os.environ['MODEL_PATH'] = str(mp)
 r = subprocess.run([str(pathlib.Path(sys.executable).parent / 'spleeter'), 'separate', '-p', 'spleeter:2stems', '-o', str(out), os.environ['WAV']], capture_output=True, text=True)
 if r.returncode: raise SystemExit('spleeter: ' + (r.stderr or r.stdout).strip().splitlines()[-1][-180:])
 print('spleeter 2stems: ' + ', '.join(sorted(p.name for p in out.rglob('*.wav'))))""", timeout=1200)
