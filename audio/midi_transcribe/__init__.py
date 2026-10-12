@@ -354,6 +354,52 @@ def evaluate_notes(detected: list[dict], reference: list[dict], partials: list[d
     }
 
 
+
+def harmonic_ambiguities(notes: list[dict]) -> list[dict]:
+    """Return aligned note pairs that may be a fundamental plus its harmonic partial.
+
+    This deliberately does not delete notes. A real octave/chord can be
+    acoustically indistinguishable from a harmonic partial, so callers must
+    fail closed or explicitly opt into the unfiltered Basic Pitch output.
+    """
+    candidates = []
+    ordered = sorted(notes, key=lambda note: (int(note["pitch"]), float(note["start_s"])))
+    for index, lower in enumerate(ordered):
+        lower_pitch = int(lower["pitch"])
+        lower_start = float(lower["start_s"])
+        lower_end = float(lower["end_s"])
+        lower_duration = max(0.0, lower_end - lower_start)
+        if lower_duration <= 0:
+            continue
+        for upper in ordered[index + 1:]:
+            upper_pitch = int(upper["pitch"])
+            semitones = upper_pitch - lower_pitch
+            if semitones < 12:
+                continue
+            harmonic_number = int(round(2 ** (semitones / 12.0)))
+            if not 2 <= harmonic_number <= 8:
+                continue
+            expected_semitones = 12.0 * math.log2(harmonic_number)
+            if abs(semitones - expected_semitones) > PITCH_TOLERANCE_SEMITONES:
+                continue
+            upper_start = float(upper["start_s"])
+            upper_end = float(upper["end_s"])
+            upper_duration = max(0.0, upper_end - upper_start)
+            if upper_duration <= 0 or abs(upper_start - lower_start) > ONSET_TOLERANCE_S:
+                continue
+            overlap = max(0.0, min(lower_end, upper_end) - max(lower_start, upper_start))
+            if overlap < 0.60 * min(lower_duration, upper_duration):
+                continue
+            candidate = {
+                "lower_pitch": lower_pitch,
+                "upper_pitch": upper_pitch,
+                "harmonic_number": harmonic_number,
+            }
+            if candidate not in candidates:
+                candidates.append(candidate)
+    return candidates
+
+
 def _transcribe(source: Path, out: Path) -> dict:
     from importlib.metadata import version
     import basic_pitch
@@ -367,12 +413,6 @@ def _transcribe(source: Path, out: Path) -> dict:
         raise MidiError(f"basic-pitch não transcreveu: {type(exc).__name__}: {exc}") from exc
     if not events:
         raise MidiError("transcrição sem notas")
-    midi_path = out.with_suffix(".mid")
-    midi.write(str(midi_path))
-    parsed = parse_midi_notes(midi_path)
-    if not parsed:
-        midi_path.unlink(missing_ok=True)
-        raise MidiError("MIDI escrito sem notas legíveis")
     notes = [
         {
             "start_s": round(float(event[0]), 6),
@@ -382,6 +422,25 @@ def _transcribe(source: Path, out: Path) -> dict:
         }
         for event in events
     ]
+    ambiguities = harmonic_ambiguities(notes)
+    allow_ambiguity = os.environ.get("FYAH_MIDI_ALLOW_HARMONIC_AMBIGUITY") == "1"
+    if ambiguities and not allow_ambiguity:
+        details = ", ".join(
+            f"MIDI {item['upper_pitch']} pode ser parcial h{item['harmonic_number']} de MIDI {item['lower_pitch']}"
+            for item in ambiguities
+        )
+        raise MidiError(
+            "transcrição bloqueada: ambiguidade harmônica não resolvida ("
+            + details
+            + "). Nenhum MIDI foi publicado. Revise a fonte ou defina "
+            + "FYAH_MIDI_ALLOW_HARMONIC_AMBIGUITY=1 para aceitar explicitamente a saída bruta."
+        )
+    midi_path = out.with_suffix(".mid")
+    midi.write(str(midi_path))
+    parsed = parse_midi_notes(midi_path)
+    if not parsed:
+        midi_path.unlink(missing_ok=True)
+        raise MidiError("MIDI escrito sem notas legíveis")
     return {
         "schema": "fyah-re/midi-transcribe@1",
         "ok": True,
@@ -393,6 +452,8 @@ def _transcribe(source: Path, out: Path) -> dict:
         "midi": midi_path.name,
         "note_count": len(parsed),
         "notes": notes,
+        "harmonic_ambiguities": ambiguities,
+        "harmonic_ambiguity_override": allow_ambiguity,
         "limitations": LIMITATIONS,
     }
 
