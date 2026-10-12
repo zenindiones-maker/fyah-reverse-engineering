@@ -44,6 +44,9 @@ def main():
     Path(a.receipt).parent.mkdir(parents=True, exist_ok=True)
     Path(a.receipt).write_text(json.dumps(receipt, indent=2, ensure_ascii=False))
     print(json.dumps(receipt, ensure_ascii=False))
+    # A deliberate model denial is a successful policy decision, not a tool failure.
+    if not approved:
+        return 0 if h.get("ok") is True and h.get("model_preset") == "qwen3-30b-a3b" and not proposed else 1
     return 0 if receipt["executed"] else 1
 
 if __name__ == "__main__":
