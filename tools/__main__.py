@@ -214,6 +214,10 @@ def doctor_report() -> dict:
         missing_commands = [command for command in requirements["commands"] if shutil.which(command) is None]
         if name == "binary-inspect" and shutil.which("rz-bin") is None and shutil.which("r2") is None:
             missing_commands.append("rz-bin|r2")
+        if name == "midi-transcribe":
+            venv_python = pathlib.Path(os.environ.get("FYAH_RE_VENVS", "")) / "basicpitch" / "bin" / "python"
+            if not _module_available("basic_pitch") and not venv_python.is_file():
+                missing_modules.append("basic_pitch")
         optional = DOCTOR_OPTIONAL.get(name, {"modules": [], "commands": []})
         missing_optional_modules = [module for module in optional["modules"] if not _module_available(module)]
         missing_optional_commands = [command for command in optional["commands"] if shutil.which(command) is None]
@@ -226,6 +230,11 @@ def doctor_report() -> dict:
                 reason = (
                     "rizin/radare2 ausente. O pacote apt rizin não instala no runner gratuito; "
                     "o caminho reproduzível é scripts/er_releases.sh com o release oficial rizinorg/rizin"
+                )
+            elif "basic_pitch" in missing_modules:
+                reason = (
+                    "basic-pitch 0.4.0 ausente no interpretador principal. "
+                    "Use a venv isolada de scripts/er_venvs.sh em FYAH_RE_VENVS; o modelo é o ONNX empacotado, sem API"
                 )
             else:
                 reason = "instale as dependências ausentes listadas neste relatório"
@@ -280,6 +289,9 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
         markdown = out.with_suffix(".md")
         if markdown.is_file() and markdown != out:
             outputs.append(artifact_metadata(markdown, root=out.parent))
+        midi = out.with_suffix(".mid")
+        if midi.is_file() and midi != out:
+            outputs.append(artifact_metadata(midi, root=out.parent))
         receipt = build_receipt(
             run_id=run_id, tool_name=name, tool_version=tool_version, status="success",
             exit_code=0, started_at=started, ended_at=ended,
