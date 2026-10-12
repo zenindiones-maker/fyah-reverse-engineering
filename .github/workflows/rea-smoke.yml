@@ -7,6 +7,7 @@ on:
       - docs/integracoes/rea.md
       - scripts/rea_mcp_protocol_smoke.mjs
       - harness/rea_mcp_bridge.mjs
+      - harness/rea_dsh_adapter.py
 permissions:
   contents: read
 jobs:
@@ -53,6 +54,16 @@ jobs:
           export REA_MCP_FIXTURE="$PWD/fixtures/rea_mcp_fixture"
           node harness/rea_mcp_bridge.mjs /tmp/rea-smoke/node_modules/.bin/rea inspect_artifact '{}' | tee rea-authorized-call.json
           node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("rea-authorized-call.json","utf8"));if(d.status!=="PASS"||d.tool!=="inspect_artifact")process.exit(1)'
+      - name: Validate DSH adapter denies unapproved model decisions
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/rea-policy
+          printf '%s\n' '{"ok":true,"model_preset":"qwen25-7b","final_response":"inspect_artifact"}' > /tmp/rea-policy/denied.json
+          rc=0
+          python3 harness/rea_dsh_adapter.py --harness-result /tmp/rea-policy/denied.json --rea-cli /tmp/rea-smoke/node_modules/.bin/rea --fixture "$PWD/fixtures/rea_mcp_fixture" --receipt /tmp/rea-policy/receipt.json || rc=$?
+          test "$rc" -eq 1
+          python3 -c 'import json; d=json.load(open("/tmp/rea-policy/receipt.json")); assert d["policy_approved"] is False and d["executed"] is False'
+          echo 'REA_DSH_POLICY_DENY=PASS'
       - name: Summarize
         if: always()
         run: |
