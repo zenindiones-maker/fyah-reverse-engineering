@@ -1,6 +1,7 @@
 """Real CLI E2E: exercise ffprobe, HTTP download, JSON output, and receipts."""
 import hashlib
 import json
+import math
 import shutil
 import subprocess
 import sys
@@ -201,3 +202,40 @@ def test_media_inspect_cli_records_interrupted_download_and_no_artifact(tmp_path
 def test_media_inspect_cli_rejects_oversized_content_length_before_download(tmp_path):
     receipt = _run_failure_url_case(tmp_path, "/oversized.wav")
     assert receipt["error_category"] == "ValueError"
+
+
+def test_unified_cli_runs_real_audio_profile_and_receipts_output(tmp_path):
+    """Prove the shared dispatcher reaches the real audio analyzer, not just media-inspect."""
+    sample_rate = 22050
+    frames = bytearray()
+    for i in range(sample_rate * 4):
+        value = int(10000 * math.sin(2 * math.pi * 440 * i / sample_rate))
+        frames.extend(value.to_bytes(2, "little", signed=True))
+    source = tmp_path / "tone.wav"
+    with wave.open(str(source), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(sample_rate)
+        wav.writeframes(frames)
+
+    output = tmp_path / "audio-profile.json"
+    result = subprocess.run(
+        [sys.executable, "-m", "tools", "run", "audio-profile",
+         "--input", str(source), "--out", str(output)],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert result.returncode == 0, f"audio-profile CLI failed: {result.stdout}\\n{result.stderr}"
+    payload = json.loads(output.read_text())
+    assert payload["schema"] == "fyah-re/audio-profile@1"
+    assert payload["duration_s"] == 4.0
+    assert payload["sample_rate"] == sample_rate
+    assert payload["spectrum"]["centroid_hz"] > 0
+    receipt = json.loads((tmp_path / "audio-profile.json.receipt.json").read_text())
+    assert receipt["schema_version"] == "fyah-re/execution-receipt@1"
+    assert receipt["status"] == "success"
+    assert receipt["tool_name"] == "audio-profile"
+    assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
