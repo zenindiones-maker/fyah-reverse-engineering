@@ -192,8 +192,10 @@ jobs:
           }, indent=2))
           PY
           # Fallback (does NOT count toward tool_use score): ensure JSON still lands
-          python -m tools run media-inspect --input "${{ inputs.url }}" --out out/media-inspect.json || true
-          python -m tools run audio-full --input "${{ inputs.url }}" --out out/audio-full.json || true
+          if [ "${{ inputs.rea_mcp }}" != "true" ]; then
+            python -m tools run media-inspect --input "${{ inputs.url }}" --out out/media-inspect.json || true
+            python -m tools run audio-full --input "${{ inputs.url }}" --out out/audio-full.json || true
+          fi
           {
             echo "## er-harness"
             echo
