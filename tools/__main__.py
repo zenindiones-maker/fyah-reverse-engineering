@@ -1,7 +1,10 @@
 """CLI uniforme: list | run | smoke."""
 from __future__ import annotations
 
-import argparse, json, pathlib, subprocess, sys, tempfile, urllib.request
+import argparse, json, os, pathlib, subprocess, sys, tempfile, urllib.request, uuid
+from datetime import datetime, timezone
+
+from tools.contracts import artifact_metadata, build_receipt
 
 from tools.catalog import CATALOG, by_name, list_for_prompt
 
@@ -17,7 +20,7 @@ def download(url: str, dest: pathlib.Path) -> pathlib.Path:
     return p
 
 
-def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
+def _run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
     if name not in by_name:
         raise SystemExit(f"ferramenta desconhecida: {name}")
     t = by_name[name]
@@ -82,6 +85,76 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
     data.setdefault("ok", True)
     return data
 
+
+
+def _receipt_input(value: str) -> dict:
+    """Describe an input without persisting credentials or absolute local paths."""
+    if value.startswith(("http://", "https://")):
+        return {"kind": "url", "source": value}
+    path = pathlib.Path(value)
+    if path.is_file():
+        try:
+            metadata = artifact_metadata(path, root=path.resolve().parent)
+            return {"kind": "file", **metadata}
+        except (OSError, ValueError):
+            return {"kind": "file", "exists": True, "hash_status": "unavailable"}
+    return {"kind": "path", "exists": path.exists()}
+
+
+def _write_receipt(receipt_path: pathlib.Path, receipt) -> None:
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    receipt_path.write_text(json.dumps(receipt.to_dict(), indent=2, ensure_ascii=False) + "\n")
+
+
+def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
+    """Execute one catalog tool and persist a versioned receipt for success or failure."""
+    started = datetime.now(timezone.utc)
+    run_id = uuid.uuid4().hex
+    tool_version = str(by_name.get(name, {}).get("version", "unknown"))
+    receipt_path = out.with_name(out.name + ".receipt.json")
+    try:
+        data = _run_tool(name, inputs, out)
+        ended = datetime.now(timezone.utc)
+        outputs = [artifact_metadata(out, root=out.parent)] if out.is_file() else []
+        receipt = build_receipt(
+            run_id=run_id, tool_name=name, tool_version=tool_version, status="success",
+            exit_code=0, started_at=started, ended_at=ended,
+            input_metadata=[_receipt_input(value) for value in inputs],
+            output_artifacts=outputs,
+            provenance={
+                "executor": "fyah-re",
+                "commit": os.environ.get("GITHUB_SHA") or os.environ.get("FYAH_RE_COMMIT"),
+                "python": sys.version.split()[0],
+            },
+        )
+        _write_receipt(receipt_path, receipt)
+        return data
+    except SystemExit as exc:
+        ended = datetime.now(timezone.utc)
+        code = exc.code if type(exc.code) is int and exc.code != 0 else 2
+        receipt = build_receipt(
+            run_id=run_id, tool_name=name, tool_version=tool_version, status="blocked",
+            exit_code=code, started_at=started, ended_at=ended,
+            input_metadata=[_receipt_input(value) for value in inputs],
+            output_artifacts=[],
+            provenance={"executor": "fyah-re", "python": sys.version.split()[0]},
+            error_category="input_or_policy_rejection",
+        )
+        _write_receipt(receipt_path, receipt)
+        raise
+    except Exception as exc:
+        ended = datetime.now(timezone.utc)
+        code = exc.returncode if isinstance(exc, subprocess.CalledProcessError) and exc.returncode else 1
+        receipt = build_receipt(
+            run_id=run_id, tool_name=name, tool_version=tool_version, status="failed",
+            exit_code=code, started_at=started, ended_at=ended,
+            input_metadata=[_receipt_input(value) for value in inputs],
+            output_artifacts=[],
+            provenance={"executor": "fyah-re", "python": sys.version.split()[0]},
+            error_category=type(exc).__name__,
+        )
+        _write_receipt(receipt_path, receipt)
+        raise
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="fyah-re")
