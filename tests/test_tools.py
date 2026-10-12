@@ -80,3 +80,25 @@ def test_apk_markdown():
          "activities": [], "services": [], "receivers": [], "providers": []}
     md = to_markdown(d)
     assert "a.b" in md and "RECORD_AUDIO" in md
+
+
+def test_silence_does_not_invent_a_key_or_tempo():
+    from audio.profile import profile_signal
+    p = profile_signal(np.zeros(SR * 2, dtype=np.float32), SR)
+    assert p["tempo_bpm"] == 0.0
+    assert p["beats"] == 0
+    assert p["key"]["estimable"] is False
+    assert p["key"]["tonic"] is None
+    assert p["loudness"]["integrated_lufs"] is None
+    assert any("silêncio" in item for item in p["limitations"])
+
+
+def test_short_audio_does_not_invent_tempo():
+    from audio.profile import profile_signal
+    n = int(SR * 0.2)
+    y = (0.2 * np.sin(2 * np.pi * 440 * np.arange(n) / SR)).astype(np.float32)
+    p = profile_signal(y, SR)
+    assert p["duration_s"] == pytest.approx(0.2, abs=0.02)
+    assert p["tempo_bpm"] == 0.0
+    assert p["key"]["estimable"] is False
+    assert any("curto" in item for item in p["limitations"])

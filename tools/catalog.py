@@ -19,9 +19,11 @@ CATALOG: list[dict] = [
     {"name": "cuts-pacing", "area": "video", "version": "1", "module": "video.pacing", "argv": [], "needs": ["video"], "desc": "cortes e ritmo"},
     {"name": "apk-inspect", "area": "apps", "version": "1", "module": "apps.apk", "argv": [], "needs": ["apps"], "desc": "manifesto APK"},
     {"name": "stems", "area": "audio", "version": "1", "kind": "stems", "needs": ["ml"], "desc": "Demucs htdemucs CPU"},
+    {"name": "fingerprint", "area": "audio", "version": "1", "module": "audio.fingerprint", "argv": [], "needs": [], "desc": "Chromaprint/fpcalc local, sem lookup"},
+    {"name": "midi-transcribe", "area": "audio", "version": "1", "module": "audio.midi_transcribe", "argv": [], "needs": [], "desc": "basic-pitch ONNX local, áudio para MIDI"},
     # util batch
     {"name": "silero-vad", "area": "audio", "version": "1", "kind": "silero_vad", "needs": ["ml"], "desc": "VAD Silero (torch hub)"},
-    {"name": "supervision-detect", "area": "video", "version": "1", "kind": "supervision", "needs": ["video"], "desc": "detecção com supervision"},
+    {"name": "supervision-detect", "area": "video", "version": "1", "kind": "supervision", "needs": ["video"], "desc": "bloqueado até integrar detector real e pesos de modelo"},
 ]
 
 by_name = {t["name"]: t for t in CATALOG}

@@ -21,7 +21,13 @@ runs:
       run: |
         sudo apt-get update -qq
         pkgs="ffmpeg mediainfo libmagic1 default-jre-headless radare2 rizin apktool unzip libchromaprint-tools libjxl-tools $EXTRA_APT"
-        for p in $pkgs; do sudo apt-get install -y -qq --no-install-recommends "$p" >/dev/null 2>&1 || echo "::warning::apt: $p indisponível"; done
+        for p in $pkgs; do
+          if sudo apt-get install -y -qq --no-install-recommends "$p" >/tmp/apt-$p.log 2>&1; then
+            continue
+          fi
+          reason=$(tail -n 1 /tmp/apt-$p.log | tr '\n' ' ' | cut -c1-180)
+          echo "::warning::apt: $p indisponível (${reason:-sem detalhe})"
+        done
     - name: torch CPU
       if: inputs.torch == 'true'
       shell: bash

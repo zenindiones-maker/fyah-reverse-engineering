@@ -23,6 +23,6 @@ jobs:
       - env: {audio_url: "${{ inputs.audio_url }}"}
         run: curl -L --fail -o input.wav "$audio_url"
       - run: python -m demucs -n ${{ inputs.model }} -o out --mp3 input.wav
-      - run: for s in out/*/input/*.mp3; do python -m audio.profile "$s" --out "${s%.mp3}.json" || true; done
+      - run: for s in out/*/input/*.mp3; do python -m audio.profile "$s" --out "${s%.mp3}.json"; done
       - uses: actions/upload-artifact@v7
         with: {name: stems, path: out/, retention-days: 7}
