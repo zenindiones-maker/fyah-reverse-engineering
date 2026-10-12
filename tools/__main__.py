@@ -27,6 +27,7 @@ DOCTOR_REQUIREMENTS = {
     "cuts-pacing": {"modules": ["scenedetect"], "commands": []},
     "apk-inspect": {"modules": ["androguard"], "commands": []},
     "stems": {"modules": ["demucs"], "commands": ["ffmpeg"]},
+    "fingerprint": {"modules": [], "commands": ["fpcalc"]},
     "silero-vad": {"modules": ["torch", "torchaudio"], "commands": []},
     "supervision-detect": {"modules": ["supervision"], "commands": []},
 }

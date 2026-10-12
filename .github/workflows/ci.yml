@@ -25,7 +25,8 @@ jobs:
       - name: Instalar dependência de sistema do E2E
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends ffmpeg
+          sudo apt-get install -y -qq --no-install-recommends ffmpeg libchromaprint-tools
           command -v ffprobe
+          command -v fpcalc
       - run: pip install -e ".[audio,video,dev]"
       - run: pytest -q

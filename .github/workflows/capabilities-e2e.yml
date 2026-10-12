@@ -28,7 +28,7 @@ jobs:
             echo
             echo "- commit: ${GITHUB_SHA}"
             echo "- pytest do núcleo: ver o passo anterior"
-            echo "- stems e rizin: jobs separados desta mesma execução"
+            echo "- fingerprint, stems e rizin: jobs separados desta mesma execução"
           } >> "$GITHUB_STEP_SUMMARY"
   stems:
     runs-on: ubuntu-latest
@@ -106,3 +106,78 @@ jobs:
           PY
       - uses: actions/upload-artifact@v7
         with: {name: rizin-e2e, path: out/, retention-days: 7}
+  fingerprint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: {python-version: "3.11"}
+      - name: Chromaprint gratuito
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends libchromaprint-tools
+      - run: pip install -e . --no-deps
+      - name: fingerprint de um WAV gerado e caso negativo
+        run: |
+          python - << 'PY'
+          import hashlib, json, math, pathlib, subprocess, sys, wave
+          out = pathlib.Path("out")
+          out.mkdir()
+          source = pathlib.Path("tone.wav")
+          rate = 22050
+          frames = bytearray()
+          for i in range(rate * 5):
+              value = int(8000 * math.sin(2 * math.pi * 440 * i / rate))
+              frames.extend(value.to_bytes(2, "little", signed=True))
+          with wave.open(str(source), "wb") as wav:
+              wav.setnchannels(1)
+              wav.setsampwidth(2)
+              wav.setframerate(rate)
+              wav.writeframes(frames)
+          result = subprocess.run(
+              [sys.executable, "-m", "tools", "run", "fingerprint", "--input", str(source), "--out", "out/fingerprint.json"],
+              capture_output=True, text=True,
+          )
+          print(result.stdout)
+          print(result.stderr, file=sys.stderr)
+          if result.returncode != 0:
+              raise SystemExit(f"fingerprint falhou: {result.returncode}")
+          payload = json.loads(pathlib.Path("out/fingerprint.json").read_text())
+          assert payload["schema"] == "fyah-re/fingerprint@1"
+          assert payload["ok"] is True and payload["lookup"] is False
+          assert payload["fingerprint"].strip()
+          assert payload["duration_s"] == 5.0
+          assert payload["algorithm"] == "chromaprint"
+          receipt = json.loads(pathlib.Path("out/fingerprint.json.receipt.json").read_text())
+          assert receipt["status"] == "success" and receipt["tool_name"] == "fingerprint"
+          assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(pathlib.Path("out/fingerprint.json").read_bytes()).hexdigest()
+          silence = pathlib.Path("silence.wav")
+          silent = b"\x00\x00" * rate * 2
+          with wave.open(str(silence), "wb") as wav:
+              wav.setnchannels(1)
+              wav.setsampwidth(2)
+              wav.setframerate(rate)
+              wav.writeframes(silent)
+          negative = subprocess.run(
+              [sys.executable, "-m", "tools", "run", "fingerprint", "--input", str(silence), "--out", "out/silence.json"],
+              capture_output=True, text=True,
+          )
+          assert negative.returncode != 0, negative.stdout
+          assert not pathlib.Path("out/silence.json").exists()
+          negative_receipt = json.loads(pathlib.Path("out/silence.json.receipt.json").read_text())
+          assert negative_receipt["status"] != "success"
+          assert negative_receipt["output_artifacts"] == []
+          summary = {
+              "sha": __import__("os").environ.get("GITHUB_SHA"),
+              "fpcalc_version": payload["fpcalc_version"],
+              "duration_s": payload["duration_s"],
+              "fingerprint_length": len(payload["fingerprint"]),
+              "receipt_sha256": receipt["output_artifacts"][0]["sha256"],
+              "negative_status": negative_receipt["status"],
+              "lookup": False,
+          }
+          pathlib.Path("out/fingerprint-report.json").write_text(json.dumps(summary, indent=2) + "\n")
+          print("fingerprint e2e ok", summary)
+          PY
+      - uses: actions/upload-artifact@v7
+        with: {name: fingerprint-e2e, path: out/, retention-days: 7}
+
