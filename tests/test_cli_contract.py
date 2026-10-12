@@ -71,3 +71,19 @@ def test_supervision_tool_never_reports_fabricated_detections(tmp_path):
     assert receipt["error_category"] == "input_or_policy_rejection"
     assert receipt["output_artifacts"] == []
     assert "modelo de inferência" in result.stderr
+
+
+def test_doctor_reports_real_readiness_for_every_catalog_tool(capsys):
+    assert fyah_re_cli.main(["doctor"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    from tools.catalog import CATALOG
+
+    assert report["schema"] == "fyah-re/doctor@1"
+    assert report["tools_checked"] == len(CATALOG)
+    assert {item["name"] for item in report["tools"]} == {item["name"] for item in CATALOG}
+    assert all(item["status"] in {
+        "dependencies_ready", "blocked_missing_dependency", "blocked_unconfigured_model"
+    } for item in report["tools"])
+    supervision = next(item for item in report["tools"] if item["name"] == "supervision-detect")
+    assert supervision["status"] == "blocked_unconfigured_model"
+    assert "pesos reais" in supervision["reason"]

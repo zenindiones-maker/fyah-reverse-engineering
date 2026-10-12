@@ -10,6 +10,30 @@ from tools.catalog import CATALOG, by_name, list_for_prompt
 
 MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024
 
+# Required dependencies are explicit so the catalog never implies that an
+# optional tool is usable merely because its CLI entry exists.
+DOCTOR_REQUIREMENTS = {
+    "audio-full": {"modules": ["librosa", "numpy", "pyloudnorm", "soundfile", "demucs", "beat_this"], "commands": ["ffmpeg"]},
+    "video-full": {"modules": ["scenedetect", "cv2", "av", "colour"], "commands": ["ffprobe"]},
+    "apk-full": {"modules": ["androguard"], "commands": []},
+    "binary-inspect": {"modules": ["magic"], "commands": []},
+    "audio-profile": {"modules": ["librosa", "numpy", "pyloudnorm", "soundfile"], "commands": []},
+    "compare": {"modules": ["librosa", "numpy", "pyloudnorm", "soundfile"], "commands": []},
+    "media-inspect": {"modules": [], "commands": ["ffprobe"]},
+    "cuts-pacing": {"modules": ["scenedetect"], "commands": []},
+    "apk-inspect": {"modules": ["androguard"], "commands": []},
+    "stems": {"modules": ["demucs"], "commands": ["ffmpeg"]},
+    "silero-vad": {"modules": ["torch", "torchaudio"], "commands": []},
+    "supervision-detect": {"modules": ["supervision"], "commands": []},
+}
+DOCTOR_OPTIONAL = {
+    "media-inspect": {"modules": [], "commands": ["mediainfo"]},
+    "video-full": {"modules": [], "commands": ["mediainfo"]},
+    "apk-full": {"modules": [], "commands": ["jadx", "apktool", "d2j-dex2jar.sh", "quark"]},
+    "binary-inspect": {"modules": ["r2pipe"], "commands": ["rz-bin", "r2", "capa", "floss"]},
+    "audio-full": {"modules": ["basic_pitch"], "commands": []},
+}
+
 
 class DownloadIntegrityError(RuntimeError):
     """Raised when an HTTP response ends before its declared body length."""
@@ -140,6 +164,48 @@ def _run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
         return _run_tool_with_tmp(name, inputs, out, pathlib.Path(temporary))
 
 
+
+def _module_available(name: str) -> bool:
+    import importlib.util
+    try:
+        return importlib.util.find_spec(name) is not None
+    except (ImportError, ValueError, ModuleNotFoundError):
+        return False
+
+
+def doctor_report() -> dict:
+    """Report dependency readiness for every catalog tool without running workloads."""
+    import shutil
+    reports = []
+    for tool in CATALOG:
+        name = tool["name"]
+        requirements = DOCTOR_REQUIREMENTS.get(name, {"modules": [], "commands": []})
+        missing_modules = [module for module in requirements["modules"] if not _module_available(module)]
+        missing_commands = [command for command in requirements["commands"] if shutil.which(command) is None]
+        optional = DOCTOR_OPTIONAL.get(name, {"modules": [], "commands": []})
+        missing_optional_modules = [module for module in optional["modules"] if not _module_available(module)]
+        missing_optional_commands = [command for command in optional["commands"] if shutil.which(command) is None]
+        if name == "supervision-detect":
+            status = "blocked_unconfigured_model"
+            reason = "supervision não fornece inferência; detector e pesos reais não estão configurados"
+        elif missing_modules or missing_commands:
+            status = "blocked_missing_dependency"
+            reason = "instale as dependências ausentes listadas neste relatório"
+        else:
+            status = "dependencies_ready"
+            reason = "dependências obrigatórias encontradas; execução ainda pode falhar por entrada/modelo"
+        reports.append({
+            "name": name,
+            "area": tool["area"],
+            "status": status,
+            "missing_required_modules": missing_modules,
+            "missing_required_commands": missing_commands,
+            "missing_optional_modules": missing_optional_modules,
+            "missing_optional_commands": missing_optional_commands,
+            "reason": reason,
+        })
+    return {"schema": "fyah-re/doctor@1", "tools_checked": len(reports), "tools": reports}
+
 def _receipt_input(value: str) -> dict:
     """Describe an input without persisting credentials or absolute local paths."""
     if value.startswith(("http://", "https://")):
@@ -231,6 +297,7 @@ def main(argv=None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list")
     sub.add_parser("prompt")
+    sub.add_parser("doctor")
     r = sub.add_parser("run")
     r.add_argument("name"); r.add_argument("--input", required=True); r.add_argument("--input2")
     r.add_argument("--out", required=True)
@@ -240,6 +307,8 @@ def main(argv=None) -> int:
         print(json.dumps(CATALOG, indent=2, ensure_ascii=False)); return 0
     if a.cmd == "prompt":
         print(list_for_prompt()); return 0
+    if a.cmd == "doctor":
+        print(json.dumps(doctor_report(), indent=2, ensure_ascii=False)); return 0
     if a.cmd == "smoke":
         if a.name not in by_name:
             raise SystemExit(f"ferramenta desconhecida: {a.name}")
