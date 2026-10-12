@@ -68,6 +68,27 @@ jobs:
           python3 -c 'import json; d=json.load(open("/tmp/rea-policy/receipt.json")); assert d["policy_approved"] is False and d["executed"] is False'
           python3 -c 'import json; d=json.load(open("/tmp/rea-policy/receipt.json")); assert d["decision"] == "deny"'
           echo 'REA_DSH_POLICY_DENY=PASS'
+      - name: Validate positive DSH policy-to-MCP integration with synthetic decision
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/rea-policy
+          printf '%s\n' '{"ok":true,"model_preset":"qwen3-30b-a3b","final_response":"REA_MCP_REQUEST=inspect_artifact"}' > /tmp/rea-policy/approved.json
+          python3 harness/rea_dsh_adapter.py \
+            --harness-result /tmp/rea-policy/approved.json \
+            --rea-cli /tmp/rea-smoke/node_modules/.bin/rea \
+            --fixture "$PWD/fixtures/rea_mcp_fixture" \
+            --receipt /tmp/rea-policy/approved-receipt.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/rea-policy/approved-receipt.json'))
+          assert d['decision']=='approve'
+          assert d['model_proposed'] is True
+          assert d['policy_approved'] is True
+          assert d['executed'] is True
+          assert len(d['fixture_sha256'])==64
+          assert d['tool_receipt']['report_length']>=40
+          print('REA_DSH_SYNTHETIC_POSITIVE_E2E=PASS')
+          PY
       - name: Summarize
         if: always()
         run: |
