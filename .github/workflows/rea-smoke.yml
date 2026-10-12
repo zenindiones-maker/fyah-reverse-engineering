@@ -1,0 +1,33 @@
+name: REA CLI isolated smoke
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rea-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Inspect upstream package metadata
+        run: |
+          set -euo pipefail
+          npm view rea-agents version dist.tarball license engines --json | tee rea-package-metadata.json
+          node -e 'const p=require("./rea-package-metadata.json"); if (!p.version || !p["dist.tarball"]) process.exit(1)'
+      - name: Install exact resolved version in ephemeral runner
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p 'require("./rea-package-metadata.json").version')"
+          mkdir -p /tmp/rea-smoke
+          cd /tmp/rea-smoke
+          npm init -y >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund "rea-agents@${VERSION}"
+          node -p 'require("./node_modules/rea-agents/package.json").version'
+          ./node_modules/.bin/rea --help
+      - name: Summarize
+        if: always()
+        run: |
+          echo 'REA smoke only: no MCP registration, no native engines, no other repositories modified.' >> "$GITHUB_STEP_SUMMARY"
