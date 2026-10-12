@@ -202,9 +202,11 @@ def main(argv=None) -> int:
             raise SystemExit(f"ferramenta desconhecida: {a.name}")
         if a.name == "media-inspect":
             url = "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg"
-            out = pathlib.Path(tempfile.mkdtemp()) / "smoke.json"
-            d = run_tool(a.name, [url], out)
-            print(json.dumps({"ok": d.get("ok", True), "name": a.name, "keys": list(d)[:8]})); return 0
+            with tempfile.TemporaryDirectory(prefix="fyah-smoke-") as temporary:
+                out = pathlib.Path(temporary) / "smoke.json"
+                d = run_tool(a.name, [url], out)
+                print(json.dumps({"ok": d.get("ok", True), "name": a.name, "keys": list(d)[:8]}))
+            return 0
         print(json.dumps({"ok": True, "name": a.name, "skipped": "no default sample"})); return 0
     inputs = [a.input] + ([a.input2] if a.input2 else [])
     d = run_tool(a.name, inputs, pathlib.Path(a.out))

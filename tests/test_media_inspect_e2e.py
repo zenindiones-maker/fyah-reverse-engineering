@@ -133,3 +133,71 @@ def test_media_inspect_cli_downloads_public_wikimedia_media_url(tmp_path):
     assert receipt["exit_code"] == 0
     assert receipt["input_metadata"][0]["kind"] == "url"
     assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
+
+
+class _DownloadFailureHandler(SimpleHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
+    def do_GET(self):
+        if self.path == "/missing.wav":
+            self.send_error(404, "deliberate E2E missing file")
+            return
+        if self.path == "/truncated.wav":
+            self.send_response(200)
+            self.send_header("Content-Type", "audio/wav")
+            self.send_header("Content-Length", "1000")
+            self.end_headers()
+            self.wfile.write(b"short")
+            self.wfile.flush()
+            self.close_connection = True
+            return
+        if self.path == "/oversized.wav":
+            self.send_response(200)
+            self.send_header("Content-Length", str(2 * 1024 * 1024 * 1024 + 1))
+            self.end_headers()
+            self.close_connection = True
+            return
+        self.send_error(404)
+
+    def log_message(self, format, *args):
+        pass
+
+
+def _run_failure_url_case(tmp_path, route):
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _DownloadFailureHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    output = tmp_path / f"{route.strip('/').replace('/', '-')}.json"
+    try:
+        url = f"http://127.0.0.1:{server.server_port}{route}"
+        result = _run_media_inspect(url, output)
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+    assert result.returncode != 0, f"broken download unexpectedly passed: {route}"
+    assert not output.exists(), "failed download must not leave a success artifact"
+    receipt_path = output.with_name(output.name + ".receipt.json")
+    assert receipt_path.is_file(), "failed download did not persist an execution receipt"
+    receipt = json.loads(receipt_path.read_text())
+    assert receipt["schema_version"] == "fyah-re/execution-receipt@1"
+    assert receipt["status"] == "failed"
+    assert receipt["exit_code"] != 0
+    assert receipt["output_artifacts"] == []
+    assert receipt["input_metadata"][0]["kind"] == "url"
+    return receipt
+
+
+def test_media_inspect_cli_records_http_404_and_no_artifact(tmp_path):
+    receipt = _run_failure_url_case(tmp_path, "/missing.wav")
+    assert receipt["error_category"] == "HTTPError"
+
+
+def test_media_inspect_cli_records_interrupted_download_and_no_artifact(tmp_path):
+    receipt = _run_failure_url_case(tmp_path, "/truncated.wav")
+    assert receipt["error_category"] == "IncompleteRead"
+
+
+def test_media_inspect_cli_rejects_oversized_content_length_before_download(tmp_path):
+    receipt = _run_failure_url_case(tmp_path, "/oversized.wav")
+    assert receipt["error_category"] == "ValueError"
