@@ -7,7 +7,7 @@ from tools.catalog import CATALOG, by_name, list_for_prompt
 
 
 def download(url: str, dest: pathlib.Path) -> pathlib.Path:
-    if url.startswith("http://") or url.startswith("https://"):
+    if url.startswith(("http://", "https://")):
         req = urllib.request.Request(url, headers={"User-Agent": "fyah-re-tools"})
         dest.write_bytes(urllib.request.urlopen(req, timeout=120).read())
         return dest
@@ -18,7 +18,14 @@ def download(url: str, dest: pathlib.Path) -> pathlib.Path:
 
 
 def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
+    if name not in by_name:
+        raise SystemExit(f"ferramenta desconhecida: {name}")
     t = by_name[name]
+    expected_inputs = t.get("inputs", 1)
+    if len(inputs) != expected_inputs:
+        if name == "compare":
+            raise SystemExit("compare exige --input e --input2")
+        raise SystemExit(f"{name} exige {expected_inputs} entrada(s); recebeu {len(inputs)}")
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = pathlib.Path(tempfile.mkdtemp(prefix="fyah-tool-"))
     paths = [download(u, tmp / f"in{i}") for i, u in enumerate(inputs)]
@@ -54,7 +61,6 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
 
     if kind == "supervision":
         import supervision as sv, numpy as np
-        # smoke: criar detecção sintética e anotar
         xyxy = np.array([[10, 10, 50, 50]], dtype=float)
         det = sv.Detections(xyxy=xyxy, confidence=np.array([0.9]), class_id=np.array([0]))
         data = {"schema": "fyah-re/supervision@1", "ok": True, "version": sv.__version__, "detections": len(det)}
@@ -62,23 +68,23 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
 
     if t.get("module") == "pipelines":
         subprocess.run([sys.executable, "-m", "pipelines", *t["argv"], str(paths[0]), "--out", str(out.parent)], check=True)
-        # pipelines escrevem <name>.json
         produced = out.parent / (name.replace("-", "_") + ".json")
         if produced.exists():
-            data = json.loads(produced.read_text()); data.setdefault("ok", True)
-            out.write_text(json.dumps(data, indent=2, ensure_ascii=False)); return data
+            data = json.loads(produced.read_text())
+            data.setdefault("ok", True)
+            out.write_text(json.dumps(data, indent=2, ensure_ascii=False))
+            return data
         raise SystemExit("pipeline sem JSON de saída")
 
-    # module with --out
     cmd = [sys.executable, "-m", t["module"], *[str(p) for p in paths], "--out", str(out)]
-    if name == "compare" and len(paths) < 2:
-        raise SystemExit("compare exige --input e --input2")
     subprocess.run(cmd, check=True)
-    data = json.loads(out.read_text()); data.setdefault("ok", True); return data
+    data = json.loads(out.read_text())
+    data.setdefault("ok", True)
+    return data
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="python -m tools")
+    ap = argparse.ArgumentParser(prog="fyah-re")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list")
     sub.add_parser("prompt")
@@ -92,7 +98,8 @@ def main(argv=None) -> int:
     if a.cmd == "prompt":
         print(list_for_prompt()); return 0
     if a.cmd == "smoke":
-        # tiny synthetic / public sample
+        if a.name not in by_name:
+            raise SystemExit(f"ferramenta desconhecida: {a.name}")
         if a.name == "media-inspect":
             url = "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg"
             out = pathlib.Path(tempfile.mkdtemp()) / "smoke.json"
