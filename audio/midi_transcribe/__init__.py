@@ -48,7 +48,8 @@ LIMITATIONS = [
     "caso A passa só com três senoides isoladas; isso não é transcrição de música completa",
     "polifonia geral, instrumentos reais e pitch bend não foram aprovados",
     "tolerância fixa: ±1 semitom e ±80 ms, independente uma da outra",
-    "série harmônica: o modelo emite a oitava do parcial forte; não há correção que preserve oitavas legítimas",
+    "pares alinhados compatíveis com harmônicos são bloqueados por padrão, sem apagar notas; a distinção pode exigir revisão humana",
+    "FYAH_MIDI_ALLOW_HARMONIC_AMBIGUITY=1 permite saída bruta explicitamente, inclusive com risco de notas espúrias",
 ]
 
 
@@ -115,9 +116,9 @@ def case_specs() -> dict[str, dict]:
     ]
     return {
         "A": {"id": "A", "title": "senoides isoladas", "expect": "PASS", "tail_s": 0.50, "notes": a, "partials": ()},
-        "B": {"id": "B", "title": "série harmônica", "expect": "FAIL", "tail_s": 0.50, "notes": b_notes, "partials": tuple(b_partials)},
+        "B": {"id": "B", "title": "série harmônica", "expect": "BLOCKED", "tail_s": 0.50, "notes": b_notes, "partials": tuple(b_partials)},
         "C": {"id": "C", "title": "duas senoides simultâneas", "expect": "PASS", "tail_s": 0.50, "notes": c, "partials": ()},
-        "D": {"id": "D", "title": "timbre harmônico", "expect": "FAIL", "tail_s": 0.50, "notes": d, "partials": d_partials},
+        "D": {"id": "D", "title": "timbre harmônico", "expect": "BLOCKED", "tail_s": 0.50, "notes": d, "partials": d_partials},
         "E": {"id": "E", "title": "silêncio antes, entre e depois", "expect": "PASS", "tail_s": 0.70, "notes": e, "partials": ()},
     }
 
