@@ -32,9 +32,17 @@ try {
   for(const value of Object.values(args)){
     if(typeof value==='string' && (value.startsWith('/')||value.includes('..')||/^https?:/i.test(value)))throw Error('untrusted path or URL');
   }
+  const open=listed.tools.find(t=>t.name==='open_binary');
+  if(!open?.inputSchema)throw Error('open_binary unavailable');
+  console.error('REA_MCP_OPEN_SCHEMA='+JSON.stringify(open.inputSchema).slice(0,2200));
+  const fixture=process.env.REA_MCP_FIXTURE;
+  if(!fixture || !fixture.startsWith(process.cwd()+'/'))throw Error('fixture must be inside current workspace');
+  const openArgs={path:fixture};
+  const opened=await request('tools/call',{name:'open_binary',arguments:openArgs});
+  if(opened?.isError)throw Error('open_binary failed: '+JSON.stringify(opened.content).slice(0,1200));
   const result=await request('tools/call',{name:toolName,arguments:args});
   if(result?.isError)throw Error('MCP tool returned isError: '+JSON.stringify(result.content).slice(0,1500));
   if(!Array.isArray(result?.content))throw Error('invalid MCP tool response');
-  console.log(JSON.stringify({status:'PASS',server:init.serverInfo.name,tool:toolName,content_blocks:result.content.length}));
+  console.log(JSON.stringify({status:'PASS',server:init.serverInfo.name,tool:toolName,content_blocks:result.content.length,fixture_opened:true}));
 }catch(err){console.error('REA_MCP_CALL=FAIL',err.message);process.exitCode=1}
 finally{clearTimeout(timer);child.kill('SIGTERM')}
