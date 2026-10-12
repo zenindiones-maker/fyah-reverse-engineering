@@ -141,7 +141,11 @@ def _run_tool_with_tmp(name: str, inputs: list[str], out: pathlib.Path, tmp: pat
         out.write_text(json.dumps(data, indent=2)); return data
 
     if t.get("module") == "pipelines":
-        subprocess.run([sys.executable, "-m", "pipelines", *t["argv"], str(paths[0]), "--out", str(out.parent)], check=True)
+        pipeline_command = [sys.executable, "-m", "pipelines", *t["argv"], str(paths[0]), "--out", str(out.parent)]
+        venvs = os.environ.get("FYAH_RE_VENVS")
+        if venvs:
+            pipeline_command.extend(["--venvs", venvs])
+        subprocess.run(pipeline_command, check=True)
         produced = out.parent / (name.replace("-", "_") + ".json")
         if produced.exists():
             data = json.loads(produced.read_text())

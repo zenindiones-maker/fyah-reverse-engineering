@@ -1,68 +1,103 @@
-"""Roteador do workflow er-analyze: executa a ferramenta/pipeline e escreve o resumo do job."""
-import json, os, pathlib, shutil, subprocess, sys
+"""Workflow adapter: route every er-analyze request through the shared tools CLI."""
+from __future__ import annotations
 
-tool, inp, inp2 = sys.argv[1], sys.argv[2], sys.argv[3]
-out = pathlib.Path("out"); out.mkdir(exist_ok=True)
-summary = open(os.environ.get("GITHUB_STEP_SUMMARY", os.devnull), "a")
-py = sys.executable
-
-
-def run(*a):
-    subprocess.run(list(a), check=True)
+import json
+import os
+import pathlib
+import subprocess
+import sys
+from urllib.parse import urlsplit
 
 
-def table(rows, head):
-    return "| " + " | ".join(head) + " |\n|" + "---|" * len(head) + "\n" + "".join("| " + " | ".join(map(str, r)) + " |\n" for r in rows)
+def _is_http_url(value: str) -> bool:
+    try:
+        parts = urlsplit(value)
+        return parts.scheme in {"http", "https"} and bool(parts.netloc)
+    except ValueError:
+        return False
 
 
-if tool in ("audio-full", "stems") or tool.startswith("audio"):
-    wav = "input.wav"; run("ffmpeg", "-loglevel", "error", "-y", "-i", inp, wav); inp = wav
+def _summary(tool: str, result: subprocess.CompletedProcess, output: pathlib.Path) -> str:
+    lines = [f"## Fyah E.R. — {tool}", ""]
+    receipt_path = output.with_name(output.name + ".receipt.json")
+    receipt = {}
+    data = {}
+    if output.is_file():
+        try:
+            data = json.loads(output.read_text())
+        except (OSError, json.JSONDecodeError):
+            lines.append("Saída JSON: inválida ou ilegível.")
+    if receipt_path.is_file():
+        try:
+            receipt = json.loads(receipt_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            lines.append("Recibo: inválido ou ilegível.")
+    status = receipt.get("status", "unknown")
+    lines += [f"- **Status:** {status}", f"- **Exit code:** {receipt.get('exit_code', result.returncode)}"]
+    if data:
+        lines += [f"- **Schema:** {data.get('schema', 'não declarado')}", f"- **Resultado ok:** {data.get('ok', 'não declarado')}"]
+        if tool == "audio-profile":
+            lines.append(f"- **Áudio:** {data.get('tempo_bpm')} BPM · {data.get('key', {}).get('tonic')} {data.get('key', {}).get('mode')} · {data.get('duration_s')} s")
+        elif tool == "media-inspect":
+            ffprobe = data.get("ffprobe", {})
+            fmt = ffprobe.get("format", {})
+            lines.append(f"- **Mídia:** {fmt.get('format_long_name', 'formato não identificado')} · {fmt.get('duration', '?')} s · {len(ffprobe.get('streams', []))} stream(s)")
+        elif tool == "cuts-pacing":
+            lines.append(f"- **Edição:** {data.get('cuts', '?')} cortes · {data.get('cuts_per_minute', '?')} cortes/min")
+        elif tool in {"audio-full", "video-full", "apk-full", "binary-inspect"}:
+            errors = []
+            def collect(value, path=""):
+                if isinstance(value, dict):
+                    for key, item in value.items():
+                        next_path = f"{path}.{key}" if path else key
+                        if key == "error" and item:
+                            errors.append(f"{next_path}: {str(item)[:180]}")
+                        else:
+                            collect(item, next_path)
+                elif isinstance(value, list):
+                    for i, item in enumerate(value):
+                        collect(item, f"{path}[{i}]")
+            collect(data)
+            if errors:
+                lines += ["", "**Componentes com falha:**"] + [f"- {error}" for error in errors[:10]]
+    if result.returncode != 0 and result.stderr.strip():
+        lines += ["", "**Erro do executor:**", "text:", result.stderr.strip()[-1800:]]
+    return "\n".join(lines) + "\n"
 
-if tool == "audio-profile":
-    run(py, "-m", "audio.profile", inp, "--out", "out/profile.json")
-    d = json.load(open("out/profile.json"))
-    summary.write("## Perfil de áudio\n\n" + table([[d["tempo_bpm"], f"{d['key']['tonic']} {d['key']['mode']}", d["loudness"]["integrated_lufs"], d["duration_s"]]], ["BPM", "Tonalidade", "LUFS", "Duração (s)"]))
-elif tool == "compare":
-    run(py, "-m", "audio.compare", inp, inp2, "--out", "out/compare.json", "--md", "out/compare.md")
-    summary.write(open("out/compare.md").read())
-elif tool == "media-inspect":
-    r = subprocess.run(["ffprobe", "-v", "error", "-show_format", "-show_streams", "-of", "json", inp], capture_output=True, text=True, check=True)
-    (out / "ffprobe.json").write_text(r.stdout)
-    (out / "mediainfo.json").write_text(subprocess.run(["mediainfo", "--Output=JSON", inp], capture_output=True, text=True).stdout)
-    d = json.loads(r.stdout); f = d["format"]
-    summary.write(f"## Inspeção de mídia\n\nContainer: **{f.get('format_long_name')}** · duração {f.get('duration')} s · bitrate {f.get('bit_rate')}\n\n")
-    summary.write(table([[s["index"], s.get("codec_type"), s.get("codec_name"), s.get("sample_rate") or f"{s.get('width')}x{s.get('height')}"] for s in d["streams"]], ["#", "tipo", "codec", "detalhe"]))
-elif tool == "cuts-pacing":
-    run(py, "-m", "video.pacing", inp, "--out", "out/pacing.json")
-    d = json.load(open("out/pacing.json"))
-    summary.write(f"## Cortes e ritmo\n\nCortes: {d['cuts']} · cortes/min: {d['cuts_per_minute']} · plano médio: {d['shot_length_s']['mean']} s\n")
-elif tool == "stems":
-    run(py, "-m", "demucs", "-n", "htdemucs", "-o", "out", "--mp3", inp)
-    summary.write("## Stems (htdemucs, CPU)\n\n" + "\n".join(f"- {p.name}" for p in sorted(out.rglob("*.mp3"))) + "\n")
-elif tool == "apk-inspect":
-    run(py, "-m", "apps.apk", inp, "--out", "out/apk.json", "--md", "out/apk.md")
-    summary.write(open("out/apk.md").read())
-elif tool == "binary-inspect":
-    run(py, "-m", "pipelines", "binary-inspect", inp, "--out", "out")
-    d = json.load(open("out/binary_inspect.json"))
-    summary.write(f"## Binary inspect\n\nMagic: `{d.get('magic')}`\n\n")
-    if "capa" in d: summary.write(f"capa rules: {d['capa']}\n")
-    if "floss" in d: summary.write(f"FLOSS strings: {d['floss'].get('strings')}\n")
-elif tool in ("audio-full", "video-full", "apk-full"):
-    venvs = str(pathlib.Path.home() / ".er-venvs")
-    run(py, "-m", "pipelines", tool, inp, "--out", "out", "--venvs", venvs)
-    d = json.load(open(f"out/{tool.replace('-', '_')}.json"))
-    summary.write(f"## Pipeline {tool}\n\n")
-    if tool == "audio-full":
-        p = d["profile"]
-        summary.write(table([[p["tempo_bpm"], f"{p['key']['tonic']} {p['key']['mode']}", p["loudness"]["integrated_lufs"], d.get("beats"), d.get("notes")]], ["BPM", "Tonalidade", "LUFS", "beat_this", "notas (basic-pitch)"]))
-        if isinstance(d.get("stems"), dict) and "error" not in d["stems"]:
-            summary.write("\n" + table([[k, v["tempo_bpm"], v["lufs"], v["centroid_hz"]] for k, v in d["stems"].items()], ["stem", "BPM", "LUFS", "centroide Hz"]))
-    elif tool == "video-full":
-        pc = d["pacing"]
-        summary.write(table([[pc["cuts"], pc["cuts_per_minute"], pc["shot_length_s"]["mean"], d["color"].get("mean_rgb"), d["subtitles"]["text_tracks"]]], ["cortes", "cortes/min", "plano médio (s)", "RGB médio", "faixas de legenda"]))
-    else:
-        a = d["androguard"]
-        summary.write(table([[a["package"], a["version_name"], len(a["permissions"]), d.get("jadx", {}).get("java_files"), d.get("apktool", {}).get("smali_files")]], ["pacote", "versão", "permissões", ".java (jadx)", ".smali (apktool)"]))
-else:
-    sys.exit(f"ferramenta desconhecida: {tool}")
+
+def main(argv: list[str] | None = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if len(args) != 3:
+        print("uso: er_analyze.py FERRAMENTA URL URL2 (URL2 vazio exceto para compare)", file=sys.stderr)
+        return 2
+    tool, source, source2 = args
+    if not _is_http_url(source):
+        print("a entrada principal deve ser uma URL HTTP(S)", file=sys.stderr)
+        return 2
+    if tool == "compare" and not _is_http_url(source2):
+        print("compare exige duas URLs HTTP(S)", file=sys.stderr)
+        return 2
+
+    out_dir = pathlib.Path(os.environ.get("FYAH_RE_OUT_DIR", "out")).resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output = out_dir / f"{tool.replace('-', '_')}.json"
+    command = [sys.executable, "-m", "tools", "run", tool, "--input", source, "--out", str(output)]
+    if tool == "compare":
+        command.extend(["--input2", source2])
+
+    env = os.environ.copy()
+    env.setdefault("FYAH_RE_VENVS", str(pathlib.Path.home() / ".er-venvs"))
+    result = subprocess.run(command, capture_output=True, text=True, env=env)
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY", os.devnull)
+    with open(summary_path, "a", encoding="utf-8") as summary:
+        summary.write(_summary(tool, result, output))
+        summary.write("\n")
+    if result.stdout.strip():
+        print(result.stdout.strip())
+    if result.returncode != 0 and result.stderr.strip():
+        print(result.stderr.strip(), file=sys.stderr)
+    return result.returncode
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

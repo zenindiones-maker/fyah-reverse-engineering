@@ -302,3 +302,41 @@ def test_media_inspect_runs_when_optional_mediainfo_binary_is_missing(tmp_path, 
     assert result["ffprobe"]["streams"][0]["codec_type"] == "audio"
     assert "mediainfo" not in result
     assert json.loads(output.read_text())["ok"] is True
+
+
+
+def test_er_analyze_workflow_adapter_uses_shared_cli_and_receipt(tmp_path):
+    """Exercise the workflow's public entry point with a local HTTP-hosted media URL."""
+    import os
+
+    source = tmp_path / "workflow-source.wav"
+    _make_wav(source)
+    handler = partial(SimpleHTTPRequestHandler, directory=str(tmp_path))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    output_dir = tmp_path / "workflow-output"
+    env = os.environ.copy()
+    env["FYAH_RE_OUT_DIR"] = str(output_dir)
+    env.pop("GITHUB_STEP_SUMMARY", None)
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/workflow-source.wav"
+        result = subprocess.run(
+            [sys.executable, "scripts/er_analyze.py", "media-inspect", url, ""],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            timeout=45,
+            env=env,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert result.returncode == 0, f"workflow adapter failed: {result.stdout}\\n{result.stderr}"
+    output = output_dir / "media_inspect.json"
+    assert json.loads(output.read_text())["schema"] == "fyah-re/media-inspect@1"
+    receipt = json.loads((output_dir / "media_inspect.json.receipt.json").read_text())
+    assert receipt["status"] == "success"
+    assert receipt["input_metadata"][0]["kind"] == "url"

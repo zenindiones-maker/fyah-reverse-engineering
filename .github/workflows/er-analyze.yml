@@ -48,15 +48,7 @@ jobs:
       - uses: actions/cache@v6
         if: inputs.tool == 'stems' || inputs.tool == 'audio-full'
         with: {path: ~/.cache/torch/hub/checkpoints, key: demucs-htdemucs-v1}
-      - name: Baixar entrada
-        run: |
-          case "$URL" in http://*|https://*) ;; *) echo "URL inválida" >&2; exit 1;; esac
-          curl -L --fail --max-filesize 2000000000 -A "fyah-re (GitHub Actions)" -o input.bin "$URL"
-          if [ "$TOOL" = compare ]; then
-            [ -n "$URL2" ] || { echo "compare exige url2" >&2; exit 1; }
-            curl -L --fail -A "fyah-re (GitHub Actions)" -o input2.bin "$URL2"
-          fi
-      - name: Rodar
-        run: python scripts/er_analyze.py "$TOOL" input.bin input2.bin
+      - name: Rodar pelo dispatcher compartilhado
+        run: python scripts/er_analyze.py "$TOOL" "$URL" "$URL2"
       - uses: actions/upload-artifact@v7
         with: {name: "er-${{ inputs.tool }}", path: out/, retention-days: 30}
