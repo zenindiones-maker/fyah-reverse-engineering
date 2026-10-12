@@ -44,6 +44,11 @@ jobs:
           node harness/rea_mcp_bridge.mjs /tmp/rea-smoke/node_modules/.bin/rea not_allowed '{}' || rc=$?
           test "$rc" -eq 2
           echo 'REA_MCP_ALLOWLIST_DENY=PASS'
+      - name: Invoke authorized REA MCP tool on isolated fixture
+        run: |
+          set -euo pipefail
+          node harness/rea_mcp_bridge.mjs /tmp/rea-smoke/node_modules/.bin/rea inspect_artifact '{}' | tee rea-authorized-call.json
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("rea-authorized-call.json","utf8"));if(d.status!=="PASS"||d.tool!=="inspect_artifact")process.exit(1)'
       - name: Summarize
         if: always()
         run: |
