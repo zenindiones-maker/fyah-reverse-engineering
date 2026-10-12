@@ -28,7 +28,7 @@ Evoluir o Fyah Reverse Engineering de um conjunto de ferramentas e workflows par
 6. **Orquestração por dados:** planos de múltiplas etapas usam nomes de ferramentas permitidos e referências a artefatos produzidos por etapas anteriores; sem comandos arbitrários gerados pelo modelo.
 7. **Separação de autoridade:** Qwen/DSH pode propor análises; política determinística autoriza; executor realiza; validador independente confere saída. REA MCP é um adaptador e não autoridade global.
 8. **Compatibilidade incremental:** manter as interfaces atuais `python -m tools run ...` e workflows durante migração; remover duplicação somente depois de testes de paridade.
-9. **Custo e licenças:** sem API paga, tokens externos, serviços novos ou dependências de licença incompatível. Ferramentas opcionais indisponíveis são reportadas como tais, não simuladas.
+9. **Custo e licenças — gate obrigatório:** nenhum endpoint de inferência pago, token/API faturável, serviço persistente pago, runner hospedado de categoria paga ou assinatura nova. A inferência é feita por `llama.cpp` no runner padrão `ubuntu-latest` do repositório público; modelos e dependências são obtidos de fontes abertas, sem chave de provedor. `LOCAL_LLM_KEY` é apenas um marcador local e não pode ser usado para autenticar um serviço externo. Não mover o repositório para privado nem mudar para runners maiores sem nova revisão explícita de custo. Se a execução deixar de ser elegível a recursos gratuitos, deve falhar/ser suspensa, nunca fazer fallback para um recurso faturável. Ferramentas opcionais indisponíveis são reportadas como tais, não simuladas.
 
 ## Fases e critérios de aceite
 
@@ -70,6 +70,12 @@ Evoluir o Fyah Reverse Engineering de um conjunto de ferramentas e workflows par
 ## Ordem de implementação
 
 Começar na Fase 1, em commits pequenos e isolados, sobre esta branch de trabalho. Não modificar nem fazer merge da PR #1 automaticamente. Não alterar a branch `main` diretamente. Cada etapa só avança quando os testes e evidências da etapa atual sustentarem a conclusão.
+
+## Gate de custo zero (obrigatório em toda PR)
+
+- Permitido: runner padrão gratuito para repositório público, GitHub Actions padrão, `GITHUB_TOKEN`/`GH_TOKEN` limitado ao token automático da execução, downloads anônimos de pesos licenciados e pacotes abertos, inferência local por `llama.cpp`.
+- Proibido: APIs pagas ou trials, billing keys, cloud inference, GPU/runner maior pago, serviço externo persistente, recurso de cloud provisionado e fallback de fornecedor.
+- Cada PR que altera workflows/dependências deve incluir verificação de que esses limites continuam verdadeiros. Não imprimir tokens em logs. A gratuidade depende das políticas e visibilidade do GitHub; se estas condições mudarem, interromper antes de incorrer em cobrança.
 
 ## Decisões externas e limites
 
