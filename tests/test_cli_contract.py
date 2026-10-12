@@ -87,3 +87,11 @@ def test_doctor_reports_real_readiness_for_every_catalog_tool(capsys):
     supervision = next(item for item in report["tools"] if item["name"] == "supervision-detect")
     assert supervision["status"] == "blocked_unconfigured_model"
     assert "pesos reais" in supervision["reason"]
+    import shutil
+    binary = next(item for item in report["tools"] if item["name"] == "binary-inspect")
+    if shutil.which("rz-bin") or shutil.which("r2"):
+        assert "rz-bin|r2" not in binary["missing_required_commands"]
+    else:
+        assert binary["status"] == "blocked_missing_dependency"
+        assert "rz-bin|r2" in binary["missing_required_commands"]
+        assert "release oficial" in binary["reason"]

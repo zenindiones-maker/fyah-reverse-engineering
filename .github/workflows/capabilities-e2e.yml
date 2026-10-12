@@ -1,0 +1,108 @@
+name: capabilities-e2e
+# Custo zero: ubuntu-latest gratuito. Sem GPU, sem API paga, sem merge.
+on:
+  workflow_dispatch: {}
+  pull_request:
+    paths-ignore:
+      - "docs/ferramentas/STATUS.md"
+      - "docs/diario/**"
+permissions: {contents: read}
+concurrency: {group: "capabilities-e2e-${{ github.ref }}", cancel-in-progress: true}
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: {python-version: "3.11", cache: pip}
+      - name: ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg
+      - run: pip install -e ".[audio,video,dev]"
+      - run: pytest -q tests/test_cli_contract.py tests/test_plan.py tests/test_tools.py tests/test_media_inspect_e2e.py tests/test_rizin_contract.py tests/test_download_safety.py tests/test_execution_contracts.py tests/test_tool_receipts.py
+      - name: resumo
+        if: always()
+        run: |
+          {
+            echo "## Capabilities E2E"
+            echo
+            echo "- commit: ${GITHUB_SHA}"
+            echo "- pytest do núcleo: ver o passo anterior"
+            echo "- stems e rizin: jobs separados desta mesma execução"
+          } >> "$GITHUB_STEP_SUMMARY"
+  stems:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: {python-version: "3.11", cache: pip}
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg
+      - run: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install demucs -e ".[audio]"
+      - name: separar um tom autorizado de 3s
+        run: |
+          python - << 'PY'
+          import math, wave
+          frames = bytearray()
+          sr = 22050
+          for i in range(sr * 3):
+              value = int(6000 * math.sin(2 * math.pi * 220 * i / sr))
+              if i % (sr // 2) < 200:
+                  value = max(-32767, min(32767, value + 8000))
+              frames.extend(value.to_bytes(2, "little", signed=True))
+          with wave.open("tone.wav", "wb") as wav:
+              wav.setnchannels(1); wav.setsampwidth(2); wav.setframerate(sr); wav.writeframes(frames)
+          PY
+          python -m tools run stems --input tone.wav --out out/stems.json
+          python - << 'PY'
+          import json, pathlib, subprocess
+          data = json.loads(pathlib.Path("out/stems.json").read_text())
+          assert data["schema"] == "fyah-re/stems@1" and data["ok"] is True
+          stems = data["stems"]
+          assert len(stems) >= 2, stems
+          for stem in stems:
+              probe = subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-of", "json", stem], capture_output=True, text=True, check=True)
+              streams = json.loads(probe.stdout)["streams"]
+              assert streams and streams[0]["codec_type"] == "audio", stem
+          print(f"stems validados: {len(stems)}")
+          PY
+      - uses: actions/upload-artifact@v7
+        with: {name: stems-e2e, path: out/, retention-days: 7}
+  rizin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: apt não é a fonte confiável
+        run: |
+          sudo apt-get update -qq
+          if sudo apt-get install -y -qq --no-install-recommends rizin; then
+            echo "apt instalou rizin"
+            command -v rizin || command -v rz-bin
+          else
+            echo "apt: rizin indisponível neste runner, como esperado"
+          fi
+      - name: release oficial
+        env: {ER_RIZIN: "1", GH_TOKEN: "${{ github.token }}"}
+        run: bash scripts/er_releases.sh
+      - name: analisar o interpretador Python do runner
+        run: |
+          mkdir -p out
+          bin=$(readlink -f "$(command -v python3)")
+          test -n "$bin"
+          if command -v rz-bin >/dev/null; then
+            rz-bin -I -j "$bin" > out/rizin.json
+          else
+            rizin -q -c 'iIj' -c q "$bin" > out/rizin.json
+          fi
+          python - << 'PY'
+          import json, pathlib
+          raw = pathlib.Path("out/rizin.json").read_text()
+          data = json.loads(raw)
+          assert data, raw[:200]
+          pathlib.Path("out/rizin-report.json").write_text(json.dumps({"ok": True, "target": "python3", "keys": list(data)[:12]}, indent=2))
+          print("rizin ok", list(data)[:8])
+          PY
+      - uses: actions/upload-artifact@v7
+        with: {name: rizin-e2e, path: out/, retention-days: 7}

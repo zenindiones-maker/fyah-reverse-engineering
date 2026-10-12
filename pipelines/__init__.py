@@ -106,20 +106,35 @@ def apk_full(apk: str, outdir: str) -> dict:
     return res
 
 
+def probe_disassembler(path: str) -> dict:
+    """Run rizin or radare2, or record that neither binary is available."""
+    import shutil
+    if shutil.which("rz-bin"):
+        completed = subprocess.run(["rz-bin", "-I", "-j", path], capture_output=True, text=True)
+        if completed.returncode != 0:
+            return {"available": True, "tool": "rz-bin", "error": f"rz-bin exit {completed.returncode}", "stderr": completed.stderr[:300]}
+        try:
+            return {"available": True, "tool": "rz-bin", "info": json.loads(completed.stdout)}
+        except json.JSONDecodeError:
+            return {"available": True, "tool": "rz-bin", "error": "saída não JSON", "raw": completed.stdout[:500]}
+    if shutil.which("r2"):
+        completed = subprocess.run(["r2", "-qq", "-c", "iIj", path], capture_output=True, text=True)
+        if completed.returncode != 0:
+            return {"available": True, "tool": "r2", "error": f"r2 exit {completed.returncode}", "stderr": completed.stderr[:300]}
+        try:
+            return {"available": True, "tool": "r2", "info": json.loads(completed.stdout)}
+        except json.JSONDecodeError:
+            return {"available": True, "tool": "r2", "error": "saída não JSON", "raw": completed.stdout[:500]}
+    return {"available": False, "error": "rz-bin e r2 ausentes no PATH"}
+
+
 def binary_inspect(path: str, outdir: str) -> dict:
     """radare2/rizin + capa + FLOSS + file magic — só arquivos próprios/autorizados."""
     out = pathlib.Path(outdir); out.mkdir(parents=True, exist_ok=True)
     res: dict = {"schema": "fyah-re/binary-inspect@1", "source": pathlib.Path(path).name}
     import shutil, magic
     res["magic"] = magic.from_file(path)
-    if shutil.which("rz-bin"):
-        r = subprocess.run(["rz-bin", "-I", "-j", path], capture_output=True, text=True)
-        try: res["rizin"] = json.loads(r.stdout)
-        except Exception: res["rizin"] = {"raw": r.stdout[:500]}
-    elif shutil.which("r2"):
-        r = subprocess.run(["r2", "-qq", "-c", "iIj", path], capture_output=True, text=True)
-        try: res["radare2"] = json.loads(r.stdout)
-        except Exception: res["radare2"] = {"raw": r.stdout[:500]}
+    res["rizin"] = probe_disassembler(path)
     if shutil.which("capa"):
         r = subprocess.run(["capa", "-q", "-j", path], capture_output=True, text=True, timeout=300)
         try: res["capa"] = {"rules": len(json.loads(r.stdout).get("rules", {}))}

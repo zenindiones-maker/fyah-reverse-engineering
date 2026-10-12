@@ -140,6 +140,16 @@ class _DownloadFailureHandler(SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
+        if self.path == "/rate-limited.wav":
+            _DownloadFailureHandler.hits = getattr(_DownloadFailureHandler, "hits", 0) + 1
+            body = b"rate limited"
+            self.send_response(429)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Retry-After", "600")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if self.path == "/missing.wav":
             self.send_error(404, "deliberate E2E missing file")
             return
@@ -187,6 +197,13 @@ def _run_failure_url_case(tmp_path, route):
     assert receipt["output_artifacts"] == []
     assert receipt["input_metadata"][0]["kind"] == "url"
     return receipt
+
+
+def test_media_inspect_cli_records_http_429_without_retry(tmp_path):
+    _DownloadFailureHandler.hits = 0
+    receipt = _run_failure_url_case(tmp_path, "/rate-limited.wav")
+    assert receipt["error_category"] == "DownloadRejected"
+    assert _DownloadFailureHandler.hits == 1
 
 
 def test_media_inspect_cli_records_http_404_and_no_artifact(tmp_path):
@@ -400,3 +417,6 @@ def test_er_analyze_compare_routes_two_real_urls_through_shared_cli(tmp_path):
     assert receipt["status"] == "success"
     assert len(receipt["input_metadata"]) == 2
     assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
+    markdown = output_dir / "compare.md"
+    assert "Comparação de faixas" in markdown.read_text()
+    assert {item["path"] for item in receipt["output_artifacts"]} == {"compare.json", "compare.md"}

@@ -17,14 +17,28 @@ def load(path: str, sr: int = 22050):
 
 def estimate_key(mono: np.ndarray, sr: int) -> dict:
     import librosa
+    if mono.size == 0 or float(np.max(np.abs(mono))) == 0.0:
+        return {"tonic": None, "mode": None, "confidence": None, "estimable": False}
     chroma = librosa.feature.chroma_cqt(y=mono, sr=sr).mean(axis=1)
-    best = (-2.0, "C", "major")
+    if not np.isfinite(chroma).all() or float(np.std(chroma)) == 0.0:
+        return {"tonic": None, "mode": None, "confidence": None, "estimable": False}
+    best = (-2.0, None, None)
     for i in range(12):
         for mode, prof in (("major", MAJOR), ("minor", MINOR)):
-            r = float(np.corrcoef(chroma, np.roll(prof, i))[0, 1])
+            coeff = np.corrcoef(chroma, np.roll(prof, i))[0, 1]
+            r = float(coeff) if np.isfinite(coeff) else -2.0
             if r > best[0]:
                 best = (r, KEYS[i], mode)
-    return {"tonic": best[1], "mode": best[2], "confidence": round(best[0], 3)}
+    if best[1] is None or best[0] < 0:
+        return {"tonic": None, "mode": None, "confidence": None, "estimable": False}
+    return {"tonic": best[1], "mode": best[2], "confidence": round(best[0], 3), "estimable": True}
+
+
+def _finite(value, ndigits: int):
+    value = float(value)
+    if not np.isfinite(value):
+        return None
+    return round(value, ndigits)
 
 
 def profile_signal(y: np.ndarray, sr: int) -> dict:
@@ -33,15 +47,37 @@ def profile_signal(y: np.ndarray, sr: int) -> dict:
     stereo = y.ndim == 2
     mono = librosa.to_mono(y) if stereo else y
     dur = len(mono) / sr
-    tempo, beats = librosa.beat.beat_track(y=mono, sr=sr)
-    tempo = float(np.atleast_1d(tempo)[0])
-    data = y.T if stereo else mono
-    meter = pyln.Meter(sr, block_size=min(0.4, max(dur / 2, 0.05)))
-    try:
-        lufs = float(meter.integrated_loudness(data))
-    except Exception:
-        lufs = float("nan")
     peak = float(np.max(np.abs(mono))) if mono.size else 0.0
+    limitations: list[str] = []
+    if peak == 0.0:
+        limitations.append("silêncio; tempo, loudness e tonalidade não são estimáveis")
+        tempo = 0.0
+        beats: np.ndarray | list = []
+        lufs = float("nan")
+        key = {"tonic": None, "mode": None, "confidence": None, "estimable": False}
+    elif dur < 1.0:
+        limitations.append("áudio mais curto que 1s; tempo e tonalidade não são estimáveis")
+        tempo = 0.0
+        beats = []
+        key = {"tonic": None, "mode": None, "confidence": None, "estimable": False}
+        data = y.T if stereo else mono
+        meter = pyln.Meter(sr, block_size=min(0.4, max(dur / 2, 0.05)))
+        try:
+            lufs = float(meter.integrated_loudness(data))
+        except Exception:
+            lufs = float("nan")
+    else:
+        tempo, beats = librosa.beat.beat_track(y=mono, sr=sr)
+        tempo = float(np.atleast_1d(tempo)[0])
+        data = y.T if stereo else mono
+        meter = pyln.Meter(sr, block_size=min(0.4, max(dur / 2, 0.05)))
+        try:
+            lufs = float(meter.integrated_loudness(data))
+        except Exception:
+            lufs = float("nan")
+        key = estimate_key(mono, sr)
+        if not key.get("estimable"):
+            limitations.append("tonalidade não estimável a partir deste sinal")
     rms = float(np.sqrt(np.mean(mono ** 2))) if mono.size else 0.0
     S = np.abs(librosa.stft(mono, n_fft=2048))
     centroid = float(librosa.feature.spectral_centroid(S=S, sr=sr).mean())
@@ -60,16 +96,17 @@ def profile_signal(y: np.ndarray, sr: int) -> dict:
         "channels": 2 if stereo else 1,
         "tempo_bpm": round(tempo, 2),
         "beats": int(len(beats)),
-        "key": estimate_key(mono, sr),
+        "key": key,
+        "limitations": limitations,
         "loudness": {
             "integrated_lufs": None if np.isnan(lufs) or np.isinf(lufs) else round(lufs, 2),
             "peak_dbfs": round(20 * np.log10(peak), 2) if peak > 0 else None,
             "rms_dbfs": round(20 * np.log10(rms), 2) if rms > 0 else None,
             "crest_db": round(20 * np.log10(peak / rms), 2) if rms > 0 else None,
         },
-        "spectrum": {"centroid_hz": round(centroid, 1), "rolloff_hz": round(rolloff, 1),
-                     "flatness": round(flatness, 5), "band_energy": band_energy},
-        "timbre": {"mfcc_mean": [round(float(v), 3) for v in mfcc]},
+        "spectrum": {"centroid_hz": _finite(centroid, 1), "rolloff_hz": _finite(rolloff, 1),
+                     "flatness": _finite(flatness, 5), "band_energy": band_energy},
+        "timbre": {"mfcc_mean": [_finite(v, 3) for v in mfcc]},
     }
     if stereo:
         l, r = y[0], y[1]

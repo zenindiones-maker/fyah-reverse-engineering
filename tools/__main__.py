@@ -34,13 +34,25 @@ DOCTOR_OPTIONAL = {
     "media-inspect": {"modules": [], "commands": ["mediainfo"]},
     "video-full": {"modules": [], "commands": ["mediainfo"]},
     "apk-full": {"modules": [], "commands": ["jadx", "apktool", "d2j-dex2jar.sh", "quark"]},
-    "binary-inspect": {"modules": ["r2pipe"], "commands": ["rz-bin", "r2", "capa", "floss"]},
+    "binary-inspect": {"modules": ["r2pipe"], "commands": ["capa", "floss"]},
     "audio-full": {"modules": ["basic_pitch"], "commands": []},
 }
 
 
 class DownloadIntegrityError(RuntimeError):
     """Raised when an HTTP response ends before its declared body length."""
+
+
+class DownloadRejected(RuntimeError):
+    """The server refused the download. Do not retry around a rate limit."""
+
+    def __init__(self, status: int, retry_after: str | None):
+        detail = f" HTTP Retry-After={retry_after}" if retry_after else ""
+        super().__init__(
+            f"download rejeitado com HTTP {status}.{detail} "
+            "Sem nova tentativa: não contornar limite do servidor."
+        )
+        self.status = status
 
 
 class ToolResultNotSuccessful(RuntimeError):
@@ -88,6 +100,12 @@ def download(url: str, dest: pathlib.Path) -> pathlib.Path:
                         f"incomplete download: expected {declared_size} bytes, received {written}"
                     )
             return dest
+        except urllib.error.HTTPError as exc:
+            dest.unlink(missing_ok=True)
+            if exc.code == 429:
+                retry_after = exc.headers.get("Retry-After") if exc.headers else None
+                raise DownloadRejected(exc.code, retry_after) from exc
+            raise
         except Exception:
             dest.unlink(missing_ok=True)
             raise
@@ -159,6 +177,8 @@ def _run_tool_with_tmp(name: str, inputs: list[str], out: pathlib.Path, tmp: pat
         raise SystemExit("pipeline sem JSON de saída")
 
     cmd = [sys.executable, "-m", t["module"], *[str(p) for p in paths], "--out", str(out)]
+    if name == "compare":
+        cmd.extend(["--md", str(out.with_suffix(".md"))])
     subprocess.run(cmd, check=True)
     data = json.loads(out.read_text())
     data.setdefault("ok", True)
@@ -191,6 +211,8 @@ def doctor_report() -> dict:
         requirements = DOCTOR_REQUIREMENTS.get(name, {"modules": [], "commands": []})
         missing_modules = [module for module in requirements["modules"] if not _module_available(module)]
         missing_commands = [command for command in requirements["commands"] if shutil.which(command) is None]
+        if name == "binary-inspect" and shutil.which("rz-bin") is None and shutil.which("r2") is None:
+            missing_commands.append("rz-bin|r2")
         optional = DOCTOR_OPTIONAL.get(name, {"modules": [], "commands": []})
         missing_optional_modules = [module for module in optional["modules"] if not _module_available(module)]
         missing_optional_commands = [command for command in optional["commands"] if shutil.which(command) is None]
@@ -199,7 +221,13 @@ def doctor_report() -> dict:
             reason = "supervision não fornece inferência; detector e pesos reais não estão configurados"
         elif missing_modules or missing_commands:
             status = "blocked_missing_dependency"
-            reason = "instale as dependências ausentes listadas neste relatório"
+            if "rz-bin|r2" in missing_commands:
+                reason = (
+                    "rizin/radare2 ausente. O pacote apt rizin não instala no runner gratuito; "
+                    "o caminho reproduzível é scripts/er_releases.sh com o release oficial rizinorg/rizin"
+                )
+            else:
+                reason = "instale as dependências ausentes listadas neste relatório"
         else:
             status = "dependencies_ready"
             reason = "dependências obrigatórias encontradas; execução ainda pode falhar por entrada/modelo"
@@ -248,6 +276,9 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
             raise ToolResultNotSuccessful("pipeline produced diagnostics with component errors; inspect the JSON artifact")
         ended = datetime.now(timezone.utc)
         outputs = [artifact_metadata(out, root=out.parent)] if out.is_file() else []
+        markdown = out.with_suffix(".md")
+        if markdown.is_file() and markdown != out:
+            outputs.append(artifact_metadata(markdown, root=out.parent))
         receipt = build_receipt(
             run_id=run_id, tool_name=name, tool_version=tool_version, status="success",
             exit_code=0, started_at=started, ended_at=ended,
@@ -310,6 +341,9 @@ def main(argv=None) -> int:
     r = sub.add_parser("run")
     r.add_argument("name"); r.add_argument("--input", required=True); r.add_argument("--input2")
     r.add_argument("--out", required=True)
+    p = sub.add_parser("plan")
+    p.add_argument("--file", required=True)
+    p.add_argument("--workspace", required=True)
     s = sub.add_parser("smoke"); s.add_argument("--name", default="media-inspect")
     a = ap.parse_args(argv)
     if a.cmd == "list":
@@ -318,6 +352,19 @@ def main(argv=None) -> int:
         print(list_for_prompt()); return 0
     if a.cmd == "doctor":
         print(json.dumps(doctor_report(), indent=2, ensure_ascii=False)); return 0
+    if a.cmd == "plan":
+        from tools.plan import PlanFailed, execute_plan, load_plan_file
+        try:
+            result = execute_plan(
+                load_plan_file(a.file),
+                workspace=pathlib.Path(a.workspace),
+                run_tool=run_tool,
+            )
+        except PlanFailed as exc:
+            print(json.dumps(exc.result, indent=2, ensure_ascii=False))
+            return 1
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0
     if a.cmd == "smoke":
         if a.name not in by_name:
             raise SystemExit(f"ferramenta desconhecida: {a.name}")
