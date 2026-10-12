@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Preserve `feat/rea-mcp-integration-v1` and PR #1; do not merge automatically or push directly to `main`.
-- No paid APIs, cloud model fallback, new persistent service, or unapproved external execution.
+- No paid APIs, cloud model fallback, new persistent service, paid/large hosted runners, billing keys, or unapproved external execution. Keep the repository public and use only standard free `ubuntu-latest` runners; if free eligibility changes, stop rather than fall back to billable infrastructure.
 - Do not claim a tool is operational unless its implementation and tests support that claim.
 - Use test-first changes for behavior; record test and workflow evidence for each deliverable.
 - Do not execute unknown binaries dynamically; static inspection and dynamic execution remain distinct capabilities.
