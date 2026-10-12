@@ -9,6 +9,10 @@ from tools.contracts import artifact_metadata, build_receipt
 from tools.catalog import CATALOG, by_name, list_for_prompt
 
 MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024
+# Wikimedia rejects generic clients (HTTP 429). Identify the tool and a contact URL.
+DOWNLOAD_USER_AGENT = (
+    "fyah-re/0.0.1 (+https://github.com/zenindiones-maker/fyah-reverse-engineering)"
+)
 
 # Required dependencies are explicit so the catalog never implies that an
 # optional tool is usable merely because its CLI entry exists.
@@ -55,7 +59,7 @@ def _contains_component_errors(value) -> bool:
 
 def download(url: str, dest: pathlib.Path) -> pathlib.Path:
     if url.startswith(("http://", "https://")):
-        req = urllib.request.Request(url, headers={"User-Agent": "fyah-re-tools"})
+        req = urllib.request.Request(url, headers={"User-Agent": DOWNLOAD_USER_AGENT})
         written = 0
         try:
             with urllib.request.urlopen(req, timeout=120) as response:

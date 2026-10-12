@@ -50,3 +50,26 @@ def test_download_streams_allowed_payload_to_disk(tmp_path, monkeypatch):
 
     assert result == destination
     assert destination.read_bytes() == b"12345678"
+
+
+def test_download_identifies_client_so_public_hosts_accept_it(tmp_path, monkeypatch):
+    seen = {}
+
+    def fake_urlopen(request, timeout=120):
+        seen["user_agent"] = request.get_header("User-agent")
+        seen["timeout"] = timeout
+        return FakeResponse(b"ok", 2)
+
+    monkeypatch.setattr(cli.urllib.request, "urlopen", fake_urlopen)
+    destination = tmp_path / "identified.bin"
+
+    cli.download(
+        "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg",
+        destination,
+    )
+
+    user_agent = seen["user_agent"]
+    assert user_agent.startswith("fyah-re/")
+    assert "github.com/zenindiones-maker/fyah-reverse-engineering" in user_agent
+    assert user_agent != "fyah-re-tools"
+    assert destination.read_bytes() == b"ok"
