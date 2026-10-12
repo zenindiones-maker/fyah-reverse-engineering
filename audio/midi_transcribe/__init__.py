@@ -53,6 +53,8 @@ LIMITATIONS = [
     "polifonia geral, instrumentos reais e pitch bend não foram aprovados",
     "tolerância fixa: ±1 semitom e ±80 ms, independente uma da outra",
     "pares alinhados compatíveis com harmônicos são bloqueados por padrão, sem apagar notas; a distinção pode exigir revisão humana",
+    "O e O-h com o mesmo envelope têm correlação 1 e continuam bloqueados; amplitude, fase e energia em 880 Hz não separam as fontes",
+    "onset acima de 80 ms sai da porta harmônica e preserva as duas notas; isso não corrige a fixture alinhada",
     "FYAH_MIDI_ALLOW_HARMONIC_AMBIGUITY=1 permite saída bruta explicitamente, inclusive com risco de notas espúrias",
 ]
 
@@ -141,23 +143,36 @@ def case_specs() -> dict[str, dict]:
             ],
             "partials": (),
         },
+        "O-t": {
+            "id": "O-t",
+            "title": "oitava com onset 150 ms depois",
+            "expect": "PASS",
+            "tail_s": 0.50,
+            "notes": [
+                _note("A4", 440.0, 69, 0.40, 0.80),
+                _note("A5", 880.0, 81, 0.55, 0.80, ((880.0, 0.8),)),
+            ],
+            "partials": (),
+        },
     }
 
 
 def render_wav(path: str | Path, notes: list[dict], tail_s: float = REFERENCE_TAIL_S) -> None:
     destination = Path(path)
     total = max(note["start_s"] + note["duration_s"] for note in notes) + tail_s
+    delays = [float(delay) for note in notes for delay in (note.get("partial_delay_s") or {}).values()]
+    total += max(delays, default=0.0)
     frames = [0.0] * int(SAMPLE_RATE * total)
     for note in notes:
         start = int(note["start_s"] * SAMPLE_RATE)
         length = int(note["duration_s"] * SAMPLE_RATE)
-        for index in range(length):
-            t = index / SAMPLE_RATE
-            envelope = min(1.0, t / 0.02) * min(1.0, (note["duration_s"] - t) / 0.04)
-            sample = 0.0
-            for frequency, amplitude in note["partials"]:
-                sample += amplitude * math.sin(2 * math.pi * frequency * t)
-            frames[start + index] += 0.35 * envelope * sample
+        partial_delay = note.get("partial_delay_s") or {}
+        for frequency, amplitude in note["partials"]:
+            delay = int(float(partial_delay.get(frequency, 0.0)) * SAMPLE_RATE)
+            for index in range(length):
+                t = index / SAMPLE_RATE
+                envelope = min(1.0, t / 0.02) * min(1.0, (note["duration_s"] - t) / 0.04)
+                frames[start + delay + index] += 0.35 * envelope * amplitude * math.sin(2 * math.pi * frequency * t)
     peak = max(1e-9, max(abs(sample) for sample in frames))
     raw = bytearray()
     for sample in frames:
@@ -290,10 +305,27 @@ def parse_midi_notes(path: str | Path) -> list[dict]:
     return notes
 
 
+def _join_contiguous(notes: list[dict]) -> list[dict]:
+    """Join same-pitch fragments that touch. Do not bridge a real gap."""
+    ordered = sorted(notes, key=lambda note: (int(note["pitch"]), float(note["start_s"])))
+    joined: list[dict] = []
+    for note in ordered:
+        if (
+            joined
+            and int(joined[-1]["pitch"]) == int(note["pitch"])
+            and float(note["start_s"]) - float(joined[-1]["end_s"]) <= 0.02
+        ):
+            joined[-1] = {**joined[-1], "end_s": max(float(joined[-1]["end_s"]), float(note["end_s"]))}
+        else:
+            joined.append(dict(note))
+    return joined
+
+
 def _pair(detected: list[dict], reference: list[dict]) -> tuple[list[dict], list[str], list[dict]]:
     used: set[int] = set()
     pairs = []
     missing = []
+    detected = _join_contiguous(detected)
     for item in reference:
         expected_end = item["start_s"] + item["duration_s"]
         found = None
@@ -422,6 +454,131 @@ def harmonic_ambiguities(notes: list[dict]) -> list[dict]:
     return candidates
 
 
+def _goertzel(frames: list[float], frequency: float, start: int, win: int = 1024) -> float:
+    omega = 2 * math.pi * frequency / SAMPLE_RATE
+    coeff = 2 * math.cos(omega)
+    q0 = q1 = q2 = 0.0
+    end = min(len(frames), start + win)
+    span = max(1, end - start - 1)
+    for index in range(start, end):
+        window = 0.5 - 0.5 * math.cos(2 * math.pi * (index - start) / span)
+        q0 = coeff * q1 - q2 + frames[index] * window
+        q2 = q1
+        q1 = q0
+    return q1 * q1 + q2 * q2 - q1 * q2 * coeff
+
+
+def measure_pair_evidence(
+    path: str | Path,
+    lower_pitch: int,
+    upper_pitch: int,
+    start_s: float | None = None,
+    end_s: float | None = None,
+) -> dict:
+    """Envelope correlation and onset gap between two MIDI pitches. Local WAV only."""
+    missing = {"onset_delta_s": None, "envelope_correlation": None, "band_ratio": None}
+    source = Path(path)
+    if not source.is_file():
+        return missing
+    with wave.open(str(source), "rb") as wav:
+        if wav.getnchannels() != 1 or wav.getsampwidth() != 2 or wav.getframerate() != SAMPLE_RATE:
+            return missing
+        raw = wav.readframes(wav.getnframes())
+    if len(raw) < 4:
+        return missing
+    frames = [int.from_bytes(raw[index:index + 2], "little", signed=True) / 32768 for index in range(0, len(raw), 2)]
+    if start_s is not None and end_s is not None:
+        begin = max(0, int((float(start_s) - 0.05) * SAMPLE_RATE))
+        finish = min(len(frames), int((float(end_s) + 0.05) * SAMPLE_RATE))
+        if finish - begin >= 1024:
+            frames = frames[begin:finish]
+    hop = 128
+    win = 1024
+    lower_hz = 440.0 * (2 ** ((lower_pitch - 69) / 12))
+    upper_hz = 440.0 * (2 ** ((upper_pitch - 69) / 12))
+    lower_env: list[float] = []
+    upper_env: list[float] = []
+    for start in range(0, max(0, len(frames) - win), hop):
+        lower_env.append(_goertzel(frames, lower_hz, start, win))
+        upper_env.append(_goertzel(frames, upper_hz, start, win))
+    if len(lower_env) < 4 or max(lower_env) <= 0 or max(upper_env) <= 0:
+        return missing
+
+    def centered(values: list[float]) -> list[float]:
+        mean = sum(values) / len(values)
+        return [value - mean for value in values]
+
+    left = centered(lower_env)
+    right = centered(upper_env)
+    denom = math.sqrt(sum(value * value for value in left) * sum(value * value for value in right))
+    correlation = sum(a * b for a, b in zip(left, right)) / denom if denom else 0.0
+
+    def onset(values: list[float]) -> float:
+        threshold = 0.2 * max(values)
+        for index, value in enumerate(values):
+            if value > threshold:
+                return index * hop / SAMPLE_RATE
+        return 0.0
+
+    return {
+        "onset_delta_s": round(onset(upper_env) - onset(lower_env), 6),
+        "envelope_correlation": round(correlation, 6),
+        "band_ratio": round(sum(upper_env) / (sum(lower_env) or 1e-12), 6),
+    }
+
+
+def resolve_harmonic_ambiguities(path: str | Path, notes: list[dict], evidence: dict | None = None) -> dict:
+    """Keep every detected note. Do not treat 880 Hz energy as an independent note.
+
+    Identical envelopes (correlation 1) stay blocked even when phase-locked,
+    because that waveform is also two simultaneous sines. An onset gap above
+    80 ms is already outside harmonic_ambiguities and keeps both pitches.
+    """
+    ordered = sorted(notes, key=lambda note: (int(note["pitch"]), float(note["start_s"])))
+    pairs = harmonic_ambiguities(ordered)
+    if evidence is None and pairs:
+        first = pairs[0]
+        evidence = measure_pair_evidence(path, int(first["lower_pitch"]), int(first["upper_pitch"]))
+    evidence = evidence or {}
+    onset = evidence.get("onset_delta_s")
+    correlation = evidence.get("envelope_correlation")
+    if onset is None or correlation is None or evidence.get("band_ratio") is None:
+        return {
+            "status": "BLOCKED",
+            "notes": ordered,
+            "removed": [],
+            "published_as_independent": [],
+            "reason": "áudio insuficiente para distinguir oitava e harmônico",
+        }
+    if not pairs:
+        reason = "onset independente" if abs(float(onset)) > ONSET_TOLERANCE_S else "sem par harmônico"
+        return {
+            "status": "PASS",
+            "notes": ordered,
+            "removed": [],
+            "published_as_independent": [int(note["pitch"]) for note in ordered],
+            "reason": reason,
+        }
+    if abs(float(onset)) > ONSET_TOLERANCE_S and float(correlation) < 0.85:
+        return {
+            "status": "PASS",
+            "notes": ordered,
+            "removed": [],
+            "published_as_independent": [int(note["pitch"]) for note in ordered],
+            "reason": "onset independente no áudio",
+        }
+    return {
+        "status": "BLOCKED",
+        "notes": ordered,
+        "removed": [],
+        "published_as_independent": [],
+        "reason": (
+            "oitava e segundo harmônico indistinguiveis: "
+            f"correlacao {float(correlation):.3f}, onset {float(onset) * 1000:.0f} ms"
+        ),
+    }
+
+
 def _transcribe(source: Path, out: Path) -> dict:
     from importlib.metadata import version
     import basic_pitch
@@ -445,16 +602,39 @@ def _transcribe(source: Path, out: Path) -> dict:
         for event in events
     ]
     ambiguities = harmonic_ambiguities(notes)
+    pair_evidence = []
+    if ambiguities:
+        for item in ambiguities:
+            lower = next(note for note in notes if int(note["pitch"]) == int(item["lower_pitch"]))
+            upper = next(note for note in notes if int(note["pitch"]) == int(item["upper_pitch"]))
+            window_start = min(float(lower["start_s"]), float(upper["start_s"]))
+            window_end = max(float(lower["end_s"]), float(upper["end_s"]))
+            measured = measure_pair_evidence(source, int(item["lower_pitch"]), int(item["upper_pitch"]))
+            windowed = measure_pair_evidence(
+                source, int(item["lower_pitch"]), int(item["upper_pitch"]), window_start, window_end
+            )
+            pair_evidence.append({
+                **item,
+                **measured,
+                "window_onset_delta_s": windowed.get("onset_delta_s"),
+                "window_envelope_correlation": windowed.get("envelope_correlation"),
+            })
+    decision = resolve_harmonic_ambiguities(source, notes, pair_evidence[0] if pair_evidence else {"onset_delta_s": 0.0, "envelope_correlation": 0.0, "band_ratio": 0.0})
     allow_ambiguity = os.environ.get("FYAH_MIDI_ALLOW_HARMONIC_AMBIGUITY") == "1"
+    if decision["status"] == "PASS" and ambiguities:
+        ambiguities = []
     if ambiguities and not allow_ambiguity:
         details = ", ".join(
             f"MIDI {item['upper_pitch']} pode ser parcial h{item['harmonic_number']} de MIDI {item['lower_pitch']}"
             for item in ambiguities
         )
+        reason = decision["reason"]
         raise HarmonicAmbiguity(
             "transcrição bloqueada: ambiguidade harmônica não resolvida ("
             + details
-            + "). Nenhum MIDI foi publicado. Revise a fonte ou defina "
+            + "). "
+            + reason
+            + ". Nenhum MIDI foi publicado. Revise a fonte ou defina "
             + "FYAH_MIDI_ALLOW_HARMONIC_AMBIGUITY=1 para aceitar explicitamente a saída bruta."
         )
     midi_path = out.with_suffix(".mid")
@@ -475,6 +655,8 @@ def _transcribe(source: Path, out: Path) -> dict:
         "note_count": len(parsed),
         "notes": notes,
         "harmonic_ambiguities": ambiguities,
+        "harmonic_evidence": pair_evidence,
+        "harmonic_decision": decision["status"],
         "harmonic_ambiguity_override": allow_ambiguity,
         "limitations": LIMITATIONS,
     }

@@ -189,6 +189,7 @@ def test_negative_contract_keeps_block_and_fail_out_of_pass(tmp_path):
         {"id": "A", "status": "PASS", "counts_as_success": True},
         {"id": "C", "status": "PASS", "counts_as_success": True},
         {"id": "E", "status": "PASS", "counts_as_success": True},
+        {"id": "O-t", "status": "PASS", "counts_as_success": True},
         {"id": "B", "status": "BLOCKED", "counts_as_success": False},
         {"id": "D", "status": "BLOCKED", "counts_as_success": False},
         {"id": "O", "status": "BLOCKED", "counts_as_success": False},
@@ -203,3 +204,14 @@ def test_negative_contract_keeps_block_and_fail_out_of_pass(tmp_path):
     assert module.observed_status({"status": "blocked"}) == "BLOCKED"
     with pytest.raises(SystemExit, match="discorda do recibo"):
         module.assert_report_matches_receipt({"id": "B", "status": "BLOCKED", "receipt_status": "failed"})
+    with pytest.raises(SystemExit, match="falso PASS"):
+        module.reject_false_musical_pass({
+            "id": "O",
+            "status": "PASS",
+            "counts_as_success": True,
+            "distinguished": False,
+        })
+    with pytest.raises(SystemExit, match="apagou"):
+        module.reject_deleted_pitch({"id": "O-h", "removed": [81], "status": "PASS"})
+    with pytest.raises(SystemExit, match="obsoleto"):
+        module.reject_stale_artifact({"head_sha": "old", "execution": {"head_sha": "new"}})

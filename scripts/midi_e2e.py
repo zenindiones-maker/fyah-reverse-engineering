@@ -54,12 +54,12 @@ NEGATIVE_CONTRACT = {
     },
 }
 EXPECTED_GROUPS = {
-    "PASS": ["A", "C", "E"],
+    "PASS": ["A", "C", "E", "O-t"],
     "BLOCKED": ["B", "D", "O", "F1"],
     "FAIL": ["F2", "F3"],
 }
-ALLOWED_MIDI = {"A.mid", "C.mid", "E.mid", "B-raw.mid", "D-raw.mid", "O-raw.mid", "O-h-raw.mid"}
-HARNESS_VERSION = "2"
+ALLOWED_MIDI = {"A.mid", "C.mid", "E.mid", "O-t.mid", "B-raw.mid", "D-raw.mid", "O-raw.mid", "O-h-raw.mid"}
+HARNESS_VERSION = "3"
 
 
 def _run(args: list[str], extra_env: dict | None = None) -> subprocess.CompletedProcess[str]:
@@ -108,6 +108,24 @@ def assert_report_matches_receipt(case: dict) -> None:
         raise SystemExit(
             f"{case.get('id')} relatório {reported} discorda do recibo {receipt_status}"
         )
+
+
+def reject_false_musical_pass(case: dict) -> None:
+    if case.get("id") in {"O", "O-h"} and case.get("status") == "PASS" and case.get("distinguished") is False:
+        raise SystemExit(f"{case['id']} falso PASS: a oitava alinhada não foi distinguida")
+
+
+def reject_deleted_pitch(case: dict) -> None:
+    if case.get("removed"):
+        raise SystemExit(f"{case.get('id')} apagou notas {case['removed']}")
+
+
+def reject_stale_artifact(report: dict) -> None:
+    execution = report.get("execution") or {}
+    claimed = report.get("head_sha")
+    actual = execution.get("head_sha")
+    if claimed and actual and claimed != actual:
+        raise SystemExit(f"artefato obsoleto: {claimed} não é {actual}")
 
 
 def observe_negative(case_id: str, receipt: dict, returncode: int, output: Path) -> dict:
@@ -399,7 +417,7 @@ def main() -> None:
     out = _fresh_out()
     _reject_corrupt_model()
     specs = case_specs()
-    cases = [_positive(out, specs[name]) for name in ("A", "B", "C", "D", "E", "O")]
+    cases = [_positive(out, specs[name]) for name in ("A", "B", "C", "D", "E", "O", "O-t")]
     cases.extend([
         _negative(out, "F1", out / "nao-existe.wav"),
         _negative(out, "F2", _corrupt(out)),
@@ -425,6 +443,9 @@ def main() -> None:
     ]
     played["distinguished"] = False
     played["harmonic_twin"] = harmonic
+    reject_false_musical_pass(played)
+    reject_deleted_pitch(played)
+    reject_deleted_pitch(harmonic)
     if harmonic["status"] != "BLOCKED" or played["status"] != "BLOCKED":
         raise SystemExit("O e O-h não estão ambos bloqueados; a oitava não foi distinguida nem corrigida")
     for case in (*cases, harmonic):
@@ -465,6 +486,11 @@ def main() -> None:
         "cases": cases,
         "not_transcribed": ["B", "D", "O"],
         "musical_correction": "PENDENTE",
+        "octave_distinction": (
+            "O e O-h continuam indistinguiveis: mesmo envelope e correlacao 1. "
+            "O-t passa somente porque o onset medido no audio excede 80 ms e as duas notas sao preservadas. "
+            "Isso nao e correcao da fixture alinhada."
+        ),
         "policy": (
             "PASS, BLOCKED e FAIL ficam em listas separadas. "
             "Bloqueio e falha não são sucesso. A correção musical da oitava continua pendente."
