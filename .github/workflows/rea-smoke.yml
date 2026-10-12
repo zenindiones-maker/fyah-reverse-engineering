@@ -47,6 +47,10 @@ jobs:
       - name: Invoke authorized REA MCP tool on isolated fixture
         run: |
           set -euo pipefail
+          mkdir -p fixtures
+          printf 'int main(void) { return 0; }\n' > fixtures/rea_mcp_fixture.c
+          cc -o fixtures/rea_mcp_fixture fixtures/rea_mcp_fixture.c
+          export REA_MCP_FIXTURE="$PWD/fixtures/rea_mcp_fixture"
           node harness/rea_mcp_bridge.mjs /tmp/rea-smoke/node_modules/.bin/rea inspect_artifact '{}' | tee rea-authorized-call.json
           node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("rea-authorized-call.json","utf8"));if(d.status!=="PASS"||d.tool!=="inspect_artifact")process.exit(1)'
       - name: Summarize
