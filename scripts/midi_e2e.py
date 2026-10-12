@@ -58,15 +58,43 @@ def _positive(out: Path, spec: dict) -> dict:
     wav = out / f"{spec['id']}.wav"
     render_wav(wav, spec["notes"], spec["tail_s"])
     output = out / f"{spec['id']}.json"
-    result = _run(["run", "midi-transcribe", "--input", str(wav), "--out", str(output)])
-    (out / f"{spec['id']}.log").write_text(result.stdout + "\n" + result.stderr)
-    if result.returncode != 0:
-        raise SystemExit(f"caso {spec['id']} não transcreveu: {result.returncode}\n{result.stderr}")
-    payload = json.loads(output.read_text())
     midi = out / f"{spec['id']}.mid"
+    result = _run(["run", "midi-transcribe", "--input", str(wav), "--out", str(output)])
+    log_path = out / f"{spec['id']}.log"
+    log_path.write_text(result.stdout + "\\n" + result.stderr)
+    receipt_path = out / f"{spec['id']}.json.receipt.json"
+
+    if spec["expect"] == "BLOCKED":
+        if result.returncode == 0 or output.exists() or midi.exists():
+            raise SystemExit(
+                f"caso {spec['id']} deveria bloquear sem publicar MIDI/JSON; "
+                f"returncode={result.returncode}, output={output.exists()}, midi={midi.exists()}\\n{result.stderr}"
+            )
+        if not receipt_path.is_file():
+            raise SystemExit(f"caso {spec['id']} não produziu recibo de bloqueio")
+        receipt = json.loads(receipt_path.read_text())
+        if receipt["status"] == "success" or receipt["output_artifacts"]:
+            raise SystemExit(f"caso {spec['id']} publicou recibo indevido: {receipt}")
+        if "ambiguidade harmônica" not in log_path.read_text().lower():
+            raise SystemExit(f"caso {spec['id']} não explicou o bloqueio por ambiguidade harmônica")
+        return {
+            "id": spec["id"],
+            "title": spec["title"],
+            "status": "BLOCKED",
+            "expected_status": "BLOCKED",
+            "reason": "ambiguidade harmônica; saída MIDI recusada por segurança",
+            "midi_published": False,
+            "receipt_status": receipt["status"],
+            "receipt_output_artifacts": receipt["output_artifacts"],
+            "log": log_path.name,
+        }
+
+    if result.returncode != 0:
+        raise SystemExit(f"caso {spec['id']} não transcreveu: {result.returncode}\\n{result.stderr}")
+    payload = json.loads(output.read_text())
     detected = parse_midi_notes(midi)
     score = evaluate_notes(detected, spec["notes"], spec["partials"])
-    receipt = json.loads((out / f"{spec['id']}.json.receipt.json").read_text())
+    receipt = json.loads(receipt_path.read_text())
     artifacts = {item["path"]: item["sha256"] for item in receipt["output_artifacts"]}
     for name in (output.name, midi.name):
         if artifacts.get(name) != _sha256(out / name):
@@ -75,10 +103,6 @@ def _positive(out: Path, spec: dict) -> dict:
         raise SystemExit(f"caso {spec['id']} sem recibo ou modelo fixado")
     if score["status"] != spec["expect"]:
         raise SystemExit(f"caso {spec['id']} classificou {score['status']}, referência prévia era {spec['expect']}: {score}")
-    if spec["id"] == "B" and 88 not in {item["pitch"] for item in score["harmonic_confusions"]}:
-        raise SystemExit(f"a oitava extra não foi reproduzida: {score}")
-    if spec["id"] == "D" and 97 not in {item["pitch"] for item in score["harmonic_confusions"]}:
-        raise SystemExit(f"o parcial MIDI 97 não foi reproduzido: {score}")
     return {
         "id": spec["id"],
         "title": spec["title"],
@@ -150,12 +174,14 @@ def main() -> None:
         "tolerances": {"pitch_semitones": 1, "onset_s": 0.08, "offset_s": 0.08},
         "cases": cases,
         "F": {name: {"status": "PASS", "receipt": receipt["status"]} for name, receipt in negatives.items()},
-        "not_corrected": ["B", "D"],
+        "not_transcribed": ["B", "D"],
+        "policy": "harmonic ambiguity fails closed before MIDI publication; explicit override preserves raw model output",
     }
     (out / "midi-report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     lines = ["## MIDI A–F", ""]
     for case in cases:
         lines.append(f"- {case['id']} {case['title']}: {case['status']}")
+    lines.append("- B/D: BLOCKED (ambiguidade harmônica; nenhum MIDI publicado)")
     lines.append("- F ausente/corrompido/silêncio: PASS (sem recibo success)")
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
