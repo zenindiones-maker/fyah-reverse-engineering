@@ -29,7 +29,7 @@ def _make_wav(path: Path) -> None:
         wav.setnchannels(1)
         wav.setsampwidth(2)
         wav.setframerate(8000)
-        wav.writeframes(b"\\x00\\x00" * 8000)
+        wav.writeframes(b"\x00\x00" * 8000)
 
 
 def test_media_inspect_cli_writes_real_output_and_matching_receipt(tmp_path):
