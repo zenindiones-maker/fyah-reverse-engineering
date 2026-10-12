@@ -253,6 +253,10 @@ def doctor_report() -> dict:
         })
     return {"schema": "fyah-re/doctor@1", "tools_checked": len(reports), "tools": reports}
 
+def _receipt_commit() -> str | None:
+    return os.environ.get("GITHUB_SHA") or os.environ.get("FYAH_RE_COMMIT") or os.environ.get("FYAH_MIDI_HEAD_SHA")
+
+
 def _receipt_input(value: str) -> dict:
     """Describe an input without persisting credentials or absolute local paths."""
     if value.startswith(("http://", "https://")):
@@ -294,7 +298,7 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
             outputs.append(artifact_metadata(midi, root=out.parent))
         provenance = {
             "executor": "fyah-re",
-            "commit": os.environ.get("GITHUB_SHA") or os.environ.get("FYAH_RE_COMMIT"),
+            "commit": _receipt_commit(),
             "python": sys.version.split()[0],
         }
         if data.get("harmonic_ambiguity_override"):
@@ -317,7 +321,7 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
             exit_code=1, started_at=started, ended_at=ended,
             input_metadata=[_receipt_input(value) for value in inputs],
             output_artifacts=outputs,
-            provenance={"executor": "fyah-re", "python": sys.version.split()[0]},
+            provenance={"executor": "fyah-re", "commit": _receipt_commit(), "python": sys.version.split()[0]},
             error_category=type(exc).__name__,
         )
         _write_receipt(receipt_path, receipt)
@@ -330,14 +334,14 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
             exit_code=code, started_at=started, ended_at=ended,
             input_metadata=[_receipt_input(value) for value in inputs],
             output_artifacts=[],
-            provenance={"executor": "fyah-re", "python": sys.version.split()[0]},
+            provenance={"executor": "fyah-re", "commit": _receipt_commit(), "python": sys.version.split()[0]},
             error_category="input_or_policy_rejection",
         )
         _write_receipt(receipt_path, receipt)
         raise
     except subprocess.CalledProcessError as exc:
         ended = datetime.now(timezone.utc)
-        blocked = exc.returncode == 3
+        blocked = name == "midi-transcribe" and exc.returncode == 3
         receipt = build_receipt(
             run_id=run_id, tool_name=name, tool_version=tool_version,
             status="blocked" if blocked else "failed",
@@ -346,6 +350,7 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
             output_artifacts=[],
             provenance={
                 "executor": "fyah-re",
+                "commit": _receipt_commit(),
                 "python": sys.version.split()[0],
                 **({"policy": "harmonic_ambiguity"} if blocked else {}),
             },
@@ -363,7 +368,7 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
             exit_code=code, started_at=started, ended_at=ended,
             input_metadata=[_receipt_input(value) for value in inputs],
             output_artifacts=[],
-            provenance={"executor": "fyah-re", "python": sys.version.split()[0]},
+            provenance={"executor": "fyah-re", "commit": _receipt_commit(), "python": sys.version.split()[0]},
             error_category=type(exc).__name__,
         )
         _write_receipt(receipt_path, receipt)

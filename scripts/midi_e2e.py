@@ -21,6 +21,7 @@ sys.path.insert(0, str(ROOT))
 from audio.midi_transcribe import (
     HARMONIC_BLOCK_EXIT,
     PINNED_MODEL_SHA256,
+    PINNED_VERSION,
     MidiError,
     case_specs,
     evaluate_notes,
@@ -57,7 +58,8 @@ EXPECTED_GROUPS = {
     "BLOCKED": ["B", "D", "O", "F1"],
     "FAIL": ["F2", "F3"],
 }
-ALLOWED_MIDI = {"A.mid", "C.mid", "E.mid", "B-raw.mid", "D-raw.mid", "O-raw.mid"}
+ALLOWED_MIDI = {"A.mid", "C.mid", "E.mid", "B-raw.mid", "D-raw.mid", "O-raw.mid", "O-h-raw.mid"}
+HARNESS_VERSION = "2"
 
 
 def _run(args: list[str], extra_env: dict | None = None) -> subprocess.CompletedProcess[str]:
@@ -85,13 +87,39 @@ def _silence(path: Path) -> None:
         wav.writeframes(b"\x00\x00" * 22050 * 2)
 
 
+def observed_status(receipt: dict) -> str:
+    """Map the receipt. A failed receipt is FAIL, never BLOCKED."""
+    status = receipt.get("status")
+    if status == "blocked":
+        return "BLOCKED"
+    if status == "failed":
+        return "FAIL"
+    if status == "success":
+        return "PASS"
+    raise SystemExit(f"recibo sem estado conhecido: {status}")
+
+
+def assert_report_matches_receipt(case: dict) -> None:
+    """Fail if the report label is not the receipt label."""
+    reported = case.get("status")
+    receipt_status = case.get("receipt_status")
+    expected = {"BLOCKED": "blocked", "FAIL": "failed", "PASS": "success"}.get(reported)
+    if expected is None or receipt_status != expected:
+        raise SystemExit(
+            f"{case.get('id')} relatório {reported} discorda do recibo {receipt_status}"
+        )
+
+
 def observe_negative(case_id: str, receipt: dict, returncode: int, output: Path) -> dict:
     """Record F1–F3 as BLOCKED or FAIL. Never relabel those receipts as PASS."""
     expected = NEGATIVE_CONTRACT[case_id]
     midi = output.with_suffix(".mid")
     problems = []
+    observed = observed_status(receipt)
     if expected["status"] not in ("BLOCKED", "FAIL"):
         problems.append("contrato negativo não pode exigir PASS")
+    if observed != expected["status"]:
+        problems.append(f"recibo {receipt.get('status')} não é {expected['status']}")
     if returncode != expected["exit_code"]:
         problems.append(f"processo exit {returncode}")
     if receipt.get("status") != expected["receipt_status"]:
@@ -112,7 +140,7 @@ def observe_negative(case_id: str, receipt: dict, returncode: int, output: Path)
     return {
         "id": case_id,
         "title": expected["title"],
-        "status": expected["status"],
+        "status": observed,
         "counts_as_success": False,
         "midi_published": False,
         "process_exit_code": returncode,
@@ -188,6 +216,9 @@ def _positive(out: Path, spec: dict) -> dict:
             or receipt["provenance"].get("policy") != "harmonic_ambiguity"
         ):
             raise SystemExit(f"caso {spec['id']} não ficou blocked por política: {receipt}")
+        observed = observed_status(receipt)
+        if observed != "BLOCKED":
+            raise SystemExit(f"caso {spec['id']} recibo {receipt['status']} não é bloqueio")
         message = log_path.read_text()
         if "ambiguidade harmônica" not in message.lower() or f"MIDI {spec['blocked_pitch']}" not in message:
             raise SystemExit(f"caso {spec['id']} não nomeou MIDI {spec['blocked_pitch']}: {message}")
@@ -195,7 +226,7 @@ def _positive(out: Path, spec: dict) -> dict:
         return {
             "id": spec["id"],
             "title": spec["title"],
-            "status": "BLOCKED",
+            "status": observed,
             "expected_status": "BLOCKED",
             "counts_as_success": False,
             "musical_correction": "PENDENTE",
@@ -229,12 +260,16 @@ def _positive(out: Path, spec: dict) -> dict:
         raise SystemExit(f"caso {spec['id']} publicou ambiguidade como sucesso: {payload.get('harmonic_ambiguities')}")
     if score["status"] != spec["expect"]:
         raise SystemExit(f"caso {spec['id']} classificou {score['status']}, referência prévia era {spec['expect']}: {score}")
+    observed = observed_status(receipt)
+    if observed != "PASS" or score["status"] != "PASS":
+        raise SystemExit(f"caso {spec['id']} recibo {receipt['status']} não sustenta PASS musical")
     return {
         "id": spec["id"],
         "title": spec["title"],
-        "status": score["status"],
+        "status": observed,
         "expected_status": spec["expect"],
-        "counts_as_success": score["status"] == "PASS",
+        "counts_as_success": True,
+        "receipt_status": receipt["status"],
         "detected": [
             {"pitch": note["pitch"], "start_s": round(note["start_s"], 6), "end_s": round(note["end_s"], 6)}
             for note in detected
@@ -273,6 +308,9 @@ def _raw_override(out: Path, spec: dict, wav: Path) -> dict:
     pitches = {note["pitch"] for note in detected}
     if spec["blocked_pitch"] not in pitches:
         raise SystemExit(f"override do caso {spec['id']} não contém MIDI {spec['blocked_pitch']}: {sorted(pitches)}")
+    missing = [pitch for pitch in spec.get("preserved_pitches", ()) if pitch not in pitches]
+    if missing:
+        raise SystemExit(f"override do caso {spec['id']} apagou notas {missing}; detectadas {sorted(pitches)}")
     if payload.get("harmonic_ambiguity_override") is not True or not payload.get("harmonic_ambiguities"):
         raise SystemExit(f"override do caso {spec['id']} não ficou rastreável no JSON")
     receipt = json.loads((out / f"{spec['id']}-raw.json.receipt.json").read_text())
@@ -323,6 +361,27 @@ print("hash rejeitado antes de qualquer inferência")
     print(result.stdout.strip())
 
 
+def _octave_harmonic_spec() -> dict:
+    """Same pitches as a played octave, generated as one tone plus its second partial."""
+    return {
+        "id": "O-h",
+        "title": "fundamental mais parcial h2",
+        "expect": "BLOCKED",
+        "blocked_pitch": 81,
+        "preserved_pitches": (69, 81),
+        "tail_s": 0.50,
+        "notes": [{
+            "name": "A4",
+            "frequency_hz": 440.0,
+            "pitch": 69,
+            "start_s": 0.40,
+            "duration_s": 0.80,
+            "partials": ((440.0, 1.0), (880.0, 0.8)),
+        }],
+        "partials": (),
+    }
+
+
 def _negative(out: Path, case_id: str, source: Path) -> dict:
     output = out / f"{case_id}.json"
     for stale in (output, output.with_suffix(".mid"), out / f"{case_id}.json.receipt.json"):
@@ -346,6 +405,30 @@ def main() -> None:
         _negative(out, "F2", _corrupt(out)),
         _negative(out, "F3", _full_silence(out)),
     ])
+    harmonic = _positive(out, _octave_harmonic_spec())
+    played = next(case for case in cases if case["id"] == "O")
+    played["conditions"] = [
+        {
+            "id": "O",
+            "kind": "intentional_octave",
+            "status": played["status"],
+            "receipt_status": played["receipt_status"],
+            "kept_pitches": [note["pitch"] for note in played["raw_override"]["detected"]],
+        },
+        {
+            "id": "O-h",
+            "kind": "fundamental_plus_partial",
+            "status": harmonic["status"],
+            "receipt_status": harmonic["receipt_status"],
+            "kept_pitches": [note["pitch"] for note in harmonic["raw_override"]["detected"]],
+        },
+    ]
+    played["distinguished"] = False
+    played["harmonic_twin"] = harmonic
+    if harmonic["status"] != "BLOCKED" or played["status"] != "BLOCKED":
+        raise SystemExit("O e O-h não estão ambos bloqueados; a oitava não foi distinguida nem corrigida")
+    for case in (*cases, harmonic):
+        assert_report_matches_receipt(case)
     groups = group_statuses(cases)
     if groups != EXPECTED_GROUPS:
         raise SystemExit(f"grupos divergentes do contrato: {groups}")
@@ -360,8 +443,18 @@ def main() -> None:
             raise SystemExit(f"{case['id']} trata o override como PASS musical")
         if raw and raw.get("counts_as_success") is not False:
             raise SystemExit(f"{case['id']} conta o override como sucesso")
+    if (out / "O-h.mid").exists():
+        raise SystemExit("O-h publicou MIDI sem ser PASS")
+    stamp = _execution_stamp()
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        if stamp.get("run_id") != os.environ.get("GITHUB_RUN_ID") or not stamp.get("head_sha"):
+            raise SystemExit(f"artefato sem identidade da execução atual: {stamp}")
+        if stamp["head_sha"] != os.environ.get("FYAH_MIDI_HEAD_SHA"):
+            raise SystemExit("SHA do relatório não é o commit testado")
     report = {
-        "execution": _execution_stamp(),
+        "execution": stamp,
+        "harness": {"name": "scripts/midi_e2e.py", "version": HARNESS_VERSION},
+        "model": {"name": "basic-pitch", "version": PINNED_VERSION, "sha256": PINNED_MODEL_SHA256},
         "cause": (
             "No caso B o onset do modelo em MIDI 88 fica acima de 0,5 com o melodia_trick "
             "ligado ou desligado. O contorno dessa oitava é 0,327, contra 0,333 da nota fraca "

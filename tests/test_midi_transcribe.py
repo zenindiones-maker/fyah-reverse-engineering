@@ -199,3 +199,7 @@ def test_negative_contract_keeps_block_and_fail_out_of_pass(tmp_path):
         module.observe_negative("F1", {**blocked, "status": "success", "exit_code": 0}, 0, tmp_path / "F1.json")
     with pytest.raises(SystemExit, match="converte BLOCKED"):
         module.group_statuses([{"id": "B", "status": "BLOCKED", "counts_as_success": True}])
+    assert module.observed_status({"status": "failed"}) == "FAIL"
+    assert module.observed_status({"status": "blocked"}) == "BLOCKED"
+    with pytest.raises(SystemExit, match="discorda do recibo"):
+        module.assert_report_matches_receipt({"id": "B", "status": "BLOCKED", "receipt_status": "failed"})

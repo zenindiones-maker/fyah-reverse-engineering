@@ -1,6 +1,7 @@
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -73,6 +74,46 @@ def test_missing_file_process_exit_matches_blocked_receipt(tmp_path):
     assert receipt["output_artifacts"] == []
     assert not out.exists()
     assert not out.with_suffix(".mid").exists()
+
+
+def test_midi_exit_3_is_blocked_and_a_technical_exit_is_not(tmp_path, monkeypatch):
+    wav = tmp_path / "tone.wav"
+    wav.write_bytes(b"not-read")
+
+    def boom(code):
+        def fake_run(cmd, check=False, **kwargs):
+            raise subprocess.CalledProcessError(code, cmd)
+        return fake_run
+
+    monkeypatch.setattr(cli.subprocess, "run", boom(3))
+    blocked_out = tmp_path / "B.json"
+    with pytest.raises(SystemExit) as exc:
+        cli.run_tool("midi-transcribe", [str(wav)], blocked_out)
+    assert exc.value.code == 3
+    blocked = json.loads((tmp_path / "B.json.receipt.json").read_text())
+    assert blocked["status"] == "blocked"
+    assert blocked["exit_code"] == 3
+    assert blocked["provenance"]["policy"] == "harmonic_ambiguity"
+    assert blocked["output_artifacts"] == []
+    assert not blocked_out.exists()
+    assert not blocked_out.with_suffix(".mid").exists()
+
+    monkeypatch.setattr(cli.subprocess, "run", boom(1))
+    failed_out = tmp_path / "tech.json"
+    with pytest.raises(subprocess.CalledProcessError):
+        cli.run_tool("midi-transcribe", [str(wav)], failed_out)
+    failed = json.loads((tmp_path / "tech.json.receipt.json").read_text())
+    assert failed["status"] == "failed"
+    assert "policy" not in failed["provenance"]
+    assert failed["output_artifacts"] == []
+
+    monkeypatch.setattr(cli.subprocess, "run", boom(3))
+    other = tmp_path / "other.json"
+    with pytest.raises(subprocess.CalledProcessError):
+        cli.run_tool("fingerprint", [str(wav)], other)
+    other_receipt = json.loads((tmp_path / "other.json.receipt.json").read_text())
+    assert other_receipt["status"] == "failed"
+    assert "policy" not in other_receipt["provenance"]
 
 
 

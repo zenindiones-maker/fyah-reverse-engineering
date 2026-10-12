@@ -124,15 +124,16 @@ def case_specs() -> dict[str, dict]:
     ]
     return {
         "A": {"id": "A", "title": "senoides isoladas", "expect": "PASS", "tail_s": 0.50, "notes": a, "partials": ()},
-        "B": {"id": "B", "title": "série harmônica", "expect": "BLOCKED", "blocked_pitch": 88, "tail_s": 0.50, "notes": b_notes, "partials": tuple(b_partials)},
+        "B": {"id": "B", "title": "série harmônica", "expect": "BLOCKED", "blocked_pitch": 88, "preserved_pitches": (69, 72, 76, 88), "tail_s": 0.50, "notes": b_notes, "partials": tuple(b_partials)},
         "C": {"id": "C", "title": "duas senoides simultâneas", "expect": "PASS", "tail_s": 0.50, "notes": c, "partials": ()},
-        "D": {"id": "D", "title": "timbre harmônico", "expect": "BLOCKED", "blocked_pitch": 97, "tail_s": 0.50, "notes": d, "partials": d_partials},
+        "D": {"id": "D", "title": "timbre harmônico", "expect": "BLOCKED", "blocked_pitch": 97, "preserved_pitches": (69, 97), "tail_s": 0.50, "notes": d, "partials": d_partials},
         "E": {"id": "E", "title": "silêncio antes, entre e depois", "expect": "PASS", "tail_s": 0.70, "notes": e, "partials": ()},
         "O": {
             "id": "O",
             "title": "oitava realmente tocada",
             "expect": "BLOCKED",
             "blocked_pitch": 81,
+            "preserved_pitches": (69, 81),
             "tail_s": 0.50,
             "notes": [
                 _note("A4", 440.0, 69, 0.40, 0.80),
