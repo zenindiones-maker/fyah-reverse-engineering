@@ -28,8 +28,14 @@ def _sanitize(value: Any) -> Any:
         try:
             parts = urlsplit(value)
             if parts.scheme in {"http", "https"} and parts.netloc:
+                hostname = parts.hostname
+                if not hostname:
+                    return "[REDACTED_URL]"
+                host = f"[{hostname}]" if ":" in hostname and not hostname.startswith("[") else hostname
+                if parts.port is not None:
+                    host = f"{host}:{parts.port}"
                 query = urlencode([(k, "REDACTED") for k, _ in parse_qsl(parts.query, keep_blank_values=True)])
-                return urlunsplit((parts.scheme, parts.netloc, parts.path, query, ""))
+                return urlunsplit((parts.scheme, host, parts.path, query, ""))
         except ValueError:
             return "[REDACTED_URL]"
     return value

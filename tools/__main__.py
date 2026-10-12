@@ -208,7 +208,7 @@ def main(argv=None) -> int:
         print(json.dumps({"ok": True, "name": a.name, "skipped": "no default sample"})); return 0
     inputs = [a.input] + ([a.input2] if a.input2 else [])
     d = run_tool(a.name, inputs, pathlib.Path(a.out))
-    print(json.dumps({"ok": d.get("ok", True), "out": a.out, "schema": d.get("schema")}))
+    print(json.dumps({"ok": d.get("ok", True), "out": a.out, "receipt": str(pathlib.Path(a.out).with_name(pathlib.Path(a.out).name + ".receipt.json")), "schema": d.get("schema")}))
     return 0
 
 

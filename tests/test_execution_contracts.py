@@ -78,3 +78,23 @@ def test_receipt_sanitizes_signed_url_query_values():
     assert "secret" not in serialized
     assert "private" not in serialized
     assert "REDACTED" in serialized
+
+
+def test_receipt_removes_url_userinfo_and_fragment():
+    receipt = build_receipt(
+        run_id="run-123",
+        tool_name="media-inspect",
+        tool_version="1.0",
+        status="failed",
+        exit_code=1,
+        input_metadata=[{"url": "https://alice:password@example.test/file?token=secret#private-fragment"}],
+        output_artifacts=[],
+        provenance={},
+    )
+
+    serialized = json.dumps(receipt.to_dict())
+    assert "alice" not in serialized
+    assert "password" not in serialized
+    assert "secret" not in serialized
+    assert "private-fragment" not in serialized
+    assert "example.test/file" in serialized
