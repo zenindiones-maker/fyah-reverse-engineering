@@ -340,3 +340,59 @@ def test_er_analyze_workflow_adapter_uses_shared_cli_and_receipt(tmp_path):
     receipt = json.loads((output_dir / "media_inspect.json.receipt.json").read_text())
     assert receipt["status"] == "success"
     assert receipt["input_metadata"][0]["kind"] == "url"
+
+
+
+def test_er_analyze_compare_routes_two_real_urls_through_shared_cli(tmp_path):
+    """Verify compare consumes both downloaded URLs and writes one hashed receipt."""
+    import os
+
+    sample_rate = 22050
+    for filename, frequency, amplitude in (
+        ("track-a.wav", 440, 9000),
+        ("track-b.wav", 660, 5000),
+    ):
+        frames = bytearray()
+        for i in range(sample_rate * 4):
+            value = int(amplitude * math.sin(2 * math.pi * frequency * i / sample_rate))
+            frames.extend(value.to_bytes(2, "little", signed=True))
+        with wave.open(str(tmp_path / filename), "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(sample_rate)
+            wav.writeframes(frames)
+
+    handler = partial(SimpleHTTPRequestHandler, directory=str(tmp_path))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    output_dir = tmp_path / "compare-output"
+    env = os.environ.copy()
+    env["FYAH_RE_OUT_DIR"] = str(output_dir)
+    env.pop("GITHUB_STEP_SUMMARY", None)
+    try:
+        base = f"http://127.0.0.1:{server.server_port}"
+        result = subprocess.run(
+            [sys.executable, "scripts/er_analyze.py", "compare",
+             f"{base}/track-a.wav", f"{base}/track-b.wav"],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            timeout=75,
+            env=env,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    assert result.returncode == 0, f"compare workflow adapter failed: {result.stdout}\\n{result.stderr}"
+    output = output_dir / "compare.json"
+    payload = json.loads(output.read_text())
+    assert payload["schema"] == "fyah-re/audio-compare@1"
+    assert payload["tempo_bpm"]["a"] > 0
+    assert payload["tempo_bpm"]["b"] > 0
+    receipt = json.loads((output_dir / "compare.json.receipt.json").read_text())
+    assert receipt["status"] == "success"
+    assert len(receipt["input_metadata"]) == 2
+    assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
