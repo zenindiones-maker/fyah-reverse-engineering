@@ -195,7 +195,7 @@ def test_media_inspect_cli_records_http_404_and_no_artifact(tmp_path):
 
 def test_media_inspect_cli_records_interrupted_download_and_no_artifact(tmp_path):
     receipt = _run_failure_url_case(tmp_path, "/truncated.wav")
-    assert receipt["error_category"] == "IncompleteRead"
+    assert receipt["error_category"] == "DownloadIntegrityError"
 
 
 def test_media_inspect_cli_rejects_oversized_content_length_before_download(tmp_path):
