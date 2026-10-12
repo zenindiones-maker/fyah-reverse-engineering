@@ -19,15 +19,18 @@ def test_cli_without_command_fails_instead_of_claiming_success():
     assert exc.value.code == 2
 
 
-def test_cli_unknown_tool_fails_with_actionable_error(capsys):
-    with pytest.raises(SystemExit) as exc:
-        fyah_re_cli.main([
-            "run", "not-a-real-tool",
-            "--input", "fixture.bin",
-            "--out", "out.json",
-        ])
-    assert exc.value.code != 0
-    assert "ferramenta desconhecida" in str(exc.value).lower()
+def test_cli_unknown_tool_fails_with_actionable_error(capsys, tmp_path):
+    code = fyah_re_cli.main([
+        "run", "not-a-real-tool",
+        "--input", "fixture.bin",
+        "--out", str(tmp_path / "out.json"),
+    ])
+    assert code == 2
+    assert "ferramenta desconhecida" in capsys.readouterr().err.lower()
+    receipt = json.loads((tmp_path / "out.json.receipt.json").read_text())
+    assert receipt["status"] == "blocked"
+    assert receipt["exit_code"] == 2
+    assert receipt["output_artifacts"] == []
 
 
 

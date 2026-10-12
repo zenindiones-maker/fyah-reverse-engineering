@@ -196,6 +196,7 @@ jobs:
       - name: transcrever a referência e os casos negativos
         env:
           FYAH_RE_VENVS: ${{ github.workspace }}/.er-venvs
+          FYAH_MIDI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python scripts/midi_e2e.py
       - uses: actions/upload-artifact@v7
         with: {name: midi-e2e, path: out/, retention-days: 7}

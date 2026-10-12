@@ -414,7 +414,16 @@ def main(argv=None) -> int:
             return 0
         print(json.dumps({"ok": True, "name": a.name, "skipped": "no default sample"})); return 0
     inputs = [a.input] + ([a.input2] if a.input2 else [])
-    d = run_tool(a.name, inputs, pathlib.Path(a.out))
+    try:
+        d = run_tool(a.name, inputs, pathlib.Path(a.out))
+    except SystemExit as exc:
+        # A string SystemExit would otherwise become process status 1 while the
+        # receipt records 2. The process code has to match the receipt.
+        if type(exc.code) is int and exc.code != 0:
+            return exc.code
+        if exc.code not in (None, 0, ""):
+            print(exc.code, file=sys.stderr)
+        return 2
     print(json.dumps({"ok": d.get("ok", True), "out": a.out, "receipt": str(pathlib.Path(a.out).with_name(pathlib.Path(a.out).name + ".receipt.json")), "schema": d.get("schema")}))
     return 0
 

@@ -154,3 +154,48 @@ def test_harmonic_candidates_are_ambiguous_not_silently_deleted():
         {"pitch": 69, "start_s": 0.40, "end_s": 1.20},
         {"pitch": 82, "start_s": 0.40, "end_s": 1.20},
     ]) == []
+
+
+def test_negative_contract_keeps_block_and_fail_out_of_pass(tmp_path):
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "midi_e2e.py"
+    spec = importlib.util.spec_from_file_location("midi_e2e_contract", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert {item["status"] for item in module.NEGATIVE_CONTRACT.values()} == {"BLOCKED", "FAIL"}
+    blocked = {
+        "status": "blocked",
+        "exit_code": 2,
+        "error_category": "input_or_policy_rejection",
+        "output_artifacts": [],
+        "run_id": "f1-run",
+        "started_at": "2026-10-12T22:30:00Z",
+    }
+    failed = {
+        "status": "failed",
+        "exit_code": 1,
+        "error_category": "CalledProcessError",
+        "output_artifacts": [],
+        "run_id": "f-run",
+        "started_at": "2026-10-12T22:30:01Z",
+    }
+    f1 = module.observe_negative("F1", blocked, 2, tmp_path / "F1.json")
+    f2 = module.observe_negative("F2", failed, 1, tmp_path / "F2.json")
+    f3 = module.observe_negative("F3", dict(failed, run_id="f3-run"), 1, tmp_path / "F3.json")
+    assert [f1["status"], f2["status"], f3["status"]] == ["BLOCKED", "FAIL", "FAIL"]
+    assert all(item["counts_as_success"] is False for item in (f1, f2, f3))
+    groups = module.group_statuses([
+        {"id": "A", "status": "PASS", "counts_as_success": True},
+        {"id": "C", "status": "PASS", "counts_as_success": True},
+        {"id": "E", "status": "PASS", "counts_as_success": True},
+        {"id": "B", "status": "BLOCKED", "counts_as_success": False},
+        {"id": "D", "status": "BLOCKED", "counts_as_success": False},
+        {"id": "O", "status": "BLOCKED", "counts_as_success": False},
+        f1, f2, f3,
+    ])
+    assert groups == module.EXPECTED_GROUPS
+    with pytest.raises(SystemExit, match="recibo success"):
+        module.observe_negative("F1", {**blocked, "status": "success", "exit_code": 0}, 0, tmp_path / "F1.json")
+    with pytest.raises(SystemExit, match="converte BLOCKED"):
+        module.group_statuses([{"id": "B", "status": "BLOCKED", "counts_as_success": True}])

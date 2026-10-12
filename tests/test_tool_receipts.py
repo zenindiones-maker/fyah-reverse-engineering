@@ -62,6 +62,19 @@ def test_run_tool_writes_blocked_receipt_and_reraises(tmp_path, monkeypatch):
     assert receipt["error_category"] == "input_or_policy_rejection"
 
 
+def test_missing_file_process_exit_matches_blocked_receipt(tmp_path):
+    out = tmp_path / "F1.json"
+    code = cli.main(["run", "midi-transcribe", "--input", str(tmp_path / "nao-existe.wav"), "--out", str(out)])
+    receipt = json.loads((tmp_path / "F1.json.receipt.json").read_text())
+    assert code == 2
+    assert receipt["status"] == "blocked"
+    assert receipt["exit_code"] == 2
+    assert receipt["error_category"] == "input_or_policy_rejection"
+    assert receipt["output_artifacts"] == []
+    assert not out.exists()
+    assert not out.with_suffix(".mid").exists()
+
+
 
 def test_pipeline_component_errors_are_detected_recursively():
     assert cli._contains_component_errors({"ok": True, "stems": {"error": "model missing"}})
