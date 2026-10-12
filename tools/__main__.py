@@ -64,6 +64,11 @@ def _run_tool_with_tmp(name: str, inputs: list[str], out: pathlib.Path, tmp: pat
         if name == "compare":
             raise SystemExit("compare exige --input e --input2")
         raise SystemExit(f"{name} exige {expected_inputs} entrada(s); recebeu {len(inputs)}")
+    if name == "supervision-detect":
+        raise SystemExit(
+            "supervision-detect bloqueado: supervision não fornece um modelo de inferência; "
+            "configure um detector e pesos reais antes de anunciar detecções"
+        )
     out.parent.mkdir(parents=True, exist_ok=True)
     paths = [download(u, tmp / f"in{i}") for i, u in enumerate(inputs)]
     kind = t.get("kind") or "module"
@@ -94,13 +99,6 @@ def _run_tool_with_tmp(name: str, inputs: list[str], out: pathlib.Path, tmp: pat
         wav = read_audio(str(paths[0]), sampling_rate=16000)
         ts = get_speech_timestamps(wav, model, sampling_rate=16000)
         data = {"schema": "fyah-re/silero-vad@1", "ok": True, "segments": len(ts), "timestamps": ts[:50]}
-        out.write_text(json.dumps(data, indent=2)); return data
-
-    if kind == "supervision":
-        import supervision as sv, numpy as np
-        xyxy = np.array([[10, 10, 50, 50]], dtype=float)
-        det = sv.Detections(xyxy=xyxy, confidence=np.array([0.9]), class_id=np.array([0]))
-        data = {"schema": "fyah-re/supervision@1", "ok": True, "version": sv.__version__, "detections": len(det)}
         out.write_text(json.dumps(data, indent=2)); return data
 
     if t.get("module") == "pipelines":

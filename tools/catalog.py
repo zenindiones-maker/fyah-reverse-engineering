@@ -21,7 +21,7 @@ CATALOG: list[dict] = [
     {"name": "stems", "area": "audio", "version": "1", "kind": "stems", "needs": ["ml"], "desc": "Demucs htdemucs CPU"},
     # util batch
     {"name": "silero-vad", "area": "audio", "version": "1", "kind": "silero_vad", "needs": ["ml"], "desc": "VAD Silero (torch hub)"},
-    {"name": "supervision-detect", "area": "video", "version": "1", "kind": "supervision", "needs": ["video"], "desc": "detecção com supervision"},
+    {"name": "supervision-detect", "area": "video", "version": "1", "kind": "supervision", "needs": ["video"], "desc": "bloqueado até integrar detector real e pesos de modelo"},
 ]
 
 by_name = {t["name"]: t for t in CATALOG}
