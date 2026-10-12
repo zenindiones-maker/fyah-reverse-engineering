@@ -13,6 +13,11 @@ on:
         description: "Tarefa para o E.R."
         required: true
         default: "Inspecione a mídia (media-inspect) e rode audio-full no clip. Use bash."
+      rea_mcp:
+        description: "Habilitar REA MCP restrito com decisão Qwen e fixture isolada"
+        required: false
+        default: false
+        type: boolean
       url:
         description: "URL do arquivo (próprio/licenciado/domínio público)"
         required: true
@@ -209,6 +214,24 @@ jobs:
             cat out/timing_server.txt out/timing_dsh.txt 2>/dev/null || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: REA MCP authorized DSH decision
+        if: ${{ inputs.rea_mcp && inputs.model == 'qwen3-30b-a3b' }}
+        run: |
+          set -euo pipefail
+          node --version
+          mkdir -p /tmp/rea-dsh
+          cd /tmp/rea-dsh
+          npm init -y >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund rea-agents@6.4.0
+          cd "$GITHUB_WORKSPACE"
+          mkdir -p fixtures
+          printf 'int main(void) { return 0; }\n' > fixtures/rea_dsh_fixture.c
+          cc -o fixtures/rea_dsh_fixture fixtures/rea_dsh_fixture.c
+          python harness/rea_dsh_adapter.py \
+            --harness-result out/harness.json \
+            --rea-cli /tmp/rea-dsh/node_modules/.bin/rea \
+            --fixture "$GITHUB_WORKSPACE/fixtures/rea_dsh_fixture" \
+            --receipt out/rea_mcp_dsh_receipt.json
       - name: Stop server
         if: always()
         run: kill "$(cat llama.pid)" 2>/dev/null || true
