@@ -125,3 +125,24 @@ def test_harmonic_octave_stays_a_failure_under_the_same_tolerances():
     assert abs(score["matched"][2]["onset_error_s"]) <= 0.08
     assert score["matched"][2]["pitch"] == 76
 
+
+
+def test_harmonic_candidates_are_ambiguous_not_silently_deleted():
+    from audio.midi_transcribe import harmonic_ambiguities
+
+    harmonic_series = [
+        {"pitch": 69, "start_s": 0.40, "end_s": 1.60},
+        {"pitch": 97, "start_s": 0.405, "end_s": 1.55},
+    ]
+    candidates = harmonic_ambiguities(harmonic_series)
+    assert candidates == [{"lower_pitch": 69, "upper_pitch": 97, "harmonic_number": 5}]
+
+    # Uma oitava realmente tocada com onset/duração alinhados é acusticamente
+    # ambígua sob este critério; não pode ser removida silenciosamente.
+    played_octave = [
+        {"pitch": 69, "start_s": 0.40, "end_s": 1.20},
+        {"pitch": 81, "start_s": 0.40, "end_s": 1.20},
+    ]
+    assert harmonic_ambiguities(played_octave) == [
+        {"lower_pitch": 69, "upper_pitch": 81, "harmonic_number": 2}
+    ]
