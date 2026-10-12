@@ -25,6 +25,7 @@ try {
   const listed=await request('tools/list',{});
   const tool=listed?.tools?.find(t=>t.name===toolName);
   if(!tool?.inputSchema)throw Error('allowlisted tool absent');
+  console.error('REA_MCP_TOOL_SCHEMA='+JSON.stringify(tool.inputSchema).slice(0,2500));
   const required=tool.inputSchema.required||[];
   if(required.some(k=>!(k in args)))throw Error('required arguments missing: '+required.join(','));
   // No arbitrary paths or URLs accepted from a model: fixture only for now.
@@ -32,7 +33,7 @@ try {
     if(typeof value==='string' && (value.startsWith('/')||value.includes('..')||/^https?:/i.test(value)))throw Error('untrusted path or URL');
   }
   const result=await request('tools/call',{name:toolName,arguments:args});
-  if(result?.isError)throw Error('MCP tool returned isError');
+  if(result?.isError)throw Error('MCP tool returned isError: '+JSON.stringify(result.content).slice(0,1500));
   if(!Array.isArray(result?.content))throw Error('invalid MCP tool response');
   console.log(JSON.stringify({status:'PASS',server:init.serverInfo.name,tool:toolName,content_blocks:result.content.length}));
 }catch(err){console.error('REA_MCP_CALL=FAIL',err.message);process.exitCode=1}
