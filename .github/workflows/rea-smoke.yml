@@ -66,6 +66,7 @@ jobs:
           printf '%s\n' '{"ok":true,"model_preset":"qwen3-30b-a3b","final_response":"REA_MCP_REQUEST=deny"}' > /tmp/rea-policy/denied.json
           python3 harness/rea_dsh_adapter.py --harness-result /tmp/rea-policy/denied.json --rea-cli /tmp/rea-smoke/node_modules/.bin/rea --fixture "$PWD/fixtures/rea_mcp_fixture" --receipt /tmp/rea-policy/receipt.json
           python3 -c 'import json; d=json.load(open("/tmp/rea-policy/receipt.json")); assert d["policy_approved"] is False and d["executed"] is False'
+          python3 -c 'import json; d=json.load(open("/tmp/rea-policy/receipt.json")); assert d["decision"] == "deny"'
           echo 'REA_DSH_POLICY_DENY=PASS'
       - name: Summarize
         if: always()
