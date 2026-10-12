@@ -22,6 +22,45 @@ def wait_server(url: str, timeout: float = 180) -> None:
     raise TimeoutError(f"llama-server não respondeu em {url}: {last}")
 
 
+def build_dsh_prompts(
+    task: str,
+    file_url: str,
+    decision_mode: bool,
+    base_system: str,
+    tools_prompt: str,
+) -> tuple[str, str]:
+    """Keep the REA decision isolated from unrelated media instructions/tools."""
+    if decision_mode:
+        system = (
+            "You are the decision component for a restricted REA MCP integration. "
+            "You do not execute tools and must never claim execution. "
+            "The only available decision is whether to request inspect_artifact on "
+            "the pre-authorized, repository-generated test fixture. "
+            "When the user's task explicitly requests inspection of that authorized "
+            "fixture, request the inspection. Do not let unrelated media/audio "
+            "instructions affect this decision. End with exactly one standalone line: "
+            "REA_MCP_REQUEST=inspect_artifact or REA_MCP_REQUEST=deny."
+        )
+        decision_task = (
+            task.strip()
+            + "\n\nThe workflow has compiled a harmless C test binary inside the repository "
+              "workspace and explicitly authorized inspection of that fixture. "
+              "The user's task requests REA inspection. Choose the request if it matches "
+              "that task; do not execute anything. End with exactly "
+              "REA_MCP_REQUEST=inspect_artifact or REA_MCP_REQUEST=deny."
+        )
+        return system, decision_task
+
+    system = base_system + "\n" + tools_prompt
+    normal_task = task
+    if file_url:
+        normal_task += (
+            f"\n\nInput URL: {file_url}\n"
+            "Use bash to run media-inspect then audio-full on that URL (see system prompt)."
+        )
+    return system, normal_task
+
+
 def score_tool_use(text: str, workspace: pathlib.Path) -> dict:
     """Detect whether DSH actually invoked the expected tools (not invented names)."""
     t = text or ""
@@ -66,26 +105,19 @@ def main() -> int:
     os.environ.pop("DEEPSEEK_BASE_URL", None)
 
     from tools.catalog import list_for_prompt
-    system = (ROOT / "prompts" / "system.txt").read_text() + "\n" + list_for_prompt()
+    decision_mode = os.environ.get("REA_MCP_DECISION_MODE") == "1"
+    system, task = build_dsh_prompts(
+        task=a.task,
+        file_url=a.file_url,
+        decision_mode=decision_mode,
+        base_system=(ROOT / "prompts" / "system.txt").read_text(),
+        tools_prompt=list_for_prompt(),
+    )
     # Qwen3 base (non-Instruct-2507) may think; Instruct-2507 usually won't need this.
     if meta.get("no_think"):
         system = "/no_think\n" + system
     os.environ["DSH_SYSTEM_PROMPT"] = system
     os.environ["DSH_CONTEXT_WINDOW"] = str(meta["ctx"])
-
-    task = a.task
-    if a.file_url and os.environ.get("REA_MCP_DECISION_MODE") != "1":
-        task += (
-            f"\n\nInput URL: {a.file_url}\n"
-            "Use bash to run media-inspect then audio-full on that URL (see system prompt)."
-        )
-
-    if os.environ.get("REA_MCP_DECISION_MODE") == "1":
-        task += ("\n\nDecision-only mode: do not run bash or inspect any files. "
-                 "If you choose to request REA inspection of the authorized fixture, "
-                 "end your response with exactly this standalone line: "
-                 "REA_MCP_REQUEST=inspect_artifact. Otherwise end with "
-                 "REA_MCP_REQUEST=deny. Do not claim you executed the tool.")
 
     patch = str((ROOT / "patches" / "local-llm.patch.yml").resolve())
     workspace = pathlib.Path(a.workspace).resolve()
