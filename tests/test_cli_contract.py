@@ -27,4 +27,4 @@ def test_cli_unknown_tool_fails_with_actionable_error(capsys):
             "--out", "out.json",
         ])
     assert exc.value.code != 0
-    assert "ferramenta desconhecida" in capsys.readouterr().err.lower()
+    assert "ferramenta desconhecida" in str(exc.value).lower()
