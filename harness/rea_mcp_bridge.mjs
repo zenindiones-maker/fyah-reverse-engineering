@@ -43,6 +43,10 @@ try {
   const result=await request('tools/call',{name:toolName,arguments:args});
   if(result?.isError)throw Error('MCP tool returned isError: '+JSON.stringify(result.content).slice(0,1500));
   if(!Array.isArray(result?.content))throw Error('invalid MCP tool response');
-  console.log(JSON.stringify({status:'PASS',server:init.serverInfo.name,tool:toolName,content_blocks:result.content.length,fixture_opened:true}));
+  const reports=result.content.filter(b=>b.type==='text'&&typeof b.text==='string'&&b.text.trim());
+  if(!reports.length)throw Error('REA returned no nonempty report');
+  const report=reports.map(b=>b.text).join('\n');
+  if(report.length<40)throw Error('REA report unexpectedly short');
+  console.log(JSON.stringify({status:'PASS',server:init.serverInfo.name,tool:toolName,content_blocks:result.content.length,fixture_opened:true,report_length:report.length,report_preview:report.slice(0,1200)}));
 }catch(err){console.error('REA_MCP_CALL=FAIL',err.message);process.exitCode=1}
 finally{clearTimeout(timer);child.kill('SIGTERM')}
