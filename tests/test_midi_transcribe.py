@@ -105,3 +105,23 @@ def test_invalid_inputs_do_not_publish_a_successful_midi(tmp_path, monkeypatch):
     corrupt_run = run(corrupt, tmp_path / "corrupt.json")
     assert corrupt_run.returncode != 0
     assert not (tmp_path / "corrupt.mid").exists()
+
+
+def test_harmonic_octave_stays_a_failure_under_the_same_tolerances():
+    from audio.midi_transcribe import case_specs, evaluate_notes
+
+    spec = case_specs()["B"]
+    detected = [
+        {"pitch": 69, "start_s": 0.406, "end_s": 0.987},
+        {"pitch": 72, "start_s": 1.405, "end_s": 1.987},
+        {"pitch": 76, "start_s": 2.405, "end_s": 2.973},
+        {"pitch": 88, "start_s": 2.393, "end_s": 2.892},
+    ]
+    score = evaluate_notes(detected, spec["notes"], spec["partials"])
+    assert score["status"] == "FAIL"
+    assert score["missing"] == []
+    assert [item["pitch"] for item in score["harmonic_confusions"]] == [88]
+    assert score["unrelated_extras"] == []
+    assert abs(score["matched"][2]["onset_error_s"]) <= 0.08
+    assert score["matched"][2]["pitch"] == 76
+
