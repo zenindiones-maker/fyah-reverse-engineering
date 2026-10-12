@@ -39,8 +39,11 @@ jobs:
           node scripts/rea_mcp_protocol_smoke.mjs /tmp/rea-smoke/node_modules/.bin/rea
       - name: Check bridge rejects unauthorized MCP tool
         run: |
-          node harness/rea_mcp_bridge.mjs /tmp/rea-smoke/node_modules/.bin/rea not_allowed '{}'
-          test "$?" -eq 2
+          set -euo pipefail
+          rc=0
+          node harness/rea_mcp_bridge.mjs /tmp/rea-smoke/node_modules/.bin/rea not_allowed '{}' || rc=$?
+          test "$rc" -eq 2
+          echo 'REA_MCP_ALLOWLIST_DENY=PASS'
       - name: Summarize
         if: always()
         run: |
