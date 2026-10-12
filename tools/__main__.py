@@ -292,16 +292,20 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
         midi = out.with_suffix(".mid")
         if midi.is_file() and midi != out:
             outputs.append(artifact_metadata(midi, root=out.parent))
+        provenance = {
+            "executor": "fyah-re",
+            "commit": os.environ.get("GITHUB_SHA") or os.environ.get("FYAH_RE_COMMIT"),
+            "python": sys.version.split()[0],
+        }
+        if data.get("harmonic_ambiguity_override"):
+            provenance["harmonic_ambiguity_override"] = True
+            provenance["harmonic_ambiguities"] = data.get("harmonic_ambiguities")
         receipt = build_receipt(
             run_id=run_id, tool_name=name, tool_version=tool_version, status="success",
             exit_code=0, started_at=started, ended_at=ended,
             input_metadata=[_receipt_input(value) for value in inputs],
             output_artifacts=outputs,
-            provenance={
-                "executor": "fyah-re",
-                "commit": os.environ.get("GITHUB_SHA") or os.environ.get("FYAH_RE_COMMIT"),
-                "python": sys.version.split()[0],
-            },
+            provenance=provenance,
         )
         _write_receipt(receipt_path, receipt)
         return data
@@ -330,6 +334,26 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
             error_category="input_or_policy_rejection",
         )
         _write_receipt(receipt_path, receipt)
+        raise
+    except subprocess.CalledProcessError as exc:
+        ended = datetime.now(timezone.utc)
+        blocked = exc.returncode == 3
+        receipt = build_receipt(
+            run_id=run_id, tool_name=name, tool_version=tool_version,
+            status="blocked" if blocked else "failed",
+            exit_code=exc.returncode or 1, started_at=started, ended_at=ended,
+            input_metadata=[_receipt_input(value) for value in inputs],
+            output_artifacts=[],
+            provenance={
+                "executor": "fyah-re",
+                "python": sys.version.split()[0],
+                **({"policy": "harmonic_ambiguity"} if blocked else {}),
+            },
+            error_category="input_or_policy_rejection" if blocked else type(exc).__name__,
+        )
+        _write_receipt(receipt_path, receipt)
+        if blocked:
+            raise SystemExit(3) from exc
         raise
     except Exception as exc:
         ended = datetime.now(timezone.utc)

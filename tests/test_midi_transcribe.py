@@ -146,3 +146,11 @@ def test_harmonic_candidates_are_ambiguous_not_silently_deleted():
     assert harmonic_ambiguities(played_octave) == [
         {"lower_pitch": 69, "upper_pitch": 81, "harmonic_number": 2}
     ]
+    assert harmonic_ambiguities([
+        {"pitch": 69, "start_s": 0.40, "end_s": 1.20},
+        {"pitch": 76, "start_s": 0.40, "end_s": 1.20},
+    ]) == []
+    assert harmonic_ambiguities([
+        {"pitch": 69, "start_s": 0.40, "end_s": 1.20},
+        {"pitch": 82, "start_s": 0.40, "end_s": 1.20},
+    ]) == []

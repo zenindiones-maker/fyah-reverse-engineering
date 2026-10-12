@@ -38,6 +38,10 @@ PARAMETERS = {
 PITCH_TOLERANCE_SEMITONES = 1
 ONSET_TOLERANCE_S = 0.08
 OFFSET_TOLERANCE_S = 0.08
+# Intervalo do parcial, não a tolerância de avaliação. ±1 semitom classificaria
+# uma nona menor (13 semitons) como oitava e bloquearia uma díade válida.
+HARMONIC_INTERVAL_TOLERANCE_SEMITONES = 0.5
+HARMONIC_BLOCK_EXIT = 3
 REFERENCE_NOTES = (
     {"name": "A4", "frequency_hz": 440.0, "pitch": 69, "start_s": 0.40, "duration_s": 0.55},
     {"name": "C5", "frequency_hz": 523.25, "pitch": 72, "start_s": 1.40, "duration_s": 0.55},
@@ -55,6 +59,10 @@ LIMITATIONS = [
 
 class MidiError(RuntimeError):
     """Transcription did not produce a trustworthy MIDI file."""
+
+
+class HarmonicAmbiguity(MidiError):
+    """Aligned notes that cannot be separated from harmonic partials."""
 
 
 def harmonic_midi(fundamental: int, number: int) -> int:
@@ -116,10 +124,22 @@ def case_specs() -> dict[str, dict]:
     ]
     return {
         "A": {"id": "A", "title": "senoides isoladas", "expect": "PASS", "tail_s": 0.50, "notes": a, "partials": ()},
-        "B": {"id": "B", "title": "série harmônica", "expect": "BLOCKED", "tail_s": 0.50, "notes": b_notes, "partials": tuple(b_partials)},
+        "B": {"id": "B", "title": "série harmônica", "expect": "BLOCKED", "blocked_pitch": 88, "tail_s": 0.50, "notes": b_notes, "partials": tuple(b_partials)},
         "C": {"id": "C", "title": "duas senoides simultâneas", "expect": "PASS", "tail_s": 0.50, "notes": c, "partials": ()},
-        "D": {"id": "D", "title": "timbre harmônico", "expect": "BLOCKED", "tail_s": 0.50, "notes": d, "partials": d_partials},
+        "D": {"id": "D", "title": "timbre harmônico", "expect": "BLOCKED", "blocked_pitch": 97, "tail_s": 0.50, "notes": d, "partials": d_partials},
         "E": {"id": "E", "title": "silêncio antes, entre e depois", "expect": "PASS", "tail_s": 0.70, "notes": e, "partials": ()},
+        "O": {
+            "id": "O",
+            "title": "oitava realmente tocada",
+            "expect": "BLOCKED",
+            "blocked_pitch": 81,
+            "tail_s": 0.50,
+            "notes": [
+                _note("A4", 440.0, 69, 0.40, 0.80),
+                _note("A5", 880.0, 81, 0.40, 0.80, ((880.0, 0.8),)),
+            ],
+            "partials": (),
+        },
     }
 
 
@@ -381,7 +401,7 @@ def harmonic_ambiguities(notes: list[dict]) -> list[dict]:
             if not 2 <= harmonic_number <= 8:
                 continue
             expected_semitones = 12.0 * math.log2(harmonic_number)
-            if abs(semitones - expected_semitones) > PITCH_TOLERANCE_SEMITONES:
+            if abs(semitones - expected_semitones) > HARMONIC_INTERVAL_TOLERANCE_SEMITONES:
                 continue
             upper_start = float(upper["start_s"])
             upper_end = float(upper["end_s"])
@@ -430,7 +450,7 @@ def _transcribe(source: Path, out: Path) -> dict:
             f"MIDI {item['upper_pitch']} pode ser parcial h{item['harmonic_number']} de MIDI {item['lower_pitch']}"
             for item in ambiguities
         )
-        raise MidiError(
+        raise HarmonicAmbiguity(
             "transcrição bloqueada: ambiguidade harmônica não resolvida ("
             + details
             + "). Nenhum MIDI foi publicado. Revise a fonte ou defina "
@@ -469,6 +489,8 @@ def transcribe_file(path: str, out: str) -> dict:
     if importlib.util.find_spec("basic_pitch") is None:
         raise MidiError("basic-pitch ausente; use a venv isolada FYAH_RE_VENVS/basicpitch")
     destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.unlink(missing_ok=True)
+    destination.with_suffix(".mid").unlink(missing_ok=True)
     try:
         return _transcribe(source, destination)
     except Exception:
@@ -501,6 +523,9 @@ def main(argv=None) -> int:
         return completed.returncode
     try:
         result = transcribe_file(args.audio, args.out)
+    except HarmonicAmbiguity as exc:
+        print(str(exc), file=sys.stderr)
+        return HARMONIC_BLOCK_EXIT
     except MidiError as exc:
         print(str(exc), file=sys.stderr)
         return 1
