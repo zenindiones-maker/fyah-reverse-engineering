@@ -1,7 +1,7 @@
 """CLI uniforme: list | run | smoke."""
 from __future__ import annotations
 
-import argparse, json, os, pathlib, subprocess, sys, tempfile, urllib.request, uuid
+import argparse, json, os, pathlib, shutil, subprocess, sys, tempfile, urllib.request, uuid
 from datetime import datetime, timezone
 
 from tools.contracts import artifact_metadata, build_receipt
@@ -115,9 +115,10 @@ def _run_tool_with_tmp(name: str, inputs: list[str], out: pathlib.Path, tmp: pat
         r = subprocess.run(["ffprobe", "-v", "error", "-show_format", "-show_streams", "-of", "json", str(paths[0])],
                            capture_output=True, text=True, check=True)
         data = {"schema": "fyah-re/media-inspect@1", "ok": True, "ffprobe": json.loads(r.stdout)}
-        mi = subprocess.run(["mediainfo", "--Output=JSON", str(paths[0])], capture_output=True, text=True)
-        if mi.returncode == 0:
-            data["mediainfo"] = json.loads(mi.stdout)
+        if shutil.which("mediainfo"):
+            mi = subprocess.run(["mediainfo", "--Output=JSON", str(paths[0])], capture_output=True, text=True)
+            if mi.returncode == 0:
+                data["mediainfo"] = json.loads(mi.stdout)
         out.write_text(json.dumps(data, indent=2, ensure_ascii=False))
         return data
 
