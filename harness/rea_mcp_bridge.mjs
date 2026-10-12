@@ -2,6 +2,8 @@
 // Explicitly authorized REA MCP call, isolated from model authority.
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
+import { realpathSync, statSync } from 'node:fs';
+import { resolve, sep } from 'node:path';
 const [exe, toolName, argsJson] = process.argv.slice(2);
 const allowed = new Set(['inspect_artifact']);
 if (!exe || !allowed.has(toolName)) { console.error('REA_MCP_DENIED=tool_not_allowlisted'); process.exit(2); }
@@ -36,8 +38,11 @@ try {
   if(!open?.inputSchema)throw Error('open_binary unavailable');
   console.error('REA_MCP_OPEN_SCHEMA='+JSON.stringify(open.inputSchema).slice(0,2200));
   const fixture=process.env.REA_MCP_FIXTURE;
-  if(!fixture || !fixture.startsWith(process.cwd()+'/'))throw Error('fixture must be inside current workspace');
-  const openArgs={path:fixture};
+  if(!fixture)throw Error('fixture missing');
+  const root=realpathSync(process.cwd());
+  const target=realpathSync(resolve(fixture));
+  if(!target.startsWith(root+sep) || !statSync(target).isFile())throw Error('fixture must be regular file inside workspace');
+  const openArgs={path:target};
   const opened=await request('tools/call',{name:'open_binary',arguments:openArgs});
   if(opened?.isError)throw Error('open_binary failed: '+JSON.stringify(opened.content).slice(0,1200));
   const result=await request('tools/call',{name:toolName,arguments:args});
