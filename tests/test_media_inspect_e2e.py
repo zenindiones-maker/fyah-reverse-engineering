@@ -239,3 +239,41 @@ def test_unified_cli_runs_real_audio_profile_and_receipts_output(tmp_path):
     assert receipt["status"] == "success"
     assert receipt["tool_name"] == "audio-profile"
     assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
+
+
+def test_unified_cli_runs_real_video_pacing_and_receipts_output(tmp_path):
+    """Prove the shared dispatcher reaches PySceneDetect on a generated real video."""
+    import numpy as np
+    import pytest
+
+    cv2 = pytest.importorskip("cv2")
+    source = tmp_path / "scene-changes.mp4"
+    writer = cv2.VideoWriter(str(source), cv2.VideoWriter_fourcc(*"mp4v"), 10, (64, 48))
+    assert writer.isOpened(), "OpenCV MP4 writer is unavailable in the CI environment"
+    rng = np.random.default_rng(7)
+    for _scene in range(4):
+        frame = rng.integers(0, 255, (48, 64, 3), dtype=np.uint8)
+        for _ in range(20):
+            writer.write(frame)
+    writer.release()
+
+    output = tmp_path / "cuts-pacing.json"
+    result = subprocess.run(
+        [sys.executable, "-m", "tools", "run", "cuts-pacing",
+         "--input", str(source), "--out", str(output)],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert result.returncode == 0, f"cuts-pacing CLI failed: {result.stdout}\\n{result.stderr}"
+    payload = json.loads(output.read_text())
+    assert payload["schema"] == "fyah-re/video-pacing@1"
+    assert payload["duration_s"] >= 7.5
+    assert payload["shots"] >= 2
+    receipt = json.loads((tmp_path / "cuts-pacing.json.receipt.json").read_text())
+    assert receipt["schema_version"] == "fyah-re/execution-receipt@1"
+    assert receipt["status"] == "success"
+    assert receipt["tool_name"] == "cuts-pacing"
+    assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
