@@ -4,7 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
-import re
+import hashlib
 import subprocess
 
 def main():
@@ -21,13 +21,17 @@ def main():
     denied = response == "REA_MCP_REQUEST=deny"
     approved = h.get("ok") is True and h.get("model_preset") == "qwen3-30b-a3b" and proposed
     receipt = {"model": h.get("model_preset"), "model_proposed": proposed,
-               "policy_approved": approved, "executed": False}
+               "policy_approved": approved, "executed": False,
+               "decision": "approve" if approved else ("deny" if denied else "invalid")}
+    if h.get("ok") is not True or h.get("model_preset") != "qwen3-30b-a3b":
+        receipt["decision"] = "invalid"
     if approved:
         workspace = Path.cwd().resolve()
         fixture = Path(a.fixture).resolve()
         if not fixture.is_file() or workspace not in fixture.parents:
             receipt["error"] = "fixture must be a file inside workspace"
         else:
+            receipt["fixture_sha256"] = hashlib.sha256(fixture.read_bytes()).hexdigest()
             env = dict(os.environ, REA_MCP_FIXTURE=str(fixture))
             try:
                 result = subprocess.run(
