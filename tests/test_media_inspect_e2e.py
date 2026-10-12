@@ -277,3 +277,28 @@ def test_unified_cli_runs_real_video_pacing_and_receipts_output(tmp_path):
     assert receipt["status"] == "success"
     assert receipt["tool_name"] == "cuts-pacing"
     assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
+
+
+
+def test_media_inspect_runs_when_optional_mediainfo_binary_is_missing(tmp_path, monkeypatch):
+    """The required ffprobe path must work even if the optional mediainfo CLI is absent."""
+    from tools import __main__ as cli
+
+    source = tmp_path / "without-mediainfo.wav"
+    _make_wav(source)
+    output = tmp_path / "without-mediainfo.json"
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    original_which = shutil.which
+    monkeypatch.setattr(
+        cli.shutil,
+        "which",
+        lambda command: None if command == "mediainfo" else original_which(command),
+    )
+
+    result = cli._run_tool_with_tmp("media-inspect", [str(source)], output, workspace)
+
+    assert result["ok"] is True
+    assert result["ffprobe"]["streams"][0]["codec_type"] == "audio"
+    assert "mediainfo" not in result
+    assert json.loads(output.read_text())["ok"] is True
