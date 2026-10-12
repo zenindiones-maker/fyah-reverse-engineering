@@ -1,6 +1,10 @@
 name: REA CLI isolated smoke
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/rea-smoke.yml
+      - docs/integracoes/rea.md
 permissions:
   contents: read
 jobs:
