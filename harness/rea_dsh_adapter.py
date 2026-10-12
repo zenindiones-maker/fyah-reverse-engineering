@@ -16,7 +16,9 @@ def main():
     a = p.parse_args()
     h = json.loads(Path(a.harness_result).read_text())
     # Only a successful Qwen3-30B-A3B DSH result can authorize evaluation.
-    proposed = bool(re.search(r"(?m)^REA_MCP_REQUEST=inspect_artifact\s*$", str(h.get("final_response", ""))))
+    response = str(h.get("final_response", "")).strip()
+    proposed = response == "REA_MCP_REQUEST=inspect_artifact"
+    denied = response == "REA_MCP_REQUEST=deny"
     approved = h.get("ok") is True and h.get("model_preset") == "qwen3-30b-a3b" and proposed
     receipt = {"model": h.get("model_preset"), "model_proposed": proposed,
                "policy_approved": approved, "executed": False}
@@ -46,7 +48,7 @@ def main():
     print(json.dumps(receipt, ensure_ascii=False))
     # A deliberate model denial is a successful policy decision, not a tool failure.
     if not approved:
-        return 0 if h.get("ok") is True and h.get("model_preset") == "qwen3-30b-a3b" and not proposed else 1
+        return 0 if h.get("ok") is True and h.get("model_preset") == "qwen3-30b-a3b" and denied else 1
     return 0 if receipt["executed"] else 1
 
 if __name__ == "__main__":
