@@ -8,19 +8,38 @@ from tools.contracts import artifact_metadata, build_receipt
 
 from tools.catalog import CATALOG, by_name, list_for_prompt
 
+MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024
+
 
 def download(url: str, dest: pathlib.Path) -> pathlib.Path:
     if url.startswith(("http://", "https://")):
         req = urllib.request.Request(url, headers={"User-Agent": "fyah-re-tools"})
-        dest.write_bytes(urllib.request.urlopen(req, timeout=120).read())
-        return dest
+        written = 0
+        try:
+            with urllib.request.urlopen(req, timeout=120) as response:
+                declared_size = response.headers.get("Content-Length")
+                if declared_size is not None and int(declared_size) > MAX_DOWNLOAD_BYTES:
+                    raise ValueError("download exceeds size limit")
+                with dest.open("wb") as stream:
+                    while True:
+                        chunk = response.read(min(1024 * 1024, MAX_DOWNLOAD_BYTES - written + 1))
+                        if not chunk:
+                            break
+                        written += len(chunk)
+                        if written > MAX_DOWNLOAD_BYTES:
+                            raise ValueError("download exceeds size limit")
+                        stream.write(chunk)
+            return dest
+        except Exception:
+            dest.unlink(missing_ok=True)
+            raise
     p = pathlib.Path(url)
     if not p.exists():
         raise SystemExit(f"arquivo não encontrado: {url}")
     return p
 
 
-def _run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
+def _run_tool_with_tmp(name: str, inputs: list[str], out: pathlib.Path, tmp: pathlib.Path) -> dict:
     if name not in by_name:
         raise SystemExit(f"ferramenta desconhecida: {name}")
     t = by_name[name]
@@ -30,7 +49,6 @@ def _run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
             raise SystemExit("compare exige --input e --input2")
         raise SystemExit(f"{name} exige {expected_inputs} entrada(s); recebeu {len(inputs)}")
     out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = pathlib.Path(tempfile.mkdtemp(prefix="fyah-tool-"))
     paths = [download(u, tmp / f"in{i}") for i, u in enumerate(inputs)]
     kind = t.get("kind") or "module"
 
@@ -87,6 +105,13 @@ def _run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
 
 
 
+
+def _run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
+    """Run a catalog tool in a temporary workspace that is always removed."""
+    with tempfile.TemporaryDirectory(prefix="fyah-tool-") as temporary:
+        return _run_tool_with_tmp(name, inputs, out, pathlib.Path(temporary))
+
+
 def _receipt_input(value: str) -> dict:
     """Describe an input without persisting credentials or absolute local paths."""
     if value.startswith(("http://", "https://")):
@@ -114,6 +139,8 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
     receipt_path = out.with_name(out.name + ".receipt.json")
     try:
         data = _run_tool(name, inputs, out)
+        if not out.is_file():
+            raise RuntimeError("tool completed without writing its output artifact")
         ended = datetime.now(timezone.utc)
         outputs = [artifact_metadata(out, root=out.parent)] if out.is_file() else []
         receipt = build_receipt(
