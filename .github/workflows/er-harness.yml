@@ -34,6 +34,7 @@ jobs:
       LOCAL_LLM_KEY: local-no-cloud-key
       ER_TOOLS_DIR: ${{ github.workspace }}/.er-tools
       MODEL_PRESET: ${{ inputs.model }}
+      REA_MCP_DECISION_MODE: ${{ inputs.rea_mcp && '1' || '0' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
