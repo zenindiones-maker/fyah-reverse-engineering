@@ -355,6 +355,10 @@ def test_er_analyze_compare_routes_two_real_urls_through_shared_cli(tmp_path):
         frames = bytearray()
         for i in range(sample_rate * 4):
             value = int(amplitude * math.sin(2 * math.pi * frequency * i / sample_rate))
+            beat_phase = i % (sample_rate // 2)
+            if beat_phase < 110:
+                value += int(10000 * (1 - beat_phase / 110))
+            value = max(-32768, min(32767, value))
             frames.extend(value.to_bytes(2, "little", signed=True))
         with wave.open(str(tmp_path / filename), "wb") as wav:
             wav.setnchannels(1)
