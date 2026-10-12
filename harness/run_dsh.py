@@ -74,11 +74,18 @@ def main() -> int:
     os.environ["DSH_CONTEXT_WINDOW"] = str(meta["ctx"])
 
     task = a.task
-    if a.file_url:
+    if a.file_url and os.environ.get("REA_MCP_DECISION_MODE") != "1":
         task += (
             f"\n\nInput URL: {a.file_url}\n"
             "Use bash to run media-inspect then audio-full on that URL (see system prompt)."
         )
+
+    if os.environ.get("REA_MCP_DECISION_MODE") == "1":
+        task += ("\n\nDecision-only mode: do not run bash or inspect any files. "
+                 "If you choose to request REA inspection of the authorized fixture, "
+                 "end your response with exactly this standalone line: "
+                 "REA_MCP_REQUEST=inspect_artifact. Otherwise end with "
+                 "REA_MCP_REQUEST=deny. Do not claim you executed the tool.")
 
     patch = str((ROOT / "patches" / "local-llm.patch.yml").resolve())
     workspace = pathlib.Path(a.workspace).resolve()
