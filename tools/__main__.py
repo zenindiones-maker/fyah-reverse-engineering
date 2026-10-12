@@ -11,15 +11,27 @@ from tools.catalog import CATALOG, by_name, list_for_prompt
 MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024
 
 
+class DownloadIntegrityError(RuntimeError):
+    """Raised when an HTTP response ends before its declared body length."""
+
+
 def download(url: str, dest: pathlib.Path) -> pathlib.Path:
     if url.startswith(("http://", "https://")):
         req = urllib.request.Request(url, headers={"User-Agent": "fyah-re-tools"})
         written = 0
         try:
             with urllib.request.urlopen(req, timeout=120) as response:
-                declared_size = response.headers.get("Content-Length")
-                if declared_size is not None and int(declared_size) > MAX_DOWNLOAD_BYTES:
-                    raise ValueError("download exceeds size limit")
+                declared_header = response.headers.get("Content-Length")
+                declared_size = None
+                if declared_header is not None:
+                    try:
+                        declared_size = int(declared_header)
+                    except (TypeError, ValueError) as exc:
+                        raise DownloadIntegrityError("invalid Content-Length header") from exc
+                    if declared_size < 0:
+                        raise DownloadIntegrityError("negative Content-Length header")
+                    if declared_size > MAX_DOWNLOAD_BYTES:
+                        raise ValueError("download exceeds size limit")
                 with dest.open("wb") as stream:
                     while True:
                         chunk = response.read(min(1024 * 1024, MAX_DOWNLOAD_BYTES - written + 1))
@@ -29,6 +41,10 @@ def download(url: str, dest: pathlib.Path) -> pathlib.Path:
                         if written > MAX_DOWNLOAD_BYTES:
                             raise ValueError("download exceeds size limit")
                         stream.write(chunk)
+                if declared_size is not None and written != declared_size:
+                    raise DownloadIntegrityError(
+                        f"incomplete download: expected {declared_size} bytes, received {written}"
+                    )
             return dest
         except Exception:
             dest.unlink(missing_ok=True)
