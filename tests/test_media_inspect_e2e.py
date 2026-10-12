@@ -109,3 +109,27 @@ def test_media_inspect_cli_records_real_ffprobe_failure(tmp_path):
     assert receipt["exit_code"] != 0
     assert receipt["error_category"] == "CalledProcessError"
     assert receipt["output_artifacts"] == []
+
+
+
+def test_media_inspect_cli_downloads_public_wikimedia_media_url(tmp_path):
+    """Exercise the same URL pipeline against a real public media host."""
+    assert shutil.which("ffprobe"), "ffprobe must be available for the real media-inspect E2E"
+    url = "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg"
+    output = tmp_path / "remote-media.json"
+
+    result = _run_media_inspect(url, output)
+
+    assert result.returncode == 0, f"remote URL pipeline failed: {result.stdout}\\n{result.stderr}"
+    assert output.is_file(), "remote URL pipeline did not create JSON output"
+    payload = json.loads(output.read_text())
+    assert payload["schema"] == "fyah-re/media-inspect@1"
+    assert payload["ok"] is True
+    assert payload["ffprobe"]["streams"], "ffprobe found no streams in the downloaded public media"
+
+    receipt = json.loads((tmp_path / "remote-media.json.receipt.json").read_text())
+    assert receipt["schema_version"] == "fyah-re/execution-receipt@1"
+    assert receipt["status"] == "success"
+    assert receipt["exit_code"] == 0
+    assert receipt["input_metadata"][0]["kind"] == "url"
+    assert receipt["output_artifacts"][0]["sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
