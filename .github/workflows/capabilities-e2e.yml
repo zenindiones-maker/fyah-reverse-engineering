@@ -192,9 +192,10 @@ jobs:
         run: |
           python -m venv .er-venvs/basicpitch
           .er-venvs/basicpitch/bin/pip install -q 'basic-pitch[onnx]==0.4.0' 'numpy<2' 'setuptools<81'
-          .er-venvs/basicpitch/bin/pip uninstall -y -q tflite-runtime ai-edge-litert tensorflow tensorflow-cpu coremltools || true
+          .er-venvs/basicpitch/bin/pip uninstall -y tflite-runtime ai-edge-litert tensorflow tensorflow-cpu coremltools
       - name: transcrever a referência e os casos negativos
-        env: {FYAH_RE_VENVS: ${{ github.workspace }}/.er-venvs}
+        env:
+          FYAH_RE_VENVS: ${{ github.workspace }}/.er-venvs
         run: python scripts/midi_e2e.py
       - uses: actions/upload-artifact@v7
         with: {name: midi-e2e, path: out/, retention-days: 7}
