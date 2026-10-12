@@ -15,6 +15,20 @@ class DownloadIntegrityError(RuntimeError):
     """Raised when an HTTP response ends before its declared body length."""
 
 
+class ToolResultNotSuccessful(RuntimeError):
+    """Raised when a pipeline writes a diagnostic JSON but reports component failures."""
+
+
+def _contains_component_errors(value) -> bool:
+    if isinstance(value, dict):
+        if any(key == "error" and item not in (None, "", False, [], {}) for key, item in value.items()):
+            return True
+        return any(_contains_component_errors(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_contains_component_errors(item) for item in value)
+    return False
+
+
 def download(url: str, dest: pathlib.Path) -> pathlib.Path:
     if url.startswith(("http://", "https://")):
         req = urllib.request.Request(url, headers={"User-Agent": "fyah-re-tools"})
@@ -106,7 +120,7 @@ def _run_tool_with_tmp(name: str, inputs: list[str], out: pathlib.Path, tmp: pat
         produced = out.parent / (name.replace("-", "_") + ".json")
         if produced.exists():
             data = json.loads(produced.read_text())
-            data.setdefault("ok", True)
+            data["ok"] = data.get("ok", True) is not False and not _contains_component_errors(data)
             out.write_text(json.dumps(data, indent=2, ensure_ascii=False))
             return data
         raise SystemExit("pipeline sem JSON de saída")
@@ -155,6 +169,8 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
         data = _run_tool(name, inputs, out)
         if not out.is_file():
             raise RuntimeError("tool completed without writing its output artifact")
+        if data.get("ok") is False:
+            raise ToolResultNotSuccessful("pipeline produced diagnostics with component errors; inspect the JSON artifact")
         ended = datetime.now(timezone.utc)
         outputs = [artifact_metadata(out, root=out.parent)] if out.is_file() else []
         receipt = build_receipt(
@@ -170,6 +186,19 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
         )
         _write_receipt(receipt_path, receipt)
         return data
+    except ToolResultNotSuccessful as exc:
+        ended = datetime.now(timezone.utc)
+        outputs = [artifact_metadata(out, root=out.parent)] if out.is_file() else []
+        receipt = build_receipt(
+            run_id=run_id, tool_name=name, tool_version=tool_version, status="failed",
+            exit_code=1, started_at=started, ended_at=ended,
+            input_metadata=[_receipt_input(value) for value in inputs],
+            output_artifacts=outputs,
+            provenance={"executor": "fyah-re", "python": sys.version.split()[0]},
+            error_category=type(exc).__name__,
+        )
+        _write_receipt(receipt_path, receipt)
+        raise SystemExit(1) from exc
     except SystemExit as exc:
         ended = datetime.now(timezone.utc)
         code = exc.code if type(exc.code) is int and exc.code != 0 else 2
