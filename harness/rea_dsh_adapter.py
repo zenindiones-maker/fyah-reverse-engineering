@@ -16,7 +16,7 @@ def main():
     a = p.parse_args()
     h = json.loads(Path(a.harness_result).read_text())
     # Only a successful Qwen3-30B-A3B DSH result can authorize evaluation.
-    proposed = bool(re.search(r"\binspect_artifact\b", str(h.get("final_response", ""))))
+    proposed = bool(re.search(r"(?m)^REA_MCP_REQUEST=inspect_artifact\s*$", str(h.get("final_response", ""))))
     approved = h.get("ok") is True and h.get("model_preset") == "qwen3-30b-a3b" and proposed
     receipt = {"model": h.get("model_preset"), "model_proposed": proposed,
                "policy_approved": approved, "executed": False}
