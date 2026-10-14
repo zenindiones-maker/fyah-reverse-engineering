@@ -1,0 +1,85 @@
+name: PS5 Android lab preflight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ps5-android-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Inspect upstream and runner toolchain
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+
+      - name: Record runner environment
+        shell: bash
+        run: |
+          set -eu
+          mkdir -p lab-report
+          {
+            echo "# PS5 Android lab preflight"
+            echo
+            echo "- Status: inventory only; no build or game execution"
+            echo "- Timestamp (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            echo "## Runner"
+            printf '%s\n' '```text'
+            uname -a
+            cat /etc/os-release
+            echo
+            for tool in git cmake ninja make clang gcc g++ python3 pkg-config; do
+              if command -v "$tool" >/dev/null 2>&1; then
+                printf '%s: ' "$tool"
+                "$tool" --version 2>&1 | head -n 1 || true
+              else
+                printf '%s: not installed\n' "$tool"
+              fi
+            done
+            printf '%s\n' '```'
+          } > lab-report/preflight.md
+
+      - name: Fetch upstream into temporary workspace and record revision
+        shell: bash
+        run: |
+          set -eu
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          git clone --filter=blob:none --no-checkout https://github.com/boykopovar/AnyPS5.git "$tmp/AnyPS5"
+          git -C "$tmp/AnyPS5" checkout --detach origin/HEAD
+          {
+            echo
+            echo "## AnyPS5 upstream"
+            printf '%s\n' '```text'
+            git -C "$tmp/AnyPS5" remote get-url origin
+            git -C "$tmp/AnyPS5" rev-parse HEAD
+            git -C "$tmp/AnyPS5" log -1 --format='%cI %s'
+            printf '%s\n' '```'
+            echo
+            echo "### Top-level files"
+            printf '%s\n' '```text'
+            git -C "$tmp/AnyPS5" ls-tree --name-only HEAD | head -n 100
+            printf '%s\n' '```'
+            echo
+            echo "### Build and license metadata files"
+            printf '%s\n' '```text'
+            git -C "$tmp/AnyPS5" ls-tree -r --name-only HEAD | grep -Ei '(^|/)(readme|license|copying|cmakelists\.txt|meson\.build|makefile|cargo\.toml|conanfile|vcpkg\.json|requirements[^/]*\.txt|\.gitmodules)$' | head -n 160 || true
+            printf '%s\n' '```'
+            echo
+            echo "> Upstream source was inspected in a temporary runner workspace. It is not copied into this repository or uploaded as an artifact."
+          } >> lab-report/preflight.md
+
+      - name: Upload inventory report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ps5-android-preflight-report
+          path: lab-report/preflight.md
+          if-no-files-found: error
+          retention-days: 14
