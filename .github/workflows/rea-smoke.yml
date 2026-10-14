@@ -1,0 +1,95 @@
+name: REA CLI isolated smoke
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/rea-smoke.yml
+      - docs/integracoes/rea.md
+      - scripts/rea_mcp_protocol_smoke.mjs
+      - harness/rea_mcp_bridge.mjs
+      - harness/rea_dsh_adapter.py
+permissions:
+  contents: read
+jobs:
+  rea-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Inspect upstream package metadata
+        run: |
+          set -euo pipefail
+          npm view rea-agents version dist.tarball license engines --json | tee rea-package-metadata.json
+          node -e 'const p=require("./rea-package-metadata.json"); if (!p.version || !p["dist.tarball"]) process.exit(1)'
+      - name: Install exact resolved version in ephemeral runner
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p 'require("./rea-package-metadata.json").version')"
+          mkdir -p /tmp/rea-smoke
+          cd /tmp/rea-smoke
+          npm init -y >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund "rea-agents@${VERSION}"
+          node -p 'require("./node_modules/rea-agents/package.json").version'
+          ./node_modules/.bin/rea --help
+      - name: Verify real MCP handshake and tools/list
+        run: |
+          set -euo pipefail
+          node scripts/rea_mcp_protocol_smoke.mjs /tmp/rea-smoke/node_modules/.bin/rea
+      - name: Check bridge rejects unauthorized MCP tool
+        run: |
+          set -euo pipefail
+          rc=0
+          node harness/rea_mcp_bridge.mjs /tmp/rea-smoke/node_modules/.bin/rea not_allowed '{}' || rc=$?
+          test "$rc" -eq 2
+          echo 'REA_MCP_ALLOWLIST_DENY=PASS'
+      - name: Invoke authorized REA MCP tool on isolated fixture
+        run: |
+          set -euo pipefail
+          mkdir -p fixtures
+          printf 'int main(void) { return 0; }\n' > fixtures/rea_mcp_fixture.c
+          cc -o fixtures/rea_mcp_fixture fixtures/rea_mcp_fixture.c
+          export REA_MCP_FIXTURE="$PWD/fixtures/rea_mcp_fixture"
+          node harness/rea_mcp_bridge.mjs /tmp/rea-smoke/node_modules/.bin/rea inspect_artifact '{}' | tee rea-authorized-call.json
+          node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync("rea-authorized-call.json","utf8"));if(d.status!=="PASS"||d.tool!=="inspect_artifact")process.exit(1)'
+      - name: Validate DSH adapter denies unapproved model decisions
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/rea-policy
+          printf '%s\n' '{"ok":true,"model_preset":"qwen25-7b","final_response":"inspect_artifact"}' > /tmp/rea-policy/denied.json
+          rc=0
+          python3 harness/rea_dsh_adapter.py --harness-result /tmp/rea-policy/denied.json --rea-cli /tmp/rea-smoke/node_modules/.bin/rea --fixture "$PWD/fixtures/rea_mcp_fixture" --receipt /tmp/rea-policy/receipt.json || rc=$?
+          test "$rc" -eq 1
+          python3 -c 'import json; d=json.load(open("/tmp/rea-policy/receipt.json")); assert d["policy_approved"] is False and d["executed"] is False'
+          printf '%s\n' '{"ok":true,"model_preset":"qwen3-30b-a3b","final_response":"REA_MCP_REQUEST=deny"}' > /tmp/rea-policy/denied.json
+          python3 harness/rea_dsh_adapter.py --harness-result /tmp/rea-policy/denied.json --rea-cli /tmp/rea-smoke/node_modules/.bin/rea --fixture "$PWD/fixtures/rea_mcp_fixture" --receipt /tmp/rea-policy/receipt.json
+          python3 -c 'import json; d=json.load(open("/tmp/rea-policy/receipt.json")); assert d["policy_approved"] is False and d["executed"] is False'
+          python3 -c 'import json; d=json.load(open("/tmp/rea-policy/receipt.json")); assert d["decision"] == "deny"'
+          echo 'REA_DSH_POLICY_DENY=PASS'
+      - name: Validate positive DSH policy-to-MCP integration with synthetic decision
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/rea-policy
+          printf '%s\n' '{"ok":true,"model_preset":"qwen3-30b-a3b","final_response":"REA_MCP_REQUEST=inspect_artifact"}' > /tmp/rea-policy/approved.json
+          python3 harness/rea_dsh_adapter.py \
+            --harness-result /tmp/rea-policy/approved.json \
+            --rea-cli /tmp/rea-smoke/node_modules/.bin/rea \
+            --fixture "$PWD/fixtures/rea_mcp_fixture" \
+            --receipt /tmp/rea-policy/approved-receipt.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/rea-policy/approved-receipt.json'))
+          assert d['decision']=='approve'
+          assert d['model_proposed'] is True
+          assert d['policy_approved'] is True
+          assert d['executed'] is True
+          assert len(d['fixture_sha256'])==64
+          assert d['tool_receipt']['report_length']>=40
+          print('REA_DSH_SYNTHETIC_POSITIVE_E2E=PASS')
+          PY
+      - name: Summarize
+        if: always()
+        run: |
+          echo 'REA CLI + MCP initialize/tools-list checked in isolated runner. No persistent MCP registration, native engines, or other repositories modified.' >> "$GITHUB_STEP_SUMMARY"
