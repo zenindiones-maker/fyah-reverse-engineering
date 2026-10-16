@@ -38,6 +38,8 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" --install "ndk;27.2.12479018"
           echo "ANDROID_NDK_HOME=$SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK=$SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_ENV"
           echo "$SDK_ROOT/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
           test -x "$SDK_ROOT/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang"
 
@@ -69,9 +71,12 @@ jobs:
         working-directory: ai-memory-src
         env:
           CARGO_BUILD_JOBS: "2"
+          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/27.2.12479018
+          ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/27.2.12479018
+          ANDROID_NDK: /usr/local/lib/android/sdk/ndk/27.2.12479018
         run: |
           set -euo pipefail
-          cargo ndk -t arm64-v8a -p 26 build --locked --release --package ai-memory-cli --bin ai-memory
+          cargo ndk -t arm64-v8a build --locked --release --package ai-memory-cli --bin ai-memory
 
       - name: Validate binary format and create checksum
         shell: bash
