@@ -48,8 +48,16 @@ jobs:
         with:
           targets: aarch64-linux-android
 
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk --locked
+      - name: Install cargo-ndk and assert Android Rust target
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo install cargo-ndk --locked
+          rustup target add aarch64-linux-android --toolchain stable
+          rustup target list --installed --toolchain stable | tee rust-targets.txt
+          grep -qx 'aarch64-linux-android' rust-targets.txt
+          rustc +stable --print target-libdir --target aarch64-linux-android
+          test -d "$(rustc +stable --print target-libdir --target aarch64-linux-android)"
 
       - name: Record source and toolchain evidence
         shell: bash
@@ -65,6 +73,9 @@ jobs:
             rustc --version
             cargo --version
             cargo ndk --version
+            echo "installed_rust_targets:"
+            rustup target list --installed --toolchain stable
+            echo "android_target_libdir=$(rustc +stable --print target-libdir --target aarch64-linux-android)"
           } | tee build-evidence.txt
 
       - name: Build official CLI for Android ARM64
@@ -76,7 +87,9 @@ jobs:
           ANDROID_NDK: /usr/local/lib/android/sdk/ndk/27.2.12479018
         run: |
           set -euo pipefail
-          cargo ndk -t arm64-v8a build --locked --release --package ai-memory-cli --bin ai-memory
+          rustup target add aarch64-linux-android --toolchain stable
+          test -d "$(rustc +stable --print target-libdir --target aarch64-linux-android)"
+          cargo +stable ndk -t arm64-v8a build --locked --release --package ai-memory-cli --bin ai-memory
 
       - name: Validate binary format and create checksum
         shell: bash
