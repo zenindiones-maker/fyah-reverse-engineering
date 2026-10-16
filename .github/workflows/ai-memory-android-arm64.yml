@@ -1,0 +1,96 @@
+name: ai-memory v2.6.4 Android ARM64 experiment
+
+on:
+  push:
+    branches:
+      - ai-memory-v2.6.4-android-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-memory-v264-android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  android-arm64:
+    name: Cross-compile official ai-memory for Android ARM64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout official source at v2.6.4
+        uses: actions/checkout@v4
+        with:
+          repository: akitaonrails/ai-memory
+          ref: v2.6.4
+          path: ai-memory-src
+          persist-credentials: false
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --install "ndk;27.2.12479018"
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/27.2.12479018" >> "$GITHUB_ENV"
+          echo "${ANDROID_HOME}/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
+          test -x "${ANDROID_HOME}/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang"
+
+      - name: Install Rust toolchain and Android target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+
+      - name: Record source and toolchain evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "source=https://github.com/akitaonrails/ai-memory"
+            echo "tag=v2.6.4"
+            echo "commit=$(git -C ai-memory-src rev-parse HEAD)"
+            echo "target=aarch64-linux-android"
+            echo "android_abi=arm64-v8a"
+            echo "ndk=27.2.12479018"
+            rustc --version
+            cargo --version
+            cargo ndk --version
+          } | tee build-evidence.txt
+
+      - name: Build official CLI for Android ARM64
+        working-directory: ai-memory-src
+        env:
+          CARGO_BUILD_JOBS: "2"
+        run: |
+          set -euo pipefail
+          cargo ndk -t arm64-v8a -p 26 build --locked --release --package ai-memory-cli --bin ai-memory
+
+      - name: Validate binary format and create checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          BIN="ai-memory-src/target/aarch64-linux-android/release/ai-memory"
+          test -s "$BIN"
+          file "$BIN" | tee -a build-evidence.txt
+          readelf -h "$BIN" | tee -a build-evidence.txt
+          readelf -l "$BIN" | tee -a build-evidence.txt
+          sha256sum "$BIN" | tee ai-memory-android-arm64.sha256
+          cp "$BIN" ai-memory-android-arm64
+          test -s ai-memory-android-arm64
+
+      - name: Upload binary and build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-memory-v2.6.4-android-arm64
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            ai-memory-android-arm64
+            ai-memory-android-arm64.sha256
+            build-evidence.txt
