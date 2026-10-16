@@ -1,0 +1,133 @@
+name: er-ollama
+# Ollama isolado no GitHub Actions; nao altera o er-harness existente (llama.cpp).
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Modelo Ollama para teste CPU"
+        required: true
+        default: qwen3:0.6b
+        type: choice
+        options:
+          - qwen3:0.6b
+          - qwen3:1.7b
+permissions:
+  contents: read
+concurrency:
+  group: er-ollama-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  ollama-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OLLAMA_HOST: 127.0.0.1:11434
+      MODEL: ${{ inputs.model }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ollama
+        run: |
+          set -euo pipefail
+          curl -fsSL https://ollama.com/install.sh -o /tmp/ollama-install.sh
+          sh /tmp/ollama-install.sh
+          ollama --version
+
+      - name: Cache model weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ${{ runner.os }}-ollama-${{ inputs.model }}-v1
+
+      - name: Start Ollama server
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          ollama serve > out/ollama-server.log 2>&1 &
+          echo $! > ollama.pid
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:11434/api/tags > out/models-before.json; then
+              echo "OLLAMA_SERVER_READY=true"
+              exit 0
+            fi
+            if ! kill -0 "$(cat ollama.pid)" 2>/dev/null; then
+              cat out/ollama-server.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Ollama server timed out"
+          cat out/ollama-server.log
+          exit 1
+
+      - name: Pull selected model
+        run: |
+          set -euo pipefail
+          ollama pull "$MODEL"
+          ollama list | tee out/ollama-models.txt
+
+      - name: Smoke test native Ollama API
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          body = {
+              "model": os.environ["MODEL"],
+              "messages": [{"role": "user", "content":
+                            "Reply with the exact token OLLAMA_ER_SMOKE_OK and nothing else."}],
+              "stream": False,
+          }
+          req = urllib.request.Request(
+              "http://127.0.0.1:11434/api/chat",
+              data=json.dumps(body).encode(),
+              headers={"Content-Type": "application/json"},
+          )
+          with urllib.request.urlopen(req, timeout=600) as response:
+              data = json.load(response)
+          content = (data.get("message") or {}).get("content", "")
+          print("NATIVE_API_RESPONSE:", content[:500])
+          if "OLLAMA_ER_SMOKE_OK" not in content:
+              raise SystemExit("Native Ollama API smoke test failed")
+          print("OLLAMA_NATIVE_API_OK=true")
+          PY
+
+      - name: Smoke test OpenAI-compatible endpoint
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          body = {
+              "model": os.environ["MODEL"],
+              "messages": [{"role": "user", "content":
+                            "Reply with the exact token OLLAMA_OPENAI_COMPAT_OK and nothing else."}],
+              "stream": False,
+              "max_tokens": 64,
+          }
+          req = urllib.request.Request(
+              "http://127.0.0.1:11434/v1/chat/completions",
+              data=json.dumps(body).encode(),
+              headers={"Content-Type": "application/json"},
+          )
+          with urllib.request.urlopen(req, timeout=600) as response:
+              data = json.load(response)
+          choices = data.get("choices") or []
+          content = ((choices[0].get("message") or {}).get("content", "")
+                     if choices else "")
+          print("OPENAI_COMPAT_RESPONSE:", content[:500])
+          if "OLLAMA_OPENAI_COMPAT_OK" not in content:
+              raise SystemExit("OpenAI-compatible endpoint smoke test failed")
+          print("OLLAMA_OPENAI_COMPAT_OK=true")
+          PY
+
+      - name: Stop Ollama
+        if: always()
+        run: |
+          if [ -f ollama.pid ]; then kill "$(cat ollama.pid)" 2>/dev/null || true; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: er-ollama-smoke
+          path: out/
+          retention-days: 14
+          if-no-files-found: warn
