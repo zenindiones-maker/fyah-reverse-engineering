@@ -1,13 +1,12 @@
 {
-  "summary": "[media-inspect] fyah-tools concluiu em 1s; schema fyah-re/media-inspect@1",
-  "next_steps": [
-    "Conferir out/media-inspect.json e decidir o próximo pipeline"
-  ],
+  "summary": "[media-inspect] er-analyze concluiu em 1s",
+  "next_steps": [],
   "open_questions": [],
   "files_touched": [
-    "out/media-inspect.json"
+    "out/ffprobe.json",
+    "out/mediainfo.json"
   ],
-  "from_session": "fyah-fyah-tools-media-inspect-39176947955-3c8054",
-  "from_agent": "fyah-tools",
-  "created_utc": "2026-10-18T23:33:52Z"
+  "from_session": "fyah-er-analyze-media-inspect-39176953144-83d4d3",
+  "from_agent": "er-analyze",
+  "created_utc": "2026-10-18T23:33:58Z"
 }
