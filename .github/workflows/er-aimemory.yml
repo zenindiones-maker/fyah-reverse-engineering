@@ -52,6 +52,7 @@ jobs:
       - name: Estado da memória
         if: always()
         run: |
+          mkdir -p out/aimem
           python -m aimem status | tee out/aimem/status.json
           ai-memory status || true
           {

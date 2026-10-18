@@ -22,7 +22,8 @@ runs:
         curl -fsSL -o ai-memory-linux-x86_64.tar.gz "$base/ai-memory-linux-x86_64.tar.gz"
         curl -fsSL -o ai-memory-linux-x86_64.tar.gz.sha256 "$base/ai-memory-linux-x86_64.tar.gz.sha256"
         sha256sum -c ai-memory-linux-x86_64.tar.gz.sha256
-        tar xzf ai-memory-linux-x86_64.tar.gz ai-memory LICENSE
+        tar xzf ai-memory-linux-x86_64.tar.gz ./ai-memory ./LICENSE
+        ./ai-memory --version
         rm -f ai-memory-linux-x86_64.tar.gz
     - name: Iniciar servidor (loopback, zero-LLM)
       shell: bash
