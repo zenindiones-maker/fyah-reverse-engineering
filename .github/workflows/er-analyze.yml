@@ -1,5 +1,6 @@
 name: er-analyze
-# Custo zero: ponto único de entrada (celular → Run workflow). Inputs via env (sem injeção). Sem API/token/cadastro.
+# Custo zero: ponto único de entrada (celular → Run workflow), SUBORDINADO ao AI Memory (mestre, zero-LLM).
+# Inputs via env (sem injeção). Sem API/token/cadastro.
 on:
   workflow_dispatch:
     inputs:
@@ -10,7 +11,7 @@ on:
         default: media-inspect
       url: {description: "URL do arquivo (próprio/licenciado/domínio público; APK open source, ex.: F-Droid)", required: true}
       url2: {description: "Segunda URL (só para compare)", required: false, default: ""}
-permissions: {contents: read}
+permissions: {contents: write}
 concurrency: {group: "er-analyze-${{ github.ref }}", cancel-in-progress: true}
 jobs:
   analyze:
@@ -56,7 +57,15 @@ jobs:
             [ -n "$URL2" ] || { echo "compare exige url2" >&2; exit 1; }
             curl -L --fail -A "fyah-re (GitHub Actions)" -o input2.bin "$URL2"
           fi
-      - name: Rodar
-        run: python scripts/er_analyze.py "$TOOL" input.bin input2.bin
+      - name: AI Memory (harness mestre)
+        uses: ./.github/actions/setup-aimemory
+      - name: Rodar sob o AI Memory
+        run: |
+          python -m aimem session --agent er-analyze --label "$TOOL" -- \
+            python scripts/er_analyze.py "$TOOL" input.bin input2.bin
+      - name: Salvar memória (docs/memory)
+        if: always()
+        run: bash scripts/aimem_commit.sh er-analyze "$TOOL"
       - uses: actions/upload-artifact@v7
+        if: always()
         with: {name: "er-${{ inputs.tool }}", path: out/, retention-days: 30}

@@ -1,5 +1,5 @@
 name: er-toolcheck
-# Custo zero: instala tudo em CPU e faz smoke test de cada ferramenta. Commita só docs/ferramentas/STATUS.md.
+# Custo zero: instala tudo em CPU e faz smoke test de cada ferramenta. Commita só docs/ferramentas/STATUS.md e docs/memory/ (AI Memory, mestre).
 on:
   workflow_dispatch: {}
   schedule:
@@ -21,13 +21,19 @@ jobs:
         with: {path: ~/.er-venvs, key: "er-venvs-${{ hashFiles('scripts/er_venvs.sh') }}"}
       - name: Venvs isoladas
         run: bash scripts/er_venvs.sh
-      - name: Smoke test
-        run: python scripts/er_toolcheck.py
-      - name: Commit (só docs/ferramentas)
+      - name: AI Memory (harness mestre)
+        uses: ./.github/actions/setup-aimemory
+      - name: Smoke test (sob o AI Memory)
+        run: |
+          python -m aimem session --agent er-toolcheck --label toolcheck \
+            --next "Consertar o que aparecer como falha em docs/ferramentas/STATUS.md" -- \
+            python scripts/er_toolcheck.py
+      - name: Commit (só docs/ferramentas + docs/memory)
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/ferramentas/STATUS.md
+          git add docs/ferramentas/STATUS.md docs/memory
           git diff --cached --quiet && { echo "Sem mudanças"; exit 0; }
           git commit -m "ferramentas: status $(date -u +%F)"
           git pull --rebase -q && git push

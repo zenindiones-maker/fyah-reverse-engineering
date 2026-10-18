@@ -1,0 +1,50 @@
+name: setup-aimemory
+description: "Sobe o AI Memory (akitaonrails/ai-memory, MIT) como harness MESTRE: baixa o binário oficial do release (sha256 conferido, cache), inicia o servidor local em loopback no modo zero-LLM e reidrata a memória de docs/memory/. Sem API, sem token de nuvem, sem cadastro; nenhum binário vai para o repo."
+inputs:
+  version: {description: "Versão do ai-memory (tag sem o v)", default: "3.1.1"}
+  seed: {description: "Reidratar a memória a partir de docs/memory/", default: "true"}
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@v6
+      id: cache
+      with:
+        path: ~/.er-tools/ai-memory/${{ inputs.version }}
+        key: ai-memory-${{ inputs.version }}-linux-x86_64
+    - name: Baixar ai-memory (release oficial)
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env: {V: "${{ inputs.version }}"}
+      run: |
+        set -euo pipefail
+        d=~/.er-tools/ai-memory/$V; mkdir -p "$d"; cd "$d"
+        base="https://github.com/akitaonrails/ai-memory/releases/download/v$V"
+        curl -fsSL -o ai-memory-linux-x86_64.tar.gz "$base/ai-memory-linux-x86_64.tar.gz"
+        curl -fsSL -o ai-memory-linux-x86_64.tar.gz.sha256 "$base/ai-memory-linux-x86_64.tar.gz.sha256"
+        sha256sum -c ai-memory-linux-x86_64.tar.gz.sha256
+        tar xzf ai-memory-linux-x86_64.tar.gz ai-memory LICENSE
+        rm -f ai-memory-linux-x86_64.tar.gz
+    - name: Iniciar servidor (loopback, zero-LLM)
+      shell: bash
+      env: {V: "${{ inputs.version }}"}
+      run: |
+        set -euo pipefail
+        bin=~/.er-tools/ai-memory/$V
+        echo "$bin" >> "$GITHUB_PATH"; export PATH="$bin:$PATH"
+        data="$RUNNER_TEMP/ai-memory-data"
+        echo "AI_MEMORY_DATA_DIR=$data" >> "$GITHUB_ENV"; export AI_MEMORY_DATA_DIR="$data"
+        echo "AI_MEMORY_SERVER_URL=http://127.0.0.1:49374" >> "$GITHUB_ENV"
+        echo "AI_MEMORY_BIN=$bin/ai-memory" >> "$GITHUB_ENV"
+        ai-memory --version || true
+        ai-memory init >/dev/null 2>&1
+        # Nenhum provedor LLM configurado: captura, busca e handoff rodam sem modelo.
+        unset AI_MEMORY_LLM_PROVIDER
+        (cd "$RUNNER_TEMP" && nohup ai-memory serve --transport http --workspace fyah --project fyah-reverse-engineering > "$RUNNER_TEMP/ai-memory.log" 2>&1 &)
+        for i in $(seq 1 60); do curl -sf http://127.0.0.1:49374/healthz >/dev/null && break; sleep 1; done
+        curl -sf http://127.0.0.1:49374/healthz || { tail -50 "$RUNNER_TEMP/ai-memory.log"; exit 1; }
+        echo
+        ai-memory status | grep -E 'version|llm|embedding' || true
+    - name: Reidratar memória (docs/memory → ai-memory)
+      if: inputs.seed == 'true'
+      shell: bash
+      run: python3 -m aimem seed

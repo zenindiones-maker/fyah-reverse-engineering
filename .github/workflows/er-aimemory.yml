@@ -1,0 +1,80 @@
+name: er-aimemory
+# AI Memory (akitaonrails/ai-memory, MIT) como harness MESTRE. Custo zero, CPU, sem API/token/cadastro,
+# sem LLM: servidor local em loopback → smoke (captura/busca/handoff) → ferramenta do catálogo sob uma
+# sessão do ai-memory → memória durável commitada em docs/memory/.
+on:
+  workflow_dispatch:
+    inputs:
+      tool:
+        description: "Ferramenta do catálogo (python -m tools) para rodar sob o AI Memory"
+        type: choice
+        options: [media-inspect, audio-profile, cuts-pacing, apk-inspect, binary-inspect]
+        default: media-inspect
+      url:
+        description: "URL do arquivo (próprio/licenciado/domínio público)"
+        required: true
+        default: "https://upload.wikimedia.org/wikipedia/commons/4/40/Toreador_song_cleaned.ogg"
+      salvar:
+        description: "Commitar a memória em docs/memory/"
+        type: boolean
+        default: true
+permissions: {contents: write}
+concurrency: {group: er-aimemory, cancel-in-progress: false}
+jobs:
+  aimemory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TOOL: ${{ inputs.tool }}
+      URL: ${{ inputs.url }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Escolher dependências
+        id: deps
+        run: |
+          case "$TOOL" in
+            cuts-pacing) echo "extras=audio,video" >> "$GITHUB_OUTPUT" ;;
+            apk-inspect) echo "extras=apps" >> "$GITHUB_OUTPUT" ;;
+            binary-inspect) echo "extras=formats,binary" >> "$GITHUB_OUTPUT" ;;
+            *) echo "extras=audio" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - uses: ./.github/actions/setup-er
+        with: {extras: "${{ steps.deps.outputs.extras }}"}
+      - name: AI Memory (harness mestre)
+        uses: ./.github/actions/setup-aimemory
+      - name: Smoke zero-LLM (captura, busca, handoff)
+        run: python -m aimem smoke --out out/aimem/smoke.json
+      - name: Ferramenta sob o AI Memory
+        run: |
+          case "$URL" in http://*|https://*) ;; *) echo "URL inválida" >&2; exit 1;; esac
+          python -m aimem run-tool "$TOOL" --input "$URL" --out "out/$TOOL.json" \
+            --next "Conferir out/$TOOL.json e decidir o próximo pipeline"
+      - name: Estado da memória
+        if: always()
+        run: |
+          python -m aimem status | tee out/aimem/status.json
+          ai-memory status || true
+          {
+            echo "## AI Memory (mestre)"
+            echo
+            echo "Versão: \`$(ai-memory --version)\` · LLM: desligado"
+            echo
+            echo '### smoke'
+            echo '```json'; cat out/aimem/smoke.json 2>/dev/null; echo '```'
+            echo
+            echo '### sessão da ferramenta'
+            echo '```json'; head -c 3000 out/aimem/session-fyah-tools.json 2>/dev/null; echo; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Salvar memória (docs/memory)
+        if: always() && inputs.salvar
+        run: bash scripts/aimem_commit.sh er-aimemory "$TOOL"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: er-aimemory-${{ inputs.tool }}
+          path: |
+            out/
+            ${{ runner.temp }}/ai-memory.log
+            ${{ runner.temp }}/ai-memory-data/wiki/
+          retention-days: 14
+          if-no-files-found: warn

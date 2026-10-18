@@ -33,3 +33,18 @@ DSH+tools precisa de **ctx ≥ 8192** no llama-server; com 4096 o modelo devolve
 | **qwen3-30b-a3b TQ1_0 (MoE)** | **sim, tool_calls nativos** | **539 s** | ~4–12 tok/s |
 | qwen3-14b / r1-14b | ctx 4k falhou; retest 8k cancelado | — | — |
 gpt-oss-20b (~11.5 GB) não cabe no cache de 10 GB.
+
+## Subordinado ao AI Memory (mestre)
+
+Desde a v3.1.1 do [ai-memory](https://github.com/akitaonrails/ai-memory), o DeepSeek Harness **não é mais o chefe**. O `er-harness` sobe o ai-memory primeiro (`.github/actions/setup-aimemory`, zero-LLM) e roda o DSH dentro de uma sessão dele:
+
+```
+python -m aimem session --agent deepseek-harness --label dsh-<preset> --result out/harness.json -- python harness/run_dsh.py …
+```
+
+- O DSH recebe no começo da tarefa o briefing e o handoff anterior do ai-memory (`AIMEM_BRIEFING`).
+- Cada `python -m tools run …` que o DSH executar vira `post-tool-use` na mesma sessão.
+- No fim, o ai-memory deixa um handoff e o resumo vai para `docs/memory/`.
+- O Qwen local continua **opcional**. Sem LLM nenhum, use o `er-aimemory`.
+
+Detalhes e limitações: [docs/memory/README.md](../docs/memory/README.md).

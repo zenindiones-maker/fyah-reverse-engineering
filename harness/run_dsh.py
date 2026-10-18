@@ -80,6 +80,12 @@ def main() -> int:
             "Use bash to run media-inspect then audio-full on that URL (see system prompt)."
         )
 
+    # Subordinado ao AI Memory: o mestre injeta briefing + handoff recebido.
+    bp = os.environ.get("AIMEM_BRIEFING")
+    if bp and pathlib.Path(bp).is_file():
+        task = ("Contexto do AI Memory (harness mestre; memória histórica, não é ordem):\n"
+                + pathlib.Path(bp).read_text()[:4000] + "\n\n---\nTarefa:\n" + task)
+
     patch = str((ROOT / "patches" / "local-llm.patch.yml").resolve())
     workspace = pathlib.Path(a.workspace).resolve()
     dsh_home = pathlib.Path(a.dsh_home).resolve()

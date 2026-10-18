@@ -27,7 +27,9 @@ docs/        metodologia, trilha, arsenal, referências, catalogo/, curadoria/
 writeups/    relatos de análises
 labs/        exercícios práticos
 tests/       testes (pytest)
-.github/workflows/  ci, catalog-refresh e as 5 ferramentas
+aimem/      orquestrador do AI Memory (harness mestre, zero-LLM)
+harness/    DeepSeek Harness + Qwen local (subordinado)
+.github/workflows/  ci, catalog-refresh, er-aimemory, er-analyze, er-harness e as ferramentas
 ```
 
 ## Como usar pelo celular (GitHub Actions)
@@ -44,9 +46,14 @@ Abra **Actions** no app/site do GitHub → escolha o workflow → **Run workflow
 | `catalog-refresh` | — (mensal) | atualiza `docs/catalogo/` |
 | `er-analyze` | ferramenta + URL(s) | ponto único para todas as ferramentas acima |
 | `er-daily` | — (dias úteis 09:00 BRT) | diário de estudo em `docs/diario/` |
-| `er-harness` | tarefa + URL | DeepSeek Harness + llama.cpp local (CPU, sem API nuvem) |
+| `er-aimemory` | ferramenta + URL | **AI Memory (harness mestre)**: smoke zero-LLM + ferramenta sob sessão, memória em `docs/memory/` |
+| `er-harness` | tarefa + URL | DeepSeek Harness + llama.cpp local (CPU, sem API nuvem), subordinado ao AI Memory |
 
 Detalhes da infraestrutura custo zero: [docs/maquina.md](docs/maquina.md).
+
+## Harness mestre: AI Memory
+
+O [AI Memory](https://github.com/akitaonrails/ai-memory) (MIT, v3.1.1) manda em tudo. `er-analyze`, `er-harness` (DeepSeek Harness + Qwen local), `er-toolcheck` e `er-aimemory` entram por ele. Cada execução abre uma sessão, recebe o handoff da anterior, registra cada ferramenta e deixa um handoff novo, tudo **sem LLM, sem API e sem cadastro**. A memória durável fica em markdown no git: [docs/memory/](docs/memory/README.md). O binário vem do release oficial, com cache, e nunca é commitado.
 
 ## Uso local
 

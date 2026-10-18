@@ -32,7 +32,7 @@ fyah-re = "fyah_re_cli:main"
 py-modules = ["fyah_re_cli"]
 
 [tool.setuptools.packages.find]
-include = ["audio*", "video*", "formats*", "apps*", "pipelines*", "tools*"]
+include = ["audio*", "video*", "formats*", "apps*", "pipelines*", "tools*", "aimem*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

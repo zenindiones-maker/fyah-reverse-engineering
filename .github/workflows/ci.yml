@@ -7,10 +7,14 @@ on:
     paths-ignore:
       - "docs/ferramentas/STATUS.md"
       - "docs/diario/**"
+      - "docs/memory/sessoes/**"
+      - "docs/memory/handoffs/**"
   pull_request:
     paths-ignore:
       - "docs/ferramentas/STATUS.md"
       - "docs/diario/**"
+      - "docs/memory/sessoes/**"
+      - "docs/memory/handoffs/**"
   workflow_dispatch: {}
 permissions: {contents: read}
 concurrency: {group: "ci-${{ github.ref }}", cancel-in-progress: true}

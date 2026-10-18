@@ -1,7 +1,7 @@
 """CLI uniforme: list | run | smoke."""
 from __future__ import annotations
 
-import argparse, json, pathlib, subprocess, sys, tempfile, urllib.request
+import argparse, json, pathlib, subprocess, sys, tempfile, time, urllib.request
 
 from tools.catalog import CATALOG, by_name, list_for_prompt
 
@@ -77,6 +77,15 @@ def run_tool(name: str, inputs: list[str], out: pathlib.Path) -> dict:
     data = json.loads(out.read_text()); data.setdefault("ok", True); return data
 
 
+def _aimem(*a) -> None:
+    """Registra a execução na sessão AI Memory (mestre), se houver. Nunca quebra a ferramenta."""
+    try:
+        from aimem.hooks import record_tool
+        record_tool(*a)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m tools")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -100,7 +109,13 @@ def main(argv=None) -> int:
             print(json.dumps({"ok": d.get("ok", True), "name": a.name, "keys": list(d)[:8]})); return 0
         print(json.dumps({"ok": True, "name": a.name, "skipped": "no default sample"})); return 0
     inputs = [a.input] + ([a.input2] if a.input2 else [])
-    d = run_tool(a.name, inputs, pathlib.Path(a.out))
+    t0 = time.time()
+    try:
+        d = run_tool(a.name, inputs, pathlib.Path(a.out))
+    except BaseException as e:
+        _aimem(a.name, inputs, a.out, False, time.time() - t0, {"error": f"{type(e).__name__}: {e}"[:300]})
+        raise
+    _aimem(a.name, inputs, a.out, bool(d.get("ok", True)), time.time() - t0, {"schema": d.get("schema")})
     print(json.dumps({"ok": d.get("ok", True), "out": a.out, "schema": d.get("schema")}))
     return 0
 

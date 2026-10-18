@@ -1,0 +1,3 @@
+# Roteamento do ai-memory (harness mestre). Ver docs/memory/README.md.
+workspace = "fyah"
+project = "fyah-reverse-engineering"

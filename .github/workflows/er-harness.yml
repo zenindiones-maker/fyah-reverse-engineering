@@ -1,5 +1,6 @@
 name: er-harness
-# Custo zero: DSH + llama.cpp local (CPU). Placeholder LOCAL_LLM_KEY hardcoded (não é secret).
+# Custo zero: AI Memory (mestre, zero-LLM) → DeepSeek Harness + llama.cpp local (CPU) como agente SUBORDINADO.
+# Placeholder LOCAL_LLM_KEY hardcoded (não é secret, não é chave de nuvem).
 on:
   workflow_dispatch:
     inputs:
@@ -20,7 +21,7 @@ on:
 concurrency:
   group: er-harness-${{ github.event.inputs.model || 'default' }}
   cancel-in-progress: true
-permissions: {contents: read}
+permissions: {contents: write}
 jobs:
   harness:
     runs-on: ubuntu-latest
@@ -29,6 +30,8 @@ jobs:
       LOCAL_LLM_KEY: local-no-cloud-key
       ER_TOOLS_DIR: ${{ github.workspace }}/.er-tools
       MODEL_PRESET: ${{ inputs.model }}
+      TASK: ${{ inputs.task }}
+      URL: ${{ inputs.url }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -38,6 +41,8 @@ jobs:
       - name: pip (fyah + DSH)
         run: |
           pip install -q -e ".[audio]" "deepseek-harness-sdk==0.1.5rc1"
+      - name: AI Memory (harness mestre)
+        uses: ./.github/actions/setup-aimemory
       - name: Resolve cache key
         id: meta
         run: |
@@ -148,16 +153,19 @@ jobs:
           print("USAGE=", d.get("usage"))
           PY
 
-      - name: Run DSH headless (score tool-use BEFORE fallback)
+      - name: Run DSH sob o AI Memory (score tool-use BEFORE fallback)
         id: dsh
         continue-on-error: true
         run: |
           mkdir -p out
+          # Mestre: ai-memory abre a sessão, entrega o briefing/handoff, registra e fecha.
           /usr/bin/time -f 'dsh_wall_sec=%e' -o out/timing_dsh.txt \
+            python -m aimem session --agent deepseek-harness --label "dsh-$MODEL_PRESET" \
+              --result out/harness.json --next "Revisar out/harness.json e o score de tool-use" -- \
             python harness/run_dsh.py \
               --model-preset "$MODEL_PRESET" \
-              --task "${{ inputs.task }}" \
-              --file-url "${{ inputs.url }}" \
+              --task "$TASK" \
+              --file-url "$URL" \
               --workspace "$GITHUB_WORKSPACE" \
               --dsh-home "$GITHUB_WORKSPACE/.er-dsh-home" \
               --out out/harness.json || true
@@ -186,8 +194,8 @@ jobs:
           }, indent=2))
           PY
           # Fallback (does NOT count toward tool_use score): ensure JSON still lands
-          python -m tools run media-inspect --input "${{ inputs.url }}" --out out/media-inspect.json || true
-          python -m tools run audio-full --input "${{ inputs.url }}" --out out/audio-full.json || true
+          python -m aimem run-tool media-inspect --input "$URL" --out out/media-inspect.json || true
+          python -m aimem run-tool audio-full --input "$URL" --out out/audio-full.json || true
           {
             echo "## er-harness"
             echo
@@ -212,6 +220,9 @@ jobs:
       - name: Stop server
         if: always()
         run: kill "$(cat llama.pid)" 2>/dev/null || true
+      - name: Salvar memória (docs/memory)
+        if: always()
+        run: bash scripts/aimem_commit.sh er-harness "$MODEL_PRESET"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -220,5 +231,6 @@ jobs:
             out/
             llama.log
             .er-dsh-home/
+            ${{ runner.temp }}/ai-memory.log
           retention-days: 14
           if-no-files-found: warn
