@@ -1,12 +1,11 @@
 {
-  "summary": "[media-inspect] er-analyze concluiu em 1s",
-  "next_steps": [],
-  "open_questions": [],
-  "files_touched": [
-    "out/ffprobe.json",
-    "out/mediainfo.json"
+  "summary": "[toolcheck] er-toolcheck concluiu em 141s",
+  "next_steps": [
+    "Consertar o que aparecer como falha em docs/ferramentas/STATUS.md"
   ],
-  "from_session": "fyah-er-analyze-media-inspect-39176953144-83d4d3",
-  "from_agent": "er-analyze",
-  "created_utc": "2026-10-18T23:33:58Z"
+  "open_questions": [],
+  "files_touched": [],
+  "from_session": "fyah-er-toolcheck-toolcheck-39177110784-82b631",
+  "from_agent": "er-toolcheck",
+  "created_utc": "2026-10-18T23:42:21Z"
 }
