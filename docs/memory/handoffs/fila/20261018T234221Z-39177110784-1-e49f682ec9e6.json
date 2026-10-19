@@ -1,0 +1,43 @@
+{
+  "schema": "fyah-handoff@1",
+  "id": "20261018T234221Z-39177110784-1-e49f682ec9e6",
+  "state": "pending",
+  "summary": "[toolcheck] er-toolcheck concluiu em 141s",
+  "next_steps": [
+    "Consertar o que aparecer como falha em docs/ferramentas/STATUS.md"
+  ],
+  "open_questions": [],
+  "files_touched": [],
+  "origin": {
+    "workflow": "er-toolcheck",
+    "run_id": "39177110784",
+    "run_attempt": "1",
+    "sha": null,
+    "session": "fyah-er-toolcheck-toolcheck-39177110784-82b631",
+    "agent": "er-toolcheck",
+    "created_utc": "2026-10-18T23:42:21Z"
+  },
+  "consumer": null,
+  "consumed": null,
+  "attempts": 0,
+  "max_attempts": 3,
+  "history": [
+    {
+      "at": "2026-10-19T02:33:22Z",
+      "from": null,
+      "to": "pending",
+      "by": "er-memory-persist-C",
+      "reason": "recuperado (perdido por -X theirs)"
+    }
+  ],
+  "recovery": {
+    "from_commit": "4a0ec59",
+    "overwritten_by_commit": "4ffade0",
+    "source_path": "docs/memory/handoffs/aberto.json",
+    "original_sha256": "e49f682ec9e63f83f5b63240ac32d60ee96b28d87156da6b255237abb3ddffbd",
+    "raw_path": "docs/memory/handoffs/raw/recuperado-e49f682ec9e6.json",
+    "source_run": "https://github.com/zenindiones-maker/fyah-reverse-engineering/actions/runs/39177110784",
+    "recovered_by": "er-memory-persist-C",
+    "recovered_utc": "2026-10-19T02:33:22Z"
+  }
+}
