@@ -1,7 +1,7 @@
 {
   "schema": "fyah-handoff@1",
   "id": "persist-prova-a-39190430768-1",
-  "state": "claimed",
+  "state": "consumed",
   "summary": "prova persistência job A→B (conteúdo conhecido)",
   "next_steps": [
     "job-B deve consumir"
@@ -25,7 +25,13 @@
     "lease_expires_at": "2026-10-19T09:03:03Z",
     "reclaimed_at": null
   },
-  "consumed": null,
+  "consumed": {
+    "consumer_id": "er-memory-persist:39190430768",
+    "claim_token": "0e5ce265fd384f3b8b21c5d60f905fe1",
+    "attempt_id": "39190430768.1",
+    "at": "2026-10-19T02:33:05Z",
+    "result_status": "success"
+  },
   "attempts": 1,
   "max_attempts": 3,
   "history": [
@@ -42,6 +48,14 @@
       "to": "claimed",
       "by": "er-memory-persist:39190430768",
       "reason": "claim",
+      "claim_token": "0e5ce265fd384f3b8b21c5d60f905fe1"
+    },
+    {
+      "at": "2026-10-19T02:33:05Z",
+      "from": "claimed",
+      "to": "consumed",
+      "by": "er-memory-persist:39190430768",
+      "reason": "efeito confirmado (success)",
       "claim_token": "0e5ce265fd384f3b8b21c5d60f905fe1"
     }
   ]
