@@ -155,7 +155,8 @@ def run_session(agent: str, label: str, cmd: list[str], result: str | None = Non
     up = c.healthy()
     run_id = os.environ.get("GITHUB_RUN_ID") or uuid.uuid4().hex[:10]
     sid = f"fyah-{_slug(agent)}-{_slug(label)}-{run_id}-{uuid.uuid4().hex[:6]}"
-    out_dir = REPO / "out" / "aimem"; out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = pathlib.Path(os.environ["AIMEM_OUT_DIR"]) if os.environ.get("AIMEM_OUT_DIR") else (REPO / "out" / "aimem")
+    out_dir.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, AIMEM_SESSION_ID=sid, AIMEM_AGENT=agent, AI_MEMORY_CAPTURE_OWNER="fyah.er", **(env_extra or {}))
     handoff = None
     claimed_id = None

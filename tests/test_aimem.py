@@ -38,17 +38,23 @@ def test_redact_command():
 
 
 def test_session_degrades_without_server(tmp_path, monkeypatch):
-    """Sem servidor o subordinado ainda roda (modo degradado) e a memória vai pro markdown."""
+    """Sem servidor o subordinado ainda roda (modo degradado); sessão JSON vai para AIMEM_OUT_DIR."""
     import aimem.__main__ as m
+    out = tmp_path / "out-aimem"
     monkeypatch.setenv("AI_MEMORY_SERVER_URL", "http://127.0.0.1:9")
+    monkeypatch.setenv("AIMEM_OUT_DIR", str(out))
     monkeypatch.setattr(m, "MEM", tmp_path / "memory")
     monkeypatch.chdir(tmp_path)
     rc = m.run_session("fyah-er", "teste", [sys.executable, "-c", "import os; assert os.environ['AIMEM_SESSION_ID']"],
                        next_steps=["seguir"])
     assert rc == 0
-    ab = json.loads((tmp_path / "memory" / "handoffs" / "aberto.json").read_text())
-    assert ab["from_agent"] == "fyah-er" and "seguir" in ab["next_steps"]
+    # markdown de sessão/handoff gravados; aberto.json NÃO é reescrito (fila durável P0a)
     assert list((tmp_path / "memory" / "sessoes").glob("*-teste-*.md"))
+    assert list((tmp_path / "memory" / "handoffs").glob("*-teste-*.md"))
+    assert not (tmp_path / "memory" / "handoffs" / "aberto.json").exists()
+    assert (out / "session-fyah-er.json").is_file()
+    rec = json.loads((out / "session-fyah-er.json").read_text())
+    assert rec["agent"] == "fyah-er" and rec["exit_code"] == 0
 
 
 def test_workflows_route_through_aimemory():
