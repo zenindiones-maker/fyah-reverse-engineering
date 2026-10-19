@@ -1,0 +1,48 @@
+{
+  "schema": "fyah-handoff@1",
+  "id": "20261018T234805Z-39177105670-1-0e5a7efa681c",
+  "state": "pending",
+  "summary": "[audio-full] fyah-tools concluiu em 5s; schema fyah-re/audio-full@1",
+  "next_steps": [],
+  "open_questions": [],
+  "files_touched": [
+    "out/audio-full.json",
+    "out/audio_full.json",
+    "out/dsh_events.json",
+    "out/harness.json",
+    "out/media-inspect.json",
+    "out/profile.json",
+    "out/score.json",
+    "out/smoke_pong.json",
+    "out/smoke_tool.json",
+    "out/smoke_tools_api.json"
+  ],
+  "origin": {
+    "workflow": "fyah-tools",
+    "run_id": "39177105670",
+    "run_attempt": "1",
+    "sha": null,
+    "session": "fyah-fyah-tools-audio-full-39177105670-e605e7",
+    "agent": "fyah-tools",
+    "created_utc": "2026-10-18T23:48:05Z"
+  },
+  "consumer": null,
+  "consumed": null,
+  "attempts": 0,
+  "max_attempts": 3,
+  "history": [
+    {
+      "at": "2026-10-19T02:32:38Z",
+      "from": null,
+      "to": "pending",
+      "by": "aimem migrate",
+      "reason": "migrado de aberto.json"
+    }
+  ],
+  "migration": {
+    "original_sha256": "0e5a7efa681c7d196738172b54c1840ac3be8454e8584ef41e2a388eb9340c9f",
+    "raw_path": "docs/memory/handoffs/raw/aberto-0e5a7efa681c.json",
+    "migrated_utc": "2026-10-19T02:32:38Z",
+    "by": "aimem migrate"
+  }
+}

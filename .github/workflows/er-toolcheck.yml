@@ -28,12 +28,38 @@ jobs:
           python -m aimem session --agent er-toolcheck --label toolcheck \
             --next "Consertar o que aparecer como falha em docs/ferramentas/STATUS.md" -- \
             python scripts/er_toolcheck.py
-      - name: Commit (só docs/ferramentas + docs/memory)
+      - name: Commit (STATUS + memória via sync seguro)
         if: always()
+        env:
+          AIMEM_SYNC_EXTRA: docs/ferramentas/STATUS.md
+        run: bash scripts/aimem_commit.sh er-toolcheck status
+      - name: Varrer artefato de conflito (segredos)
+        if: failure()
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/ferramentas/STATUS.md docs/memory
-          git diff --cached --quiet && { echo "Sem mudanças"; exit 0; }
-          git commit -m "ferramentas: status $(date -u +%F)"
-          git pull --rebase -q && git push
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          conf = Path("out/aimem/conflito")
+          if not conf.is_dir():
+              print("sem conflito; ok")
+              sys.exit(0)
+          from aimem.gitsync import scan_artifact, ArtifactSecretError
+          blocked = False
+          for d in conf.iterdir():
+              if d.is_dir():
+                  try:
+                      scan_artifact(d)
+                      print("ok", d)
+                  except ArtifactSecretError as e:
+                      print("::error::", e)
+                      blocked = True
+          sys.exit(2 if blocked else 0)
+          PY
+      - name: Artefato de conflito da memória (se falhou o sync)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: aimem-conflito-toolcheck-${{ github.run_id }}
+          path: out/aimem/conflito/
+          retention-days: 3
+          if-no-files-found: ignore

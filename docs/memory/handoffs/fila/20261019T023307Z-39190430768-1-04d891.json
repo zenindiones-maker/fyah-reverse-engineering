@@ -1,0 +1,31 @@
+{
+  "schema": "fyah-handoff@1",
+  "id": "20261019T023307Z-39190430768-1-04d891",
+  "state": "pending",
+  "summary": "[prova-B] er-memory-persist concluiu em 0s",
+  "next_steps": [],
+  "open_questions": [],
+  "files_touched": [],
+  "origin": {
+    "workflow": "er-memory-persist",
+    "run_id": "39190430768",
+    "run_attempt": "1",
+    "sha": "b85e8c5aa1ffe89e88f41e58cc4d3d22e18934a7",
+    "session": "fyah-er-memory-persist-prova-b-39190430768-277e23",
+    "agent": "er-memory-persist",
+    "created_utc": "2026-10-19T02:33:07Z"
+  },
+  "consumer": null,
+  "consumed": null,
+  "attempts": 0,
+  "max_attempts": 3,
+  "history": [
+    {
+      "at": "2026-10-19T02:33:07Z",
+      "from": null,
+      "to": "pending",
+      "by": "er-memory-persist:39190430768",
+      "reason": "criado"
+    }
+  ]
+}

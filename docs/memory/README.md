@@ -45,6 +45,23 @@ python -m aimem session --agent fyah-er --label rotulo --result out/x.json -- co
 python -m aimem status                    # handoffs abertos
 ```
 
+### Destino do push da memória (fail-closed)
+
+`python -m aimem sync` / `scripts/aimem_commit.sh` (e `session`, quando grava efeitos) **não têm fallback para `main`**.
+- **No Actions:** o destino é `GITHUB_REF_NAME` (a branch do run). Workflows disparados em `main` continuam gravando em `main`.
+- **Fora do Actions (uso local): `AIMEM_SYNC_REF` é obrigatório.** Exemplo:
+
+```bash
+AIMEM_SYNC_REF=p0a-fila-handoffs bash scripts/aimem_commit.sh minha-sessao
+# ou
+export AIMEM_SYNC_REF=main && python -m aimem sync --msg "memoria: ..."
+```
+
+O sync falha (código ≠ 0, sem nenhum `git push`, dados locais preservados) se: nenhum dos dois estiver definido;
+`GITHUB_ACTIONS=true` sem `GITHUB_REF_NAME`; `AIMEM_SYNC_REF` ≠ `GITHUB_REF_NAME`; o nome de branch for inválido
+(`git check-ref-format --branch`, sem espaços, `+`, `:` ou prefixo `refs/`); ou `AIMEM_FORBID_MAIN=1` e o alvo for
+`main` em qualquer grafia (`MAIN`, `refs/heads/main`, `+main`, `HEAD:main`…). Regressão: `tests/p0a/test_p0a_forbid_main.py`.
+
 ## Limitação documentada (`ai-memory run`)
 
 `ai-memory run` só lança harnesses de agente que ele conhece: `claude`, `codex`, `opencode`, `opencode2`, `pi`, `crush`, `omp`, `kimi`, `command-code`, `kiro`, `grok`, `antigravity` e `copilot`. Um valor diferente (como o nosso catálogo ou o DeepSeek Harness) dá `invalid value … for harness`, e ele não embrulha comandos arbitrários. Além disso, esses harnesses dependem de LLM de nuvem.
@@ -55,3 +72,36 @@ Por isso usamos o caminho **zero-LLM** que o próprio ai-memory documenta para o
 - **Markdown no git**, como fonte durável.
 
 Agentes que não estão na lista nativa aparecem como `agent: other` nas páginas do ai-memory. O agente lógico (`deepseek-harness`, `fyah-tools`, `er-analyze` ou `er-toolcheck`) fica registrado aqui, como o guia de captura externa recomenda.
+
+## Limitação documentada (proteção de `main` no GitHub)
+
+Hoje `main` **não tem** proteção de branch nem ruleset no GitHub (`branches/main` → `protected: false`; rulesets → `[]`, lido em 2026-10-18).
+As travas contra escrita em `main` (refspec `HEAD:refs/heads/<ref>`, destino fail-closed, `AIMEM_FORBID_MAIN`, guards do
+`er-memory-persist`) são **só de código/workflow**: protegem os caminhos que passam por `aimem`, mas **não substituem**
+proteção do lado do GitHub (qualquer outro push com permissão de escrita em `main` continua possível).
+
+## Fila durável (`handoffs/fila/`) — P0a
+
+Cada handoff é um arquivo `fyah-handoff@1` com estados `pending|claimed|consumed|failed`.
+O bastão **não** vive mais só em `aberto.json` (legado: migrar com `python -m aimem migrate`).
+Efeitos idempotentes: `handoffs/efeitos/`. Cópias brutas de migração/recuperação: `handoffs/raw/`.
+Commit da memória: `scripts/aimem_commit.sh` → `python -m aimem sync` (sem `-X theirs`; falha = artefato em `out/aimem/conflito/`).
+
+Recuperação do handoff perdido do toolcheck (`4a0ec59` sobrescrito em `4ffade0`):
+
+```bash
+python -m aimem recover --commit 4a0ec59 --overwritten-by 4ffade0 --by "E.R."
+bash scripts/aimem_commit.sh recuperacao-toolcheck
+```
+
+Rodar isso no Actions na branch de validação (não no commit de código), para a prova ser contra o histórico real do remoto.
+
+## Workflow `er-memory-persist` (branch `p0a-fila-handoffs`)
+
+Gatilhos: `workflow_dispatch` e `push` (paths: workflow, `aimem/**`, `scripts/aimem_commit.sh`, `tests/p0a/**` — **sem** `docs/memory/**`).
+
+`docs/memory/**` fica fora do filtro **de propósito**: commits de memória — feitos por bot ou por humano —
+não devem disparar a validação; só mudanças de código/teste/workflow disparam.
+
+Pushes feitos com o `GITHUB_TOKEN` do Actions **não** disparam novos runs deste workflow
+([documentação oficial](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow)).

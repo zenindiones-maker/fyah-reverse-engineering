@@ -83,7 +83,10 @@ class Client:
                                         "params": {"name": tool, "arguments": args}})
         if raw.startswith("event:") or raw.startswith("data:"):
             raw = next(l[5:].strip() for l in raw.splitlines() if l.startswith("data:"))
-        d = json.loads(raw)
+        try:
+            d = json.loads(raw)
+        except json.JSONDecodeError as e:
+            raise AIMemoryError(f"{tool}: resposta não-JSON (HTTP {code}): {raw[:200]!r}") from e
         if d.get("error"):
             raise AIMemoryError(f"{tool}: {d['error']}")
         res = d.get("result") or {}

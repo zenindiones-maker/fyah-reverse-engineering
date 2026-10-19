@@ -1,0 +1,20 @@
+{
+  "summary": "[audio-full] fyah-tools concluiu em 5s; schema fyah-re/audio-full@1",
+  "next_steps": [],
+  "open_questions": [],
+  "files_touched": [
+    "out/audio-full.json",
+    "out/audio_full.json",
+    "out/dsh_events.json",
+    "out/harness.json",
+    "out/media-inspect.json",
+    "out/profile.json",
+    "out/score.json",
+    "out/smoke_pong.json",
+    "out/smoke_tool.json",
+    "out/smoke_tools_api.json"
+  ],
+  "from_session": "fyah-fyah-tools-audio-full-39177105670-e605e7",
+  "from_agent": "fyah-tools",
+  "created_utc": "2026-10-18T23:48:05Z"
+}
