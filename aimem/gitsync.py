@@ -60,23 +60,134 @@ def _stage_allowed() -> list[str]:
     return staged
 
 
+
+def _secret_patterns():
+    """Padrões que nunca podem aparecer em artefato de conflito/recuperação."""
+    import re
+    return [
+        re.compile(r"ghp_[A-Za-z0-9]{20,}"),
+        re.compile(r"gho_[A-Za-z0-9]{20,}"),
+        re.compile(r"github_pat_[A-Za-z0-9_]{20,}"),
+        re.compile(r"AKIA[0-9A-Z]{16}"),
+        re.compile(r"-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----"),
+        re.compile(r"(?i)ai[-_]?memory[^\n]{0,40}(token|secret|password)\s*[=:]\s*\S+"),
+        re.compile(r"(?i)(api[_-]?key|secret[_-]?key|access[_-]?token)\s*[=:]\s*['\"]?[A-Za-z0-9_\-]{16,}"),
+    ]
+
+
+_FORBIDDEN_NAMES = {
+    "config.toml", ".env", ".env.local", "credentials", "credentials.json",
+    "id_rsa", "id_ed25519", ".netrc",
+}
+_FORBIDDEN_SUFFIXES = (
+    ".db", ".sqlite", ".sqlite3", ".redb", ".duckdb", ".mdb",
+    ".pem", ".p12", ".pfx", ".key",
+)
+
+
+class ArtifactSecretError(SyncError):
+    """Artefato de conflito contém segredo ou arquivo proibido."""
+
+
+def scan_artifact(dest: pathlib.Path) -> None:
+    """Varre o diretório do artefato; levanta ArtifactSecretError se achar segredo/arquivo proibido."""
+    dest = pathlib.Path(dest)
+    hits = []
+    for f in dest.rglob("*"):
+        if not f.is_file():
+            continue
+        name = f.name.lower()
+        if name in _FORBIDDEN_NAMES or any(name.endswith(s) for s in _FORBIDDEN_SUFFIXES):
+            hits.append(f"arquivo_proibido:{f.relative_to(dest)}")
+            continue
+        if f.suffix == ".bundle" or name.endswith(".bundle"):
+            # descompacta em tmp e varre blobs de docs/memory
+            tmp = dest / f".bundle-scan-{f.name}"
+            if tmp.exists():
+                shutil.rmtree(tmp)
+            tmp.mkdir()
+            r = _run(["git", "clone", "-q", str(f), str(tmp / "repo")], check=False)
+            text = (r.stdout or "") + (r.stderr or "")
+            if r.returncode == 0:
+                repo = tmp / "repo"
+                for blob in repo.rglob("*"):
+                    if not blob.is_file() or ".git" in blob.parts:
+                        continue
+                    try:
+                        text += "\n" + blob.read_text(errors="replace")
+                    except Exception:
+                        pass
+                shutil.rmtree(tmp, ignore_errors=True)
+            else:
+                text += _run(["git", "bundle", "list-heads", str(f)], check=False).stdout or ""
+        else:
+            try:
+                text = f.read_text(errors="replace")
+            except Exception:
+                text = f.read_bytes()[:200_000].decode("utf-8", errors="replace")
+        for pat in _secret_patterns():
+            if pat.search(text):
+                hits.append(f"padrao:{pat.pattern[:40]}:{f.relative_to(dest)}")
+                break
+    if hits:
+        raise ArtifactSecretError("artefato bloqueado: " + "; ".join(hits[:8]))
+
+
 def _preserve(reason: str) -> pathlib.Path:
+    """Salva patch+bundle só de docs/memory (commits locais à frente do remoto). Varre segredos."""
     CONFLICT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     dest = CONFLICT_DIR / f"{stamp}-{os.getpid()}-{time.time_ns()}"
     dest.mkdir(parents=True, exist_ok=True)
     (dest / "reason.txt").write_text(reason + "\n")
-    _run(["git", "format-patch", "-1", "HEAD", "-o", str(dest)], check=False)
+    ref = _sync_ref()
+    remote_ref = f"origin/{ref}"
+    ahead = _run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], check=False)
+    n_ahead = int((ahead.stdout or "0").strip() or "0") if ahead.returncode == 0 else 0
+    if n_ahead > 0:
+        # origin/ref..HEAD — só patches que tocam docs/memory
+        _run(["git", "format-patch", f"{remote_ref}..HEAD", "-o", str(dest),
+              "--", "docs/memory"], check=False)
     if not list(dest.glob("*.patch")):
-        # sem commit local: patch do working tree vs HEAD
         d = _run(["git", "diff", "HEAD", "--", "docs/memory"], check=False)
         (dest / "working-tree.patch").write_text(d.stdout or "")
+    bundle = dest / "memoria.bundle"
+    mem_shas = _run(
+        ["git", "rev-list", "--reverse", f"{remote_ref}..HEAD", "--", "docs/memory"],
+        check=False,
+    )
+    shas = [x for x in (mem_shas.stdout or "").split() if x]
+    if shas:
+        tmp_ref = f"refs/tags/aimem-art-{os.getpid()}-{time.time_ns()}"
+        _run(["git", "update-ref", tmp_ref, shas[-1]], check=False)
+        try:
+            r = _run(["git", "bundle", "create", str(bundle), f"{remote_ref}..{tmp_ref}"], check=False)
+            if r.returncode != 0:
+                (dest / "NO_BUNDLE.txt").write_text(f"bundle falhou: {(r.stderr or '')[-300:]}\n")
+        finally:
+            _run(["git", "update-ref", "-d", tmp_ref], check=False)
+    elif (dest / "working-tree.patch").exists():
+        (dest / "NO_BUNDLE.txt").write_text(
+            "sem commits locais de docs/memory à frente do remoto; só working-tree.patch\n"
+        )
     br = f"aimem-conflito-{stamp}"
-    _run(["git", "bundle", "create", str(dest / "memoria.bundle"), "HEAD"], check=False)
     (dest / "README.md").write_text(
         f"# Conflito de memória\n\n{reason}\n\n"
-        f"Recuperação: `git fetch {dest/'memoria.bundle'} HEAD:{br}` e inspecione o patch.\n"
+        f"Escopo: apenas `docs/memory/` (allowlist). Bundle = commits que tocam docs/memory em `{remote_ref}..`.\n\n"
+        f"Recuperação: `git fetch {bundle.name} HEAD:{br}` (se bundle existir) e inspecione o patch.\n"
     )
+    try:
+        scan_artifact(dest)
+    except ArtifactSecretError as e:
+        (dest / "BLOCKED.txt").write_text(str(e) + "\n")
+        for f in list(dest.iterdir()):
+            if f.name in ("reason.txt", "BLOCKED.txt", "README.md"):
+                continue
+            if f.is_file():
+                f.unlink()
+            elif f.is_dir():
+                shutil.rmtree(f)
+        raise
     return dest
 
 
