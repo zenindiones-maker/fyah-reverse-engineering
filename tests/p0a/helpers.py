@@ -42,8 +42,48 @@ def overlay_code(dst: pathlib.Path):
     shutil.copy2(CODE / "scripts" / "aimem_commit.sh", dst / "scripts" / "aimem_commit.sh")
 
 
+# aberto.json legado (formato pré-fila), conteúdo fixo idêntico ao de 4ffade0 — fixture, não o estado vivo.
+LEGACY_ABERTO = """{
+  "summary": "[audio-full] fyah-tools concluiu em 5s; schema fyah-re/audio-full@1",
+  "next_steps": [],
+  "open_questions": [],
+  "files_touched": [
+    "out/audio-full.json",
+    "out/audio_full.json",
+    "out/dsh_events.json",
+    "out/harness.json",
+    "out/media-inspect.json",
+    "out/profile.json",
+    "out/score.json",
+    "out/smoke_pong.json",
+    "out/smoke_tool.json",
+    "out/smoke_tools_api.json"
+  ],
+  "from_session": "fyah-fyah-tools-audio-full-39177105670-e605e7",
+  "from_agent": "fyah-tools",
+  "created_utc": "2026-10-18T23:48:05Z"
+}
+"""
+
+
+def synthetic_memory(dst: pathlib.Path) -> pathlib.Path:
+    """docs/memory mínimo e determinístico: fila/efeitos/raw VAZIOS + aberto.json legado fixo.
+    Nunca copia o docs/memory vivo do checkout (que muda com commits de memória dos runs)."""
+    dst = pathlib.Path(dst)
+    for sub in ("handoffs/fila", "handoffs/efeitos", "handoffs/raw", "sessoes"):
+        (dst / sub).mkdir(parents=True, exist_ok=True)
+        (dst / sub / ".gitkeep").write_text("")
+    (dst / "handoffs" / "aberto.json").write_text(LEGACY_ABERTO)
+    (dst / "paginas").mkdir(parents=True, exist_ok=True)
+    (dst / "paginas" / "regras.md").write_text("# Regras (fixture)\n\n- custo zero; zero LLM.\n")
+    (dst / "paginas" / "hierarquia.md").write_text("# Hierarquia (fixture)\n\nai-memory → aimem → subordinados.\n")
+    (dst / "paginas" / "ferramentas.md").write_text("# Ferramentas (fixture)\n\n- python -m aimem session …\n")
+    (dst / "README.md").write_text("# memória (fixture de teste)\n")
+    return dst
+
+
 def make_remote(tmp: pathlib.Path, *, memory_from: pathlib.Path | None = None) -> pathlib.Path:
-    """Remoto bare com: código sob teste + docs/memory (do checkout sob teste por padrão)."""
+    """Remoto bare com: código sob teste + docs/memory sintético (ou `memory_from` explícito)."""
     tmp = pathlib.Path(tmp); tmp.mkdir(parents=True, exist_ok=True)
     remote = tmp / "origin.git"
     git(tmp, "init", "-q", "--bare", "-b", "main", str(remote))
@@ -52,10 +92,10 @@ def make_remote(tmp: pathlib.Path, *, memory_from: pathlib.Path | None = None) -
     _ident(seed)
     overlay_code(seed)
     (seed / "docs").mkdir()
-    src_mem = memory_from or (HIST / "docs" / "memory")
-    if not src_mem.is_dir():
-        raise RuntimeError(f"docs/memory ausente em HIST={HIST} (src={src_mem})")
-    shutil.copytree(src_mem, seed / "docs" / "memory")
+    if memory_from is not None:
+        shutil.copytree(memory_from, seed / "docs" / "memory")
+    else:
+        synthetic_memory(seed / "docs" / "memory")
     (seed / "README.md").write_text("base\n")
     (seed / "docs" / "ferramentas").mkdir(parents=True)
     (seed / "docs" / "ferramentas" / "STATUS.md").write_text("status base\n")

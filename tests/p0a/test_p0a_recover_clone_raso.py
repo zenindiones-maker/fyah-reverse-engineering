@@ -28,6 +28,8 @@ def test_recover_clone_raso_falha_sem_criar_item(tmp_path):
     fila = shallow / "docs/memory/handoffs/fila"
     fila.mkdir(parents=True, exist_ok=True)
     before = sorted(p.name for p in fila.glob("*.json"))
+    rawdir = shallow / "docs/memory/handoffs/raw"
+    raw_before = sorted(p.name for p in rawdir.glob("*")) if rawdir.exists() else []
     env = {**os.environ, "AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1",
            "AI_MEMORY_DATA_DIR": str(tmp_path / "d")}
     for k in list(env):
@@ -44,9 +46,11 @@ def test_recover_clone_raso_falha_sem_criar_item(tmp_path):
     assert "4a0ec59" in msg
     after = sorted(p.name for p in fila.glob("*.json"))
     assert after == before, "fila foi alterada apesar da falha"
-    assert not list((shallow / "docs/memory/handoffs/raw").glob("recuperado-*")) if (
-        shallow / "docs/memory/handoffs/raw"
-    ).exists() else True
+    raw_after = sorted(p.name for p in rawdir.glob("*")) if rawdir.exists() else []
+    assert raw_after == raw_before, f"raw/ alterado apesar da falha: {set(raw_after) ^ set(raw_before)}"
+    st = subprocess.run(["git", "status", "--porcelain", "--", "docs/memory"], cwd=shallow,
+                        capture_output=True, text=True, check=True).stdout
+    assert st == "", f"recover com falha alterou docs/memory: {st}"
 
 
 def test_ci_yml_tem_fetch_depth_0():

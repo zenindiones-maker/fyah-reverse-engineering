@@ -277,12 +277,13 @@ def test_recupera_handoff_perdido(tmp_path):
             f"precisa histórico completo (ci.yml fetch-depth: 0). stderr={(chk.stderr or b'').decode()[:200]}"
         )
     remote = tmp_path / "origin.git"
-    git(tmp_path, "clone", "-q", "--bare", str(HIST), str(remote))
-    # bare pode não ter refs/heads/main (clone só da branch de trabalho)
-    refs = git(remote, "show-ref")
-    if "refs/heads/main" not in refs:
-        git(remote, "branch", "main", OVERWRITE_COMMIT)
-    git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
+    # Remoto explícito com main = OVERWRITE_COMMIT, sem depender das refs do checkout
+    # (checkout de PR é detached e não tem refs/heads; `git clone --bare` dele não traz branch nenhuma).
+    git(tmp_path, "init", "-q", "--bare", "-b", "main", str(remote))
+    overwrite_full = git(HIST, "rev-parse", "--verify", f"{OVERWRITE_COMMIT}^{{commit}}")
+    git(HIST, "push", "-q", str(remote), f"{overwrite_full}:refs/heads/main")
+    assert git(remote, "rev-parse", "--verify", "refs/heads/main") == overwrite_full
+    git(remote, "cat-file", "-e", f"{LOST_COMMIT}^{{commit}}")  # erro real (objeto ausente) propaga
     w = tmp_path / "w"; git(tmp_path, "clone", "-q", "-b", "main", str(remote), str(w))
     git(w, "config", "user.name", "teste"); git(w, "config", "user.email", "t@x")
     git(w, "checkout", "-q", "-B", "main", OVERWRITE_COMMIT)
