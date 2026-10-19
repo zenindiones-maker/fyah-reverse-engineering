@@ -55,3 +55,19 @@ Por isso usamos o caminho **zero-LLM** que o próprio ai-memory documenta para o
 - **Markdown no git**, como fonte durável.
 
 Agentes que não estão na lista nativa aparecem como `agent: other` nas páginas do ai-memory. O agente lógico (`deepseek-harness`, `fyah-tools`, `er-analyze` ou `er-toolcheck`) fica registrado aqui, como o guia de captura externa recomenda.
+
+## Fila durável (`handoffs/fila/`) — P0a
+
+Cada handoff é um arquivo `fyah-handoff@1` com estados `pending|claimed|consumed|failed`.
+O bastão **não** vive mais só em `aberto.json` (legado: migrar com `python -m aimem migrate`).
+Efeitos idempotentes: `handoffs/efeitos/`. Cópias brutas de migração/recuperação: `handoffs/raw/`.
+Commit da memória: `scripts/aimem_commit.sh` → `python -m aimem sync` (sem `-X theirs`; falha = artefato em `out/aimem/conflito/`).
+
+Recuperação do handoff perdido do toolcheck (`4a0ec59` sobrescrito em `4ffade0`):
+
+```bash
+python -m aimem recover --commit 4a0ec59 --overwritten-by 4ffade0 --by "E.R."
+bash scripts/aimem_commit.sh recuperacao-toolcheck
+```
+
+Rodar isso no Actions na branch de validação (não no commit de código), para a prova ser contra o histórico real do remoto.
