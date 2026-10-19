@@ -71,3 +71,10 @@ bash scripts/aimem_commit.sh recuperacao-toolcheck
 ```
 
 Rodar isso no Actions na branch de validação (não no commit de código), para a prova ser contra o histórico real do remoto.
+
+## Workflow `er-memory-persist` (branch `p0a-fila-handoffs`)
+
+Gatilhos: `workflow_dispatch` e `push` (paths: workflow, `aimem/**`, `scripts/aimem_commit.sh`, `tests/p0a/**` — **sem** `docs/memory/**`).
+
+Pushes feitos com o `GITHUB_TOKEN` do Actions **não** disparam novos runs deste workflow
+([documentação oficial](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow)).

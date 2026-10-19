@@ -1,8 +1,22 @@
 name: er-memory-persist
 
-# Prova A→B→C de fila durável + recover. SOMENTE workflow_dispatch na branch de validação.
+# Prova A→B→C de fila durável + recover na branch p0a-fila-handoffs.
+#
+# Nota (docs.github.com — "Triggering a workflow from a workflow"):
+# pushes feitos com o GITHUB_TOKEN do repositório NÃO disparam novos workflow runs
+# (exceto workflow_dispatch/repository_dispatch). Por isso o gatilho `push` abaixo
+# só reage a pushes com credencial externa/PAT/App — commits de memória deste
+# próprio workflow (via GITHUB_TOKEN) não reencadeiam o workflow.
+# Ref: https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow
 on:
   workflow_dispatch:
+  push:
+    branches: [p0a-fila-handoffs]
+    paths:
+      - ".github/workflows/er-memory-persist.yml"
+      - "aimem/**"
+      - "scripts/aimem_commit.sh"
+      - "tests/p0a/**"
 
 permissions:
   contents: read
@@ -14,23 +28,30 @@ concurrency:
 env:
   AIMEM_SYNC_BACKOFF: "1"
   PYTHONDONTWRITEBYTECODE: "1"
+  AIMEM_FORBID_MAIN: "1"
+  EXPECTED_MAIN_SHA: "4ffade0153ce9a3ffd69cf532c7b0c3f282bb92b"
+  EXPECTED_BRANCH: "p0a-fila-handoffs"
 
 jobs:
   guard:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Abortar se main
+      - name: Abortar se ref != p0a-fila-handoffs ou destino seria main
         run: |
           set -euo pipefail
           echo "ref_name=${GITHUB_REF_NAME}"
-          if [ "${GITHUB_REF_NAME}" = "main" ]; then
-            echo "::error::er-memory-persist não pode rodar em main"
+          if [ "${GITHUB_REF_NAME}" != "${EXPECTED_BRANCH}" ]; then
+            echo "::error::er-memory-persist só roda em ${EXPECTED_BRANCH} (got ${GITHUB_REF_NAME})"
             exit 1
           fi
-          if [ "${GITHUB_REF_NAME}" != "p0a-fila-handoffs" ]; then
-            echo "::warning::ref inesperada (${GITHUB_REF_NAME}); esperado p0a-fila-handoffs"
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "::error::destino main proibido"
+            exit 1
           fi
+          main_sha=$(git ls-remote "https://github.com/${GITHUB_REPOSITORY}.git" refs/heads/main | awk '{print $1}')
+          echo "main_sha=${main_sha}"
+          test "${main_sha}" = "${EXPECTED_MAIN_SHA}"
 
   job-a:
     needs: guard
@@ -51,8 +72,11 @@ jobs:
       - run: pip install -e ".[dev]"
       - uses: ./.github/actions/setup-aimemory
         with: {seed: "false"}
-      - name: Guard ref
-        run: test "${GITHUB_REF_NAME}" != "main"
+      - name: Guard ref + destino
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF_NAME}" = "${EXPECTED_BRANCH}"
+          test "${GITHUB_REF_NAME}" != "main"
       - id: create
         name: Criar handoff conhecido e sync
         env:
@@ -60,11 +84,11 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import hashlib, json, os, pathlib, subprocess, sys, datetime as dt
+          import hashlib, json, os, pathlib, datetime as dt
           mem = pathlib.Path("docs/memory")
           fila = mem / "handoffs" / "fila"
           fila.mkdir(parents=True, exist_ok=True)
-          hid = "persist-prova-a-" + os.environ["GITHUB_RUN_ID"]
+          hid = f"persist-prova-a-{os.environ['GITHUB_RUN_ID']}-{os.environ.get('GITHUB_RUN_ATTEMPT','1')}"
           now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
           item = {
             "schema": "fyah-handoff@1", "id": hid, "state": "pending",
@@ -89,10 +113,11 @@ jobs:
           PY
           python -m aimem seed || true
           bash scripts/aimem_commit.sh er-memory-persist-A
-          # confirmar tip remoto da branch tem o arquivo
           HID=$(grep '^handoff_id=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)
           git fetch origin "${GITHUB_REF_NAME}"
           git show "origin/${GITHUB_REF_NAME}:docs/memory/handoffs/fila/${HID}.json" >/dev/null
+          # destino do push = refs/heads/$GITHUB_REF_NAME (nunca main)
+          test "${GITHUB_REF_NAME}" != "main"
 
   job-b:
     needs: job-a
@@ -110,8 +135,11 @@ jobs:
       - run: pip install -e ".[dev]"
       - uses: ./.github/actions/setup-aimemory
       - name: Guard ref
-        run: test "${GITHUB_REF_NAME}" != "main"
-      - name: Verificar sha256 do A e consumir
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF_NAME}" = "${EXPECTED_BRANCH}"
+          test "${GITHUB_REF_NAME}" != "main"
+      - name: Verificar sha256 do A e consumir exatamente o ID de A
         env:
           AIMEM_SYNC_REF: ${{ github.ref_name }}
           HAND_ID: ${{ needs.job-a.outputs.handoff_id }}
@@ -119,23 +147,43 @@ jobs:
           AIMEM_CLAIM_ID: ${{ needs.job-a.outputs.handoff_id }}
         run: |
           set -euo pipefail
+          test -n "${HAND_ID}"
           git fetch origin "${GITHUB_REF_NAME}"
           git checkout "origin/${GITHUB_REF_NAME}" -- "docs/memory/handoffs/fila/${HAND_ID}.json"
           python - <<'PY'
-          import hashlib, json, os, pathlib, sys
+          import hashlib, json, os, pathlib
           p = pathlib.Path("docs/memory/handoffs/fila") / (os.environ["HAND_ID"] + ".json")
           raw = p.read_bytes()
           dig = hashlib.sha256(raw).hexdigest()
           assert dig == os.environ["HAND_SHA"], (dig, os.environ["HAND_SHA"])
           item = json.loads(raw)
+          assert item["id"] == os.environ["HAND_ID"]
           assert item["state"] == "pending", item["state"]
           print("sha256 ok", dig)
           PY
           python -m aimem seed
-          # claim → effect → confirm via session
           python -m aimem session --agent er-memory-persist --label prova-B -- true
+          # claim deve ser nosso (mesmo run_id)
+          python - <<'PY'
+          import json, os, pathlib
+          p = pathlib.Path("docs/memory/handoffs/fila") / (os.environ["HAND_ID"] + ".json")
+          # após session+sync o remoto terá consumed; aqui validamos o local pós-session
+          item = json.loads(p.read_text()) if p.is_file() else {}
+          print("local_state", item.get("state"), "id", item.get("id"))
+          PY
           bash scripts/aimem_commit.sh er-memory-persist-B
-      - name: Idempotência (segunda sessão não reconome)
+          git fetch origin "${GITHUB_REF_NAME}"
+          git checkout "origin/${GITHUB_REF_NAME}" -- "docs/memory/handoffs/fila/${HAND_ID}.json"
+          python - <<'PY'
+          import json, os, pathlib
+          item = json.loads((pathlib.Path("docs/memory/handoffs/fila")/(os.environ["HAND_ID"]+".json")).read_text())
+          assert item["id"] == os.environ["HAND_ID"]
+          assert item["state"] == "consumed"
+          cid = item["consumer"]["consumer_id"]
+          assert cid.endswith(":" + os.environ["GITHUB_RUN_ID"]), cid
+          print("claim pertence a este run", cid)
+          PY
+      - name: Idempotência (segunda sessão)
         env:
           AIMEM_SYNC_REF: ${{ github.ref_name }}
           HAND_ID: ${{ needs.job-a.outputs.handoff_id }}
@@ -144,7 +192,6 @@ jobs:
           set -euo pipefail
           git fetch origin "${GITHUB_REF_NAME}"
           git reset --hard "origin/${GITHUB_REF_NAME}"
-          before=$(python -m aimem fila --json)
           hist_before=$(python - <<PY
           import json,os,pathlib
           p=pathlib.Path("docs/memory/handoffs/fila")/(os.environ["HAND_ID"]+".json")
@@ -162,13 +209,14 @@ jobs:
           p=pathlib.Path("docs/memory/handoffs/fila")/(os.environ["HAND_ID"]+".json")
           item=json.loads(p.read_text())
           assert item["state"]=="consumed", item["state"]
+          assert item["id"]==os.environ["HAND_ID"]
           print(json.dumps(item["history"], sort_keys=True))
           PY
           )
           eff_after=$(find docs/memory/handoffs/efeitos -name '*.json' 2>/dev/null | wc -l)
           test "$hist_before" = "$hist_after"
           test "$eff_before" -eq "$eff_after"
-          echo "idempotência ok hist/efeitos inalterados"
+          echo "idempotência ok"
 
   job-c:
     needs: [job-a, job-b]
@@ -187,11 +235,12 @@ jobs:
       - name: Guard ref + main intacto
         run: |
           set -euo pipefail
+          test "${GITHUB_REF_NAME}" = "${EXPECTED_BRANCH}"
           test "${GITHUB_REF_NAME}" != "main"
           main_sha=$(git ls-remote origin refs/heads/main | awk '{print $1}')
           echo "main=$main_sha"
-          test "$main_sha" = "4ffade0153ce9a3ffd69cf532c7b0c3f282bb92b"
-      - name: Consumed uma vez no remoto
+          test "$main_sha" = "${EXPECTED_MAIN_SHA}"
+      - name: Consumed uma vez no remoto (ID de A)
         env:
           HAND_ID: ${{ needs.job-a.outputs.handoff_id }}
         run: |
@@ -201,6 +250,7 @@ jobs:
           python - <<'PY'
           import json, os, pathlib
           item = json.loads((pathlib.Path("docs/memory/handoffs/fila")/(os.environ["HAND_ID"]+".json")).read_text())
+          assert item["id"] == os.environ["HAND_ID"]
           assert item["state"] == "consumed"
           consumed = [h for h in item["history"] if h.get("to") == "consumed"]
           assert len(consumed) == 1, consumed
@@ -211,28 +261,34 @@ jobs:
           AIMEM_SYNC_REF: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          # blob original
-          orig=$(git cat-file -p 4a0ec59:docs/memory/handoffs/aberto.json)
-          orig_sha=$(printf '%s' "$orig" | sha256sum | awk '{print $1}')
-          echo "orig_sha=$orig_sha"
+          orig_sha=$(git rev-parse 4a0ec59:docs/memory/handoffs/aberto.json)
+          orig_bytes=$(git cat-file -p "$orig_sha")
+          orig_sha256=$(printf '%s' "$orig_bytes" | sha256sum | awk '{print $1}')
+          # cat-file -p may omit final newline handling — use python for exact
+          orig_sha256=$(python - <<'PY'
+          import hashlib, subprocess
+          b = subprocess.check_output(["git", "cat-file", "-p", "4a0ec59:docs/memory/handoffs/aberto.json"])
+          print(hashlib.sha256(b).hexdigest())
+          PY
+          )
+          echo "orig_sha256=$orig_sha256"
           python -m aimem recover --commit 4a0ec59 --overwritten-by 4ffade0 --by "er-memory-persist-C"
-          id1=$(python -m aimem fila --json | python -c "import json,sys; items=json.load(sys.stdin); print([i['id'] for i in items if (i.get('recovery') or {}).get('from_commit')=='4a0ec59'][0])")
           bash scripts/aimem_commit.sh er-memory-persist-recover
           python -m aimem recover --commit 4a0ec59 --overwritten-by 4ffade0 --by "er-memory-persist-C"
           ids=$(python -m aimem fila --json | python -c "import json,sys; items=json.load(sys.stdin); print(len([i for i in items if (i.get('recovery') or {}).get('from_commit')=='4a0ec59']))")
           test "$ids" = "1"
           python - <<PY
-          import json, pathlib, os, hashlib
-          items = list(pathlib.Path("docs/memory/handoffs/fila").glob("*.json"))
-          rec = [json.loads(p.read_text()) for p in items if (json.loads(p.read_text()).get("recovery") or {}).get("from_commit")=="4a0ec59"]
+          import json, pathlib
+          items = [json.loads(p.read_text()) for p in pathlib.Path("docs/memory/handoffs/fila").glob("*.json")]
+          rec = [i for i in items if (i.get("recovery") or {}).get("from_commit")=="4a0ec59"]
           assert len(rec)==1
           r = rec[0]["recovery"]
           assert r["overwritten_by_commit"] == "4ffade0"
-          assert r["original_sha256"] == "$orig_sha"
+          assert r["original_sha256"] == "$orig_sha256"
           print("recover ok", rec[0]["id"])
           PY
           bash scripts/aimem_commit.sh er-memory-persist-recover-2
       - name: main ainda 4ffade0
         run: |
           main_sha=$(git ls-remote origin refs/heads/main | awk '{print $1}')
-          test "$main_sha" = "4ffade0153ce9a3ffd69cf532c7b0c3f282bb92b"
+          test "$main_sha" = "${EXPECTED_MAIN_SHA}"

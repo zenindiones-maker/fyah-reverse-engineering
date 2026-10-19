@@ -227,6 +227,8 @@ def push_paths(msg: str, *, max_tries: int = 5) -> str:
     Alvo: AIMEM_SYNC_REF ou GITHUB_REF_NAME ou main (não force-push em outra branch).
     """
     ref = _sync_ref()
+    if ref == "main" and os.environ.get("AIMEM_FORBID_MAIN") == "1":
+        raise SyncError("push para main proibido (AIMEM_FORBID_MAIN=1)")
     remote_ref = f"origin/{ref}"
     _run(["git", "config", "user.name", "github-actions[bot]"], check=False)
     _run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=False)
@@ -245,7 +247,7 @@ def push_paths(msg: str, *, max_tries: int = 5) -> str:
         print("Memória sem mudanças"); return "noop"
     last_err = ""
     for i in range(1, max_tries + 1):
-        r = _run(["git", "push", "origin", f"HEAD:{ref}"], check=False)
+        r = _run(["git", "push", "origin", f"HEAD:refs/heads/{ref}"], check=False)
         if r.returncode == 0:
             print("memória salva"); return "pushed"
         last_err = (r.stderr or r.stdout)[-400:]
