@@ -13,9 +13,47 @@ ALLOWED_DEFAULT = ("docs/memory/",)
 CONFLICT_DIR = pathlib.Path("out/aimem/conflito")
 
 
+def _looks_like_main(raw: str) -> bool:
+    """True se `raw` (já com tolerância a espaços, '+', 'X:', 'refs/heads/' e caixa) aponta p/ main."""
+    s = raw.strip().lstrip("+").strip()
+    if ":" in s:
+        s = s.rsplit(":", 1)[1].strip()
+    if s.startswith("refs/heads/"):
+        s = s[len("refs/heads/"):]
+    return s.casefold() == "main"
+
+
 def _sync_ref() -> str:
-    """Branch-alvo do push/rebase. Em Actions: GITHUB_REF_NAME; override: AIMEM_SYNC_REF; senão main."""
-    return (os.environ.get("AIMEM_SYNC_REF") or os.environ.get("GITHUB_REF_NAME") or "main").strip() or "main"
+    """Branch-alvo do push/rebase — fail-closed, SEM fallback implícito para main.
+
+    Fonte: AIMEM_SYNC_REF (obrigatório fora do Actions) e/ou GITHUB_REF_NAME (Actions).
+    Falha (SyncError) se: nenhum definido; GITHUB_ACTIONS=true sem GITHUB_REF_NAME;
+    ambos definidos e diferentes; AIMEM_FORBID_MAIN=1 e alvo ≈ main; nome de branch inválido
+    (git check-ref-format --branch; sem espaços, '+', ':', prefixo 'refs/').
+    """
+    env = os.environ
+    sync = env.get("AIMEM_SYNC_REF")
+    gh = env.get("GITHUB_REF_NAME")
+    if env.get("GITHUB_ACTIONS") == "true" and not (gh or "").strip():
+        raise SyncError("destino do push indeterminado: GITHUB_ACTIONS=true mas GITHUB_REF_NAME ausente")
+    if sync is None and gh is None:
+        raise SyncError("destino do push indeterminado: defina AIMEM_SYNC_REF (fora do Actions) "
+                        "ou GITHUB_REF_NAME; não há fallback para main")
+    if env.get("AIMEM_FORBID_MAIN") == "1":
+        for v in (sync, gh):
+            if v is not None and _looks_like_main(v):
+                raise SyncError(f"push para main proibido (AIMEM_FORBID_MAIN=1; ref={v!r})")
+    if sync is not None and gh is not None and sync != gh:
+        raise SyncError(f"destino do push inconsistente: AIMEM_SYNC_REF={sync!r} != GITHUB_REF_NAME={gh!r}")
+    ref = sync if sync is not None else gh
+    ok = (bool(ref) and ref == ref.strip() and not any(c.isspace() for c in ref)
+          and not ref.startswith(("+", "-", "refs/")) and ":" not in ref)
+    if ok:
+        chk = subprocess.run(["git", "check-ref-format", "--branch", ref], capture_output=True, text=True)
+        ok = chk.returncode == 0 and chk.stdout.strip() == ref
+    if not ok:
+        raise SyncError(f"ref inválido para destino do push: {ref!r}")
+    return ref
 
 
 
@@ -140,8 +178,10 @@ def _preserve(reason: str) -> pathlib.Path:
     dest = CONFLICT_DIR / f"{stamp}-{os.getpid()}-{time.time_ns()}"
     dest.mkdir(parents=True, exist_ok=True)
     (dest / "reason.txt").write_text(reason + "\n")
-    ref = _sync_ref()
-    remote_ref = f"origin/{ref}"
+    try:
+        remote_ref = f"origin/{_sync_ref()}"
+    except SyncError:
+        remote_ref = "HEAD"  # destino indeterminado: preserva só working tree (+bundle vazio)
     allow = _allowed()
     ahead = _run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], check=False)
     n_ahead = int((ahead.stdout or "0").strip() or "0") if ahead.returncode == 0 else 0
@@ -224,10 +264,10 @@ def _semantic_rebase() -> None:
 def push_paths(msg: str, *, max_tries: int = 5) -> str:
     """Stage allowlist → commit se houver mudança → push com retry + merge semântico.
     Retorna 'noop' | 'pushed'. Em falha: preserva artefato e levanta SyncError.
-    Alvo: AIMEM_SYNC_REF ou GITHUB_REF_NAME ou main (não force-push em outra branch).
+    Alvo: _sync_ref() (AIMEM_SYNC_REF/GITHUB_REF_NAME; sem fallback p/ main). Nunca force-push.
     """
-    ref = _sync_ref()
-    if ref == "main" and os.environ.get("AIMEM_FORBID_MAIN") == "1":
+    ref = _sync_ref()  # fail-closed: valida destino ANTES de stage/commit/push
+    if os.environ.get("AIMEM_FORBID_MAIN") == "1" and _looks_like_main(ref):
         raise SyncError("push para main proibido (AIMEM_FORBID_MAIN=1)")
     remote_ref = f"origin/{ref}"
     _run(["git", "config", "user.name", "github-actions[bot]"], check=False)

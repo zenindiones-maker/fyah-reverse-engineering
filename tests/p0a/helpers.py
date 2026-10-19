@@ -85,6 +85,7 @@ class Job:
             "GITHUB_RUN_ID": str(run_id), "GITHUB_RUN_ATTEMPT": str(attempt),
             "GITHUB_WORKFLOW": workflow or name, "GITHUB_SHA": git(self.dir, "rev-parse", "HEAD"),
             "AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1",
+            "AIMEM_SYNC_REF": "main",  # destino explícito (sem fallback implícito p/ main)
             **(extra_env or {}),
         })
         pathlib.Path(self.env["AI_MEMORY_DATA_DIR"]).mkdir(parents=True, exist_ok=True)

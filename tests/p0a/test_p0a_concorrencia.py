@@ -17,7 +17,7 @@ def _seed_one_handoff(tmp: pathlib.Path):
     git(tmp, "clone", "-q", str(remote), str(seed))
     git(seed, "config", "user.name", "p"); git(seed, "config", "user.email", "p@x")
     env = {k: v for k, v in os.environ.items() if not k.startswith(("GITHUB_", "AIMEM_"))}
-    env.update({"AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1",
+    env.update({"AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1", "AIMEM_SYNC_REF": "main",
                 "AI_MEMORY_DATA_DIR": str(tmp / "dprep"), "GITHUB_WORKFLOW": "prep", "GITHUB_RUN_ID": "1",
                 "GITHUB_RUN_ATTEMPT": "1"})
     r = subprocess.run([PY, "-m", "aimem", "migrate"], cwd=seed, env=env, capture_output=True, text=True)
@@ -39,7 +39,7 @@ def _spawn_racer(tmp, remote, name, run_id, iid, barrier):
     reject = tmp / f"reject-{name}-{run_id}.txt"
     env = {k: v for k, v in os.environ.items() if not k.startswith(("GITHUB_", "AIMEM_"))}
     env.update({
-        "AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1",
+        "AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1", "AIMEM_SYNC_REF": "main",
         "AI_MEMORY_DATA_DIR": str(tmp / f"data-{name}-{run_id}"),
         "GITHUB_WORKFLOW": name, "GITHUB_RUN_ID": str(run_id), "GITHUB_RUN_ATTEMPT": "1",
         "GITHUB_SHA": git(work, "rev-parse", "HEAD"),
@@ -189,7 +189,7 @@ git commit -qam intruso && git push -q origin HEAD:main
     out = tmp_path / "out.json"
     env = {k: v for k, v in os.environ.items() if not k.startswith(("GITHUB_", "AIMEM_"))}
     env.update({
-        "AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1",
+        "AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1", "AIMEM_SYNC_REF": "main",
         "AI_MEMORY_DATA_DIR": str(tmp_path / "d"),
         "GITHUB_WORKFLOW": "A", "GITHUB_RUN_ID": "9", "GITHUB_RUN_ATTEMPT": "1",
         "AIMEM_TEST_AFTER_CLAIM_PUSH": f"bash {hook}",

@@ -293,7 +293,7 @@ def test_recupera_handoff_perdido(tmp_path):
     overlay_code(w); git(w, "add", "-A"); git(w, "commit", "-qm", "codigo sob teste", check=False)
     git(w, "push", "-q", "-f", "origin", "HEAD:main")
     env = {k: v for k, v in os.environ.items() if not k.startswith(("GITHUB_", "AIMEM_"))}
-    env.update({"AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1", "AI_MEMORY_DATA_DIR": str(tmp_path / "d")})
+    env.update({"AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1", "AIMEM_SYNC_REF": "main", "AI_MEMORY_DATA_DIR": str(tmp_path / "d")})
     r = subprocess.run([PY, "-m", "aimem", "recover", "--commit", LOST_COMMIT, "--overwritten-by", OVERWRITE_COMMIT,
                         "--path", "docs/memory/handoffs/aberto.json", "--by", "E.R. (teste)"],
                        cwd=w, env=env, capture_output=True, text=True)
