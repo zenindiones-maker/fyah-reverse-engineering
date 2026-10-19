@@ -278,7 +278,10 @@ def test_recupera_handoff_perdido(tmp_path):
         )
     remote = tmp_path / "origin.git"
     git(tmp_path, "clone", "-q", "--bare", str(HIST), str(remote))
-    # bare herda HEAD da branch atual do HIST; fixar main como default
+    # bare pode não ter refs/heads/main (clone só da branch de trabalho)
+    refs = git(remote, "show-ref")
+    if "refs/heads/main" not in refs:
+        git(remote, "branch", "main", OVERWRITE_COMMIT)
     git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
     w = tmp_path / "w"; git(tmp_path, "clone", "-q", "-b", "main", str(remote), str(w))
     git(w, "config", "user.name", "teste"); git(w, "config", "user.email", "t@x")
