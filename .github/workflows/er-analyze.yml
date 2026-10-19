@@ -66,6 +66,20 @@ jobs:
       - name: Salvar memória (docs/memory)
         if: always()
         run: bash scripts/aimem_commit.sh er-analyze "$TOOL"
+      - name: Artefato de conflito da memória (se falhou o sync)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: aimem-conflito-${{ github.job }}-${{ github.run_id }}
+          path: out/aimem/conflito/
+          retention-days: 7
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v7
         if: always()
-        with: {name: "er-${{ inputs.tool }}", path: out/, retention-days: 30}
+        with:
+          name: "er-${{ inputs.tool }}"
+          path: |
+            out/
+            out/aimem/conflito/
+          retention-days: 30
+          if-no-files-found: warn

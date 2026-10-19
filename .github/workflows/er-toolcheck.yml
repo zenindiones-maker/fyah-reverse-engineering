@@ -28,12 +28,16 @@ jobs:
           python -m aimem session --agent er-toolcheck --label toolcheck \
             --next "Consertar o que aparecer como falha em docs/ferramentas/STATUS.md" -- \
             python scripts/er_toolcheck.py
-      - name: Commit (só docs/ferramentas + docs/memory)
+      - name: Commit (STATUS + memória via sync seguro)
         if: always()
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/ferramentas/STATUS.md docs/memory
-          git diff --cached --quiet && { echo "Sem mudanças"; exit 0; }
-          git commit -m "ferramentas: status $(date -u +%F)"
-          git pull --rebase -q && git push
+        env:
+          AIMEM_SYNC_EXTRA: docs/ferramentas/STATUS.md
+        run: bash scripts/aimem_commit.sh er-toolcheck status
+      - name: Artefato de conflito da memória (se falhou o sync)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: aimem-conflito-toolcheck-${{ github.run_id }}
+          path: out/aimem/conflito/
+          retention-days: 7
+          if-no-files-found: ignore
