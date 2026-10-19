@@ -1,0 +1,15 @@
+{
+  "key": "persist-prova-a-39190430768-1:0e5ce265fd384f3b8b21c5d60f905fe1",
+  "handoff_id": "persist-prova-a-39190430768-1",
+  "claim_token": "0e5ce265fd384f3b8b21c5d60f905fe1",
+  "attempt_id": "39190430768.1",
+  "consumer_id": "er-memory-persist:39190430768",
+  "applied_utc": "2026-10-19T02:33:04Z",
+  "payload": {
+    "label": "prova-B",
+    "agent": "er-memory-persist",
+    "session_id": "fyah-er-memory-persist-prova-b-39190430768-277e23",
+    "command": "true"
+  },
+  "status": "applied"
+}
