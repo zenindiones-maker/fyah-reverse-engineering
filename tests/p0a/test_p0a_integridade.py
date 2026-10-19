@@ -268,9 +268,19 @@ def test_F9_item_tem_id_origem_estado_consumidor_historico(env):
 def test_recupera_handoff_perdido(tmp_path):
     """Reconstrói o cenário real: remoto com o histórico do repo (4a0ec59 → 4ffade0) e
     exige o handoff do toolcheck de volta na fila, byte a byte, com registro da recuperação."""
+    # Histórico real obrigatório — clone raso deve FALHAR aqui, não pular
+    chk = subprocess.run(["git", "cat-file", "-e", f"{LOST_COMMIT}^{{commit}}"],
+                         cwd=HIST, capture_output=True)
+    if chk.returncode != 0:
+        raise AssertionError(
+            f"commit {LOST_COMMIT} ausente em HIST={HIST}; "
+            f"precisa histórico completo (ci.yml fetch-depth: 0). stderr={(chk.stderr or b'').decode()[:200]}"
+        )
     remote = tmp_path / "origin.git"
     git(tmp_path, "clone", "-q", "--bare", str(HIST), str(remote))
-    w = tmp_path / "w"; git(tmp_path, "clone", "-q", str(remote), str(w))
+    # bare herda HEAD da branch atual do HIST; fixar main como default
+    git(remote, "symbolic-ref", "HEAD", "refs/heads/main")
+    w = tmp_path / "w"; git(tmp_path, "clone", "-q", "-b", "main", str(remote), str(w))
     git(w, "config", "user.name", "teste"); git(w, "config", "user.email", "t@x")
     git(w, "checkout", "-q", "-B", "main", OVERWRITE_COMMIT)
     original = subprocess.run(["git", "show", f"{LOST_COMMIT}:docs/memory/handoffs/aberto.json"],
@@ -287,7 +297,7 @@ def test_recupera_handoff_perdido(tmp_path):
     assert r.returncode == 0, r.stderr[-500:]
     assert subprocess.run(["bash", "scripts/aimem_commit.sh", "recuperacao"], cwd=w, env=env).returncode == 0
     # validação no REMOTO
-    v = tmp_path / "v"; git(tmp_path, "clone", "-q", str(remote), str(v))
+    v = tmp_path / "v"; git(tmp_path, "clone", "-q", "-b", "main", str(remote), str(v))
     items = [json.loads(p.read_text()) for p in sorted((v / "docs/memory/handoffs/fila").glob("*.json"))]
     rec = [i for i in items if (i.get("recovery") or {}).get("from_commit", "").startswith(LOST_COMMIT)]
     assert len(rec) == 1, "handoff perdido não está na fila"

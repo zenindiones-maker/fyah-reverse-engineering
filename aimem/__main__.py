@@ -345,7 +345,12 @@ def cmd_migrate(a) -> int:
 
 
 def cmd_recover(a) -> int:
-    item = ledger.recover_lost(MEM, a.commit, a.overwritten_by, a.path, a.by, repo=REPO)
+    try:
+        item = ledger.recover_lost(MEM, a.commit, a.overwritten_by, a.path, a.by, repo=REPO)
+    except ledger.LedgerError as e:
+        print(f"::error::{e}", file=sys.stderr)
+        print(str(e), file=sys.stderr)
+        return 2
     print(json.dumps({"id": item["id"], "summary": item["summary"],
                       "original_sha256": item["recovery"]["original_sha256"]}, ensure_ascii=False, indent=2))
     return 0

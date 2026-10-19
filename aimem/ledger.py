@@ -362,7 +362,14 @@ def migrate_aberto(mem: pathlib.Path, by: str = "aimem migrate") -> dict | None:
 def recover_lost(mem: pathlib.Path, commit: str, overwritten_by: str, path: str, by: str,
                  repo: pathlib.Path | None = None) -> dict:
     cwd = str(repo or pathlib.Path.cwd())
-    body = subprocess.run(["git", "show", f"{commit}:{path}"], cwd=cwd, capture_output=True, check=True).stdout
+    shown = subprocess.run(["git", "show", f"{commit}:{path}"], cwd=cwd, capture_output=True)
+    if shown.returncode != 0:
+        err = (shown.stderr or shown.stdout or b"").decode("utf-8", errors="replace")[-400:]
+        raise LedgerError(
+            f"objeto git ausente: {commit}:{path} (cwd={cwd}). "
+            f"Faça fetch completo do histórico (actions/checkout fetch-depth: 0). Detalhe: {err.strip()}"
+        )
+    body = shown.stdout
     digest = hashlib.sha256(body).hexdigest()
     for it in load_all(mem):
         if (it.get("recovery") or {}).get("original_sha256") == digest:
