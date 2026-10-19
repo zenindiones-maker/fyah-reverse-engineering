@@ -19,7 +19,11 @@ on:
       - ".github/workflows/er-memory-persist.yml"
       - "aimem/**"
       - "scripts/aimem_commit.sh"
-      - "tests/p0a/**"
+      - "scripts/aimem_limpa_prova.py"
+      - "pyproject.toml"
+      - ".github/actions/setup-aimemory/**"
+      # tests/p0a/** fica FORA de propósito: este workflow não executa pytest (ci.yml cobre os
+      # testes) e cada run grava itens de prova na branch. Ver fix_v5/FILTRO_PATHS.md.
 
 permissions:
   contents: read
@@ -65,6 +69,9 @@ jobs:
     outputs:
       handoff_id: ${{ steps.create.outputs.handoff_id }}
       handoff_sha256: ${{ steps.create.outputs.handoff_sha256 }}
+      run_base: ${{ steps.base.outputs.run_base }}
+      manifest: ${{ steps.manifesto.outputs.manifest }}
+      manifest_sha256: ${{ steps.manifesto.outputs.manifest_sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,6 +87,21 @@ jobs:
           set -euo pipefail
           test "${GITHUB_REF_NAME}" = "${EXPECTED_BRANCH}"
           test "${GITHUB_REF_NAME}" != "main"
+      - name: Pré-janela — migração legada (se houver) fica FORA do manifesto
+        env:
+          AIMEM_SYNC_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          python -m aimem migrate --by er-memory-persist-pre
+          bash scripts/aimem_commit.sh er-memory-persist-pre
+      - id: base
+        name: Base do run + snapshot remoto (início da janela A)
+        run: |
+          set -euo pipefail
+          git fetch origin "${GITHUB_REF_NAME}"
+          run_base=$(git rev-parse "origin/${GITHUB_REF_NAME}")
+          echo "run_base=${run_base}" >> "$GITHUB_OUTPUT"
+          python scripts/aimem_limpa_prova.py snapshot --ref "origin/${GITHUB_REF_NAME}" --out "${RUNNER_TEMP}/antes-a.json"
       - id: create
         name: Criar handoff conhecido e sync
         env:
@@ -121,6 +143,16 @@ jobs:
           git show "origin/${GITHUB_REF_NAME}:docs/memory/handoffs/fila/${HID}.json" >/dev/null
           # destino do push = refs/heads/$GITHUB_REF_NAME (nunca main)
           test "${GITHUB_REF_NAME}" != "main"
+      - id: manifesto
+        name: Manifesto A (arquivos criados por commits deste run/job, após o push)
+        env:
+          RUN_BASE: ${{ steps.base.outputs.run_base }}
+        run: |
+          set -euo pipefail
+          git fetch origin "${GITHUB_REF_NAME}"
+          python scripts/aimem_limpa_prova.py registra --job job-a --run-base "${RUN_BASE}" \
+            --antes "${RUNNER_TEMP}/antes-a.json" --ref "origin/${GITHUB_REF_NAME}" \
+            --out "${RUNNER_TEMP}/manifesto-a.json" --github-output "$GITHUB_OUTPUT"
 
   job-b:
     needs: job-a
@@ -128,6 +160,9 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
+    outputs:
+      manifest: ${{ steps.manifesto.outputs.manifest }}
+      manifest_sha256: ${{ steps.manifesto.outputs.manifest_sha256 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -142,6 +177,11 @@ jobs:
           set -euo pipefail
           test "${GITHUB_REF_NAME}" = "${EXPECTED_BRANCH}"
           test "${GITHUB_REF_NAME}" != "main"
+      - name: Snapshot remoto (início da janela B)
+        run: |
+          set -euo pipefail
+          git fetch origin "${GITHUB_REF_NAME}"
+          python scripts/aimem_limpa_prova.py snapshot --ref "origin/${GITHUB_REF_NAME}" --out "${RUNNER_TEMP}/antes-b.json"
       - name: Verificar sha256 do A e consumir exatamente o ID de A
         env:
           AIMEM_SYNC_REF: ${{ github.ref_name }}
@@ -220,6 +260,28 @@ jobs:
           test "$hist_before" = "$hist_after"
           test "$eff_before" -eq "$eff_after"
           echo "idempotência ok"
+      - id: manifesto
+        name: Manifesto final (A conferido por hash + criados em B)
+        env:
+          RUN_BASE: ${{ needs.job-a.outputs.run_base }}
+          MANIFEST_A: ${{ needs.job-a.outputs.manifest }}
+          MANIFEST_A_SHA: ${{ needs.job-a.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${MANIFEST_A}" > "${RUNNER_TEMP}/manifesto-a.json"
+          git fetch origin "${GITHUB_REF_NAME}"
+          mkdir -p "${RUNNER_TEMP}/manifesto"
+          python scripts/aimem_limpa_prova.py registra --job job-b --run-base "${RUN_BASE}" \
+            --antes "${RUNNER_TEMP}/antes-b.json" --ref "origin/${GITHUB_REF_NAME}" \
+            --anterior "${RUNNER_TEMP}/manifesto-a.json" --anterior-sha256 "${MANIFEST_A_SHA}" \
+            --out "${RUNNER_TEMP}/manifesto/manifesto.json" --github-output "$GITHUB_OUTPUT"
+      - name: Manifesto como artefato do run (auditoria)
+        uses: actions/upload-artifact@v4
+        with:
+          name: prova-manifesto-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/manifesto/manifesto.json
+          if-no-files-found: error
+          retention-days: 30
 
   job-c:
     needs: [job-a, job-b]
@@ -295,3 +357,28 @@ jobs:
         run: |
           main_sha=$(git ls-remote origin refs/heads/main | awk '{print $1}')
           test "$main_sha" = "${EXPECTED_MAIN_SHA}"
+      - name: Baixar manifesto (artefato deste run)
+        uses: actions/download-artifact@v4
+        with:
+          name: prova-manifesto-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/art
+      - name: Limpar itens da própria prova (só manifesto autorizado + proveniência)
+        env:
+          AIMEM_SYNC_REF: ${{ github.ref_name }}
+          RUN_BASE: ${{ needs.job-a.outputs.run_base }}
+          MANIFEST: ${{ needs.job-b.outputs.manifest }}
+          MANIFEST_SHA: ${{ needs.job-b.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          S=scripts/aimem_limpa_prova.py; R="origin/${GITHUB_REF_NAME}"; T="${RUNNER_TEMP}"
+          printf '%s' "${MANIFEST}" > "$T/manifesto.json"
+          cmp "$T/manifesto.json" "$T/art/manifesto.json"   # output do job == artefato
+          git fetch origin "${GITHUB_REF_NAME}"
+          git merge --ff-only "$R"
+          python "$S" snapshot --ref "$R" --out "$T/antes-c.json"
+          python "$S" limpa --manifest "$T/manifesto.json" --manifest-sha256 "${MANIFEST_SHA}" \
+            --run-base "${RUN_BASE}" --ref "$R"
+          bash scripts/aimem_commit.sh "er-memory-persist-limpa-prova-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git fetch origin "${GITHUB_REF_NAME}"
+          python "$S" verifica --antes "$T/antes-c.json" --manifest "$T/manifesto.json" \
+            --manifest-sha256 "${MANIFEST_SHA}" --ref "$R"

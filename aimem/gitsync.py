@@ -80,6 +80,26 @@ def _allowed() -> list[str]:
     return list(ALLOWED_DEFAULT) + extra
 
 
+def _run_trailers() -> str:
+    """Trailers de proveniência do run (só no Actions/quando GITHUB_RUN_ID existe).
+
+    Permitem verificar depois, via git, que um commit de memória foi feito por um
+    workflow/run/attempt/job específico (usado pela limpeza da prova). Não são assinatura:
+    qualquer um com write no repo pode escrever trailers iguais (ver fix_v5/MODELO_AMEACA.md).
+    """
+    env = os.environ
+    rid = (env.get("GITHUB_RUN_ID") or "").strip()
+    if not rid:
+        return ""
+    def v(k, d="-"):
+        return " ".join((env.get(k) or d).split()) or d  # sem quebras de linha
+    return ("\n\n"
+            f"Aimem-Workflow: {v('GITHUB_WORKFLOW')}\n"
+            f"Aimem-Run-Id: {v('GITHUB_RUN_ID')}\n"
+            f"Aimem-Run-Attempt: {v('GITHUB_RUN_ATTEMPT', '1')}\n"
+            f"Aimem-Job: {v('GITHUB_JOB')}")
+
+
 def _stage_allowed() -> list[str]:
     """Só paths autorizados. Rejeita alterações em paginas/ (curadoria humana)."""
     r = _run(["git", "status", "--porcelain", "-uall"], check=False)
@@ -275,7 +295,7 @@ def push_paths(msg: str, *, max_tries: int = 5) -> str:
     staged = _stage_allowed()
     made_commit = False
     if staged and _run(["git", "diff", "--cached", "--quiet"], check=False).returncode != 0:
-        _run(["git", "commit", "-q", "-m", msg]); made_commit = True
+        _run(["git", "commit", "-q", "-m", msg + _run_trailers()]); made_commit = True
     # também empurra commits locais já existentes (HEAD à frente do remoto)
     ahead = _run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], check=False)
     n_ahead = int((ahead.stdout or "0").strip() or "0") if ahead.returncode == 0 else (1 if made_commit else 0)
