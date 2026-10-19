@@ -76,5 +76,8 @@ Rodar isso no Actions na branch de validação (não no commit de código), para
 
 Gatilhos: `workflow_dispatch` e `push` (paths: workflow, `aimem/**`, `scripts/aimem_commit.sh`, `tests/p0a/**` — **sem** `docs/memory/**`).
 
+`docs/memory/**` fica fora do filtro **de propósito**: commits de memória — feitos por bot ou por humano —
+não devem disparar a validação; só mudanças de código/teste/workflow disparam.
+
 Pushes feitos com o `GITHUB_TOKEN` do Actions **não** disparam novos runs deste workflow
 ([documentação oficial](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow)).

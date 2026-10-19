@@ -12,6 +12,9 @@ on:
   workflow_dispatch:
   push:
     branches: [p0a-fila-handoffs]
+    # docs/memory/** fica FORA de propósito: commits de memória (de bots ou de humanos)
+    # não devem disparar esta validação; e pushes do próprio workflow via GITHUB_TOKEN
+    # já não disparariam novos runs de qualquer forma (ver nota acima).
     paths:
       - ".github/workflows/er-memory-persist.yml"
       - "aimem/**"
