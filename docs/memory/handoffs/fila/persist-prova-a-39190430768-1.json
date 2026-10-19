@@ -1,0 +1,33 @@
+{
+  "schema": "fyah-handoff@1",
+  "id": "persist-prova-a-39190430768-1",
+  "state": "pending",
+  "summary": "prova persistência job A→B (conteúdo conhecido)",
+  "next_steps": [
+    "job-B deve consumir"
+  ],
+  "open_questions": [],
+  "files_touched": [],
+  "origin": {
+    "workflow": "er-memory-persist",
+    "run_id": "39190430768",
+    "run_attempt": "1",
+    "sha": "b85e8c5aa1ffe89e88f41e58cc4d3d22e18934a7",
+    "session": "prova-a",
+    "agent": "er-memory-persist",
+    "created_utc": "2026-10-19T02:32:38Z"
+  },
+  "consumer": null,
+  "consumed": null,
+  "attempts": 0,
+  "max_attempts": 3,
+  "history": [
+    {
+      "at": "2026-10-19T02:32:38Z",
+      "from": null,
+      "to": "pending",
+      "by": "job-a",
+      "reason": "prova A"
+    }
+  ]
+}
