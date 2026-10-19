@@ -33,11 +33,33 @@ jobs:
         env:
           AIMEM_SYNC_EXTRA: docs/ferramentas/STATUS.md
         run: bash scripts/aimem_commit.sh er-toolcheck status
+      - name: Varrer artefato de conflito (segredos)
+        if: failure()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          conf = Path("out/aimem/conflito")
+          if not conf.is_dir():
+              print("sem conflito; ok")
+              sys.exit(0)
+          from aimem.gitsync import scan_artifact, ArtifactSecretError
+          blocked = False
+          for d in conf.iterdir():
+              if d.is_dir():
+                  try:
+                      scan_artifact(d)
+                      print("ok", d)
+                  except ArtifactSecretError as e:
+                      print("::error::", e)
+                      blocked = True
+          sys.exit(2 if blocked else 0)
+          PY
       - name: Artefato de conflito da memória (se falhou o sync)
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: aimem-conflito-toolcheck-${{ github.run_id }}
           path: out/aimem/conflito/
-          retention-days: 7
+          retention-days: 3
           if-no-files-found: ignore
