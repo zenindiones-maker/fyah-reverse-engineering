@@ -142,18 +142,18 @@ def _preserve(reason: str) -> pathlib.Path:
     (dest / "reason.txt").write_text(reason + "\n")
     ref = _sync_ref()
     remote_ref = f"origin/{ref}"
+    allow = _allowed()
     ahead = _run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], check=False)
     n_ahead = int((ahead.stdout or "0").strip() or "0") if ahead.returncode == 0 else 0
     if n_ahead > 0:
-        # origin/ref..HEAD — só patches que tocam docs/memory
-        _run(["git", "format-patch", f"{remote_ref}..HEAD", "-o", str(dest),
-              "--", "docs/memory"], check=False)
+        _run(["git", "format-patch", f"{remote_ref}..HEAD", "-o", str(dest), "--", *allow], check=False)
     if not list(dest.glob("*.patch")):
-        d = _run(["git", "diff", "HEAD", "--", "docs/memory"], check=False)
-        (dest / "working-tree.patch").write_text(d.stdout or "")
+        d = _run(["git", "diff", "HEAD", "--", *allow], check=False)
+        if d.stdout:
+            (dest / "working-tree.patch").write_text(d.stdout)
     bundle = dest / "memoria.bundle"
     mem_shas = _run(
-        ["git", "rev-list", "--reverse", f"{remote_ref}..HEAD", "--", "docs/memory"],
+        ["git", "rev-list", "--reverse", f"{remote_ref}..HEAD", "--", *allow],
         check=False,
     )
     shas = [x for x in (mem_shas.stdout or "").split() if x]
@@ -166,14 +166,14 @@ def _preserve(reason: str) -> pathlib.Path:
                 (dest / "NO_BUNDLE.txt").write_text(f"bundle falhou: {(r.stderr or '')[-300:]}\n")
         finally:
             _run(["git", "update-ref", "-d", tmp_ref], check=False)
-    elif (dest / "working-tree.patch").exists():
+    elif list(dest.glob("*.patch")):
         (dest / "NO_BUNDLE.txt").write_text(
-            "sem commits locais de docs/memory à frente do remoto; só working-tree.patch\n"
+            "sem commits allowlist à frente do remoto; só patch do working tree\n"
         )
     br = f"aimem-conflito-{stamp}"
     (dest / "README.md").write_text(
         f"# Conflito de memória\n\n{reason}\n\n"
-        f"Escopo: apenas `docs/memory/` (allowlist). Bundle = commits que tocam docs/memory em `{remote_ref}..`.\n\n"
+        f"Escopo: allowlist {allow}. Bundle = commits que tocam a allowlist em `{remote_ref}..`.\n\n"
         f"Recuperação: `git fetch {bundle.name} HEAD:{br}` (se bundle existir) e inspecione o patch.\n"
     )
     try:
