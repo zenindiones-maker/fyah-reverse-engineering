@@ -4,8 +4,24 @@ from __future__ import annotations
 import json, os, pathlib, shutil, subprocess, sys
 
 HERE = pathlib.Path(__file__).resolve()
-CODE = pathlib.Path(os.environ.get("FYAH_CODE_DIR", HERE.parents[2]))        # código sob teste
-HIST = pathlib.Path(os.environ.get("FYAH_HISTORY_REPO", "/workspace/fyah"))  # histórico real (4a0ec59/4ffade0)
+
+
+def _repo_toplevel(start: pathlib.Path) -> pathlib.Path:
+    """Raiz do checkout git que contém `start` (arquivo ou dir)."""
+    cwd = start if start.is_dir() else start.parent
+    r = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=cwd, capture_output=True, text=True,
+    )
+    if r.returncode != 0:
+        raise RuntimeError(f"git toplevel ausente a partir de {start}: {(r.stderr or '').strip()}")
+    return pathlib.Path(r.stdout.strip())
+
+
+# Código sob teste e histórico: raiz do checkout (descoberta via git), override opcional por env.
+# Sem caminhos absolutos de máquina.
+CODE = pathlib.Path(os.environ["FYAH_CODE_DIR"]) if os.environ.get("FYAH_CODE_DIR") else _repo_toplevel(HERE)
+HIST = pathlib.Path(os.environ["FYAH_HISTORY_REPO"]) if os.environ.get("FYAH_HISTORY_REPO") else _repo_toplevel(HERE)
 PY = sys.executable
 DEAD = "http://127.0.0.1:9"
 
@@ -27,7 +43,7 @@ def overlay_code(dst: pathlib.Path):
 
 
 def make_remote(tmp: pathlib.Path, *, memory_from: pathlib.Path | None = None) -> pathlib.Path:
-    """Remoto bare com: código sob teste + docs/memory (do repo real por padrão, com aberto.json legado)."""
+    """Remoto bare com: código sob teste + docs/memory (do checkout sob teste por padrão)."""
     tmp = pathlib.Path(tmp); tmp.mkdir(parents=True, exist_ok=True)
     remote = tmp / "origin.git"
     git(tmp, "init", "-q", "--bare", "-b", "main", str(remote))
@@ -36,7 +52,10 @@ def make_remote(tmp: pathlib.Path, *, memory_from: pathlib.Path | None = None) -
     _ident(seed)
     overlay_code(seed)
     (seed / "docs").mkdir()
-    shutil.copytree(memory_from or (HIST / "docs" / "memory"), seed / "docs" / "memory")
+    src_mem = memory_from or (HIST / "docs" / "memory")
+    if not src_mem.is_dir():
+        raise RuntimeError(f"docs/memory ausente em HIST={HIST} (src={src_mem})")
+    shutil.copytree(src_mem, seed / "docs" / "memory")
     (seed / "README.md").write_text("base\n")
     (seed / "docs" / "ferramentas").mkdir(parents=True)
     (seed / "docs" / "ferramentas" / "STATUS.md").write_text("status base\n")
@@ -61,7 +80,6 @@ class Job:
             if k.startswith(("GITHUB_", "AIMEM_", "AI_MEMORY_")):
                 self.env.pop(k)
         self.env.update({
-            # cliente e servidor compartilham o data dir, como no setup-aimemory
             "AI_MEMORY_DATA_DIR": str(server.data_dir if server else tmp / f"data-{name}-{run_id}-{attempt}"),
             "AI_MEMORY_SERVER_URL": server.url if server else DEAD,
             "GITHUB_RUN_ID": str(run_id), "GITHUB_RUN_ATTEMPT": str(attempt),

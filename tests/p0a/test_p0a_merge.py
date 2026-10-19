@@ -85,7 +85,7 @@ def test_merge_mesmo_id_conteudo_diferente_falha_com_artefato(tmp_path, ledger_m
     w = tmp_path / "w"; git(tmp_path, "clone", "-q", str(remote), str(w))
     git(w, "config", "user.name", "t"); git(w, "config", "user.email", "t@x")
     overlay_code(w)
-    fila = w / "docs/memory/handoffs/fila"; fila.mkdir(parents=True)
+    fila = w / "docs/memory/handoffs/fila"; fila.mkdir(parents=True, exist_ok=True)
     (fila / "same1.json").write_text(ledger.dumps(a))
     git(w, "add", "-A"); git(w, "commit", "-qm", "base-a"); git(w, "push", "-q", "origin", "HEAD:main")
     # clone B muda summary e push force? melhor: A e B divergem
