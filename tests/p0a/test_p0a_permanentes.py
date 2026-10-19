@@ -177,3 +177,47 @@ def test_artefatos_conflito_concorrentes_nao_sobrescrevem(tmp_path):
     assert (da / "payload.txt").read_text() == ca
     assert (db / "payload.txt").read_text() == cb
     assert (da / "reason.txt").is_file() and (db / "reason.txt").is_file()
+
+
+def test_sync_empurra_para_branch_alvo_nao_main(tmp_path):
+    """Com AIMEM_SYNC_REF=p0a-fila-handoffs, push vai para essa ref, não para main."""
+    remote = make_remote(tmp_path)
+    # criar a branch no remoto a partir de main
+    seed = tmp_path / "brseed"
+    git(tmp_path, "clone", "-q", str(remote), str(seed))
+    git(seed, "config", "user.name", "t"); git(seed, "config", "user.email", "t@x")
+    git(seed, "checkout", "-qb", "p0a-fila-handoffs")
+    git(seed, "push", "-q", "origin", "HEAD:p0a-fila-handoffs")
+    w = tmp_path / "w"
+    git(tmp_path, "clone", "-q", "-b", "p0a-fila-handoffs", str(remote), str(w))
+    git(w, "config", "user.name", "t"); git(w, "config", "user.email", "t@x")
+    overlay_code(w)
+    (w / "docs/memory/handoffs/fila").mkdir(parents=True, exist_ok=True)
+    (w / "docs/memory/handoffs/fila/na-branch.json").write_text(
+        json.dumps({"schema": "fyah-handoff@1", "id": "na-branch", "state": "pending",
+                    "summary": "na branch", "next_steps": [], "open_questions": [],
+                    "files_touched": [], "origin": {"workflow": "t", "run_id": "1", "run_attempt": "1",
+                    "sha": None, "session": "s", "agent": "a", "created_utc": "2026-10-18T23:00:00Z"},
+                    "consumer": None, "consumed": None, "attempts": 0, "max_attempts": 3,
+                    "history": [{"at": "2026-10-18T23:00:00Z", "from": None, "to": "pending",
+                                 "by": "t:1", "reason": "criado"}]}, indent=2, ensure_ascii=False) + "\n")
+    git(w, "add", "docs/memory/handoffs/fila/na-branch.json")
+    git(w, "commit", "-qm", "mem na branch")
+    main_before = git(w, "rev-parse", "origin/main")
+    env = {**os.environ, "AIMEM_SYNC_BACKOFF": "0", "PYTHONDONTWRITEBYTECODE": "1",
+           "AIMEM_SYNC_REF": "p0a-fila-handoffs",
+           "GITHUB_WORKFLOW": "t", "GITHUB_RUN_ID": "1", "GITHUB_RUN_ATTEMPT": "1",
+           "AI_MEMORY_DATA_DIR": str(tmp_path / "d")}
+    # limpar GITHUB_REF_NAME se houver
+    env.pop("GITHUB_REF_NAME", None)
+    r = subprocess.run([PY, "-m", "aimem", "sync", "--msg", "branch push"], cwd=w, env=env,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert git(w, "rev-list", "--count", "origin/p0a-fila-handoffs..HEAD") == "0"
+    assert git(w, "rev-parse", "origin/main") == main_before, "main não deve mudar"
+    tree = remote_tree(tmp_path / "vbr", remote)
+    # remote_tree clones default branch (main) — verificar via git show
+    shown = git(w, "ls-tree", "-r", "--name-only", "origin/p0a-fila-handoffs")
+    assert "docs/memory/handoffs/fila/na-branch.json" in shown
+    shown_main = git(w, "ls-tree", "-r", "--name-only", "origin/main")
+    assert "na-branch.json" not in shown_main

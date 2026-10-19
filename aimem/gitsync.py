@@ -13,6 +13,12 @@ ALLOWED_DEFAULT = ("docs/memory/",)
 CONFLICT_DIR = pathlib.Path("out/aimem/conflito")
 
 
+def _sync_ref() -> str:
+    """Branch-alvo do push/rebase. Em Actions: GITHUB_REF_NAME; override: AIMEM_SYNC_REF; senão main."""
+    return (os.environ.get("AIMEM_SYNC_REF") or os.environ.get("GITHUB_REF_NAME") or "main").strip() or "main"
+
+
+
 class SyncError(RuntimeError):
     pass
 
@@ -107,31 +113,33 @@ def _semantic_rebase() -> None:
 def push_paths(msg: str, *, max_tries: int = 5) -> str:
     """Stage allowlist → commit se houver mudança → push com retry + merge semântico.
     Retorna 'noop' | 'pushed'. Em falha: preserva artefato e levanta SyncError.
+    Alvo: AIMEM_SYNC_REF ou GITHUB_REF_NAME ou main (não force-push em outra branch).
     """
+    ref = _sync_ref()
+    remote_ref = f"origin/{ref}"
     _run(["git", "config", "user.name", "github-actions[bot]"], check=False)
     _run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], check=False)
     staged = _stage_allowed()
     made_commit = False
     if staged and _run(["git", "diff", "--cached", "--quiet"], check=False).returncode != 0:
         _run(["git", "commit", "-q", "-m", msg]); made_commit = True
-    # também empurra commits locais já existentes (HEAD à frente de origin)
-    ahead = _run(["git", "rev-list", "--count", "origin/main..HEAD"], check=False)
+    # também empurra commits locais já existentes (HEAD à frente do remoto)
+    ahead = _run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], check=False)
     n_ahead = int((ahead.stdout or "0").strip() or "0") if ahead.returncode == 0 else (1 if made_commit else 0)
-    # se origin/main ainda não existe localmente
     if ahead.returncode != 0:
-        _run(["git", "fetch", "origin", "main"], check=False)
-        ahead = _run(["git", "rev-list", "--count", "origin/main..HEAD"], check=False)
+        _run(["git", "fetch", "origin", ref], check=False)
+        ahead = _run(["git", "rev-list", "--count", f"{remote_ref}..HEAD"], check=False)
         n_ahead = int((ahead.stdout or "0").strip() or "0") if ahead.returncode == 0 else (1 if made_commit else 0)
     if not made_commit and n_ahead == 0:
         print("Memória sem mudanças"); return "noop"
     last_err = ""
     for i in range(1, max_tries + 1):
-        r = _run(["git", "push", "origin", "HEAD:main"], check=False)
+        r = _run(["git", "push", "origin", f"HEAD:{ref}"], check=False)
         if r.returncode == 0:
             print("memória salva"); return "pushed"
         last_err = (r.stderr or r.stdout)[-400:]
-        _run(["git", "fetch", "origin", "main"], check=False)
-        rb = _run(["git", "rebase", "origin/main"], check=False)
+        _run(["git", "fetch", "origin", ref], check=False)
+        rb = _run(["git", "rebase", remote_ref], check=False)
         if rb.returncode == 0:
             continue
         try:
@@ -153,9 +161,9 @@ def cas_update(path: pathlib.Path, mutate, *, msg: str, max_tries: int = 8):
     """
     last = None
     for i in range(1, max_tries + 1):
-        _run(["git", "fetch", "origin", "main"], check=False)
+        _run(["git", "fetch", "origin", _sync_ref()], check=False)
         # alinhar working tree do arquivo com o remoto
-        _run(["git", "checkout", "origin/main", "--", str(path)], check=False)
+        _run(["git", "checkout", f"origin/{_sync_ref()}", "--", str(path)], check=False)
         if not path.is_file():
             raise SyncError(f"{path} sumiu no remoto")
         item = json.loads(path.read_text())
@@ -179,8 +187,8 @@ def cas_update(path: pathlib.Path, mutate, *, msg: str, max_tries: int = 8):
         if hook:
             subprocess.run(hook, shell=True, check=False)
         # validação remota
-        _run(["git", "fetch", "origin", "main"], check=False)
-        _run(["git", "checkout", "origin/main", "--", str(path)], check=False)
+        _run(["git", "fetch", "origin", _sync_ref()], check=False)
+        _run(["git", "checkout", f"origin/{_sync_ref()}", "--", str(path)], check=False)
         remote = json.loads(path.read_text())
         if token:
             if remote.get("state") == "claimed":
@@ -203,8 +211,8 @@ def claim_one(mem: pathlib.Path) -> dict | None:
         cands = ledger.claimable(mem)
         if not cands:
             # refetch e tenta de novo uma vez (outro job pode ter liberado)
-            _run(["git", "fetch", "origin", "main"], check=False)
-            _run(["git", "checkout", "origin/main", "--", "docs/memory/handoffs/fila"], check=False)
+            _run(["git", "fetch", "origin", _sync_ref()], check=False)
+            _run(["git", "checkout", f"origin/{_sync_ref()}", "--", "docs/memory/handoffs/fila"], check=False)
             cands = ledger.claimable(mem)
         if not cands:
             return None
@@ -256,8 +264,8 @@ def claim_id(mem: pathlib.Path, iid: str) -> dict:
     """Claim de um handoff específico (CAS + validação remota). LostClaim se outro dono."""
     path = ledger.fila_dir(mem) / f"{iid}.json"
     if not path.is_file():
-        _run(["git", "fetch", "origin", "main"], check=False)
-        _run(["git", "checkout", "origin/main", "--", str(path)], check=False)
+        _run(["git", "fetch", "origin", _sync_ref()], check=False)
+        _run(["git", "checkout", f"origin/{_sync_ref()}", "--", str(path)], check=False)
     if not path.is_file():
         raise SyncError(f"handoff {iid} ausente")
 
