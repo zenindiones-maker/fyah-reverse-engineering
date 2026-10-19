@@ -8,6 +8,7 @@ from __future__ import annotations
 import json, pathlib, re
 
 from aimem import ledger
+from aimem.nomes import valida_nome
 
 
 class EffectError(RuntimeError):
@@ -26,7 +27,7 @@ def effects_dir(mem: pathlib.Path) -> pathlib.Path:
 
 
 def path_for(mem: pathlib.Path, key: str) -> pathlib.Path:
-    return effects_dir(mem) / f"{key}.json"
+    return effects_dir(mem) / valida_nome(f"{key}.json")
 
 
 def find(mem: pathlib.Path, handoff_id: str, claim_token: str, attempt_id: str) -> dict | None:
@@ -43,8 +44,8 @@ def apply(mem: pathlib.Path, handoff: dict, payload: dict) -> tuple[dict, bool]:
     if not token or not attempt:
         raise EffectError("handoff sem claim_token/attempt_id")
     key = effect_key(handoff["id"], token, attempt)
-    d = effects_dir(mem); d.mkdir(parents=True, exist_ok=True)
-    p = path_for(mem, key)
+    p = path_for(mem, key)          # valida o nome ANTES de criar diretório/arquivo
+    effects_dir(mem).mkdir(parents=True, exist_ok=True)
     if p.is_file():
         return json.loads(p.read_text()), False
     rec = {"key": key, "handoff_id": handoff["id"], "claim_token": token, "attempt_id": attempt,

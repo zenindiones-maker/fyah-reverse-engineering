@@ -165,9 +165,11 @@ def _canon(obj) -> bytes:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
 
 
-def _limpa(c, mpath, msha, run_base, *extra):
+def _limpa(c, mpath, msha, run_base, *extra, confirmar=True):
+    """Exclusão real = passo humano com --confirmar=<sha256 do manifesto> (D). Sem ele = dry-run."""
+    conf = ("--confirmar", msha) if confirmar else ()
     r = script(c, "limpa", "--manifest", str(mpath), "--manifest-sha256", msha, "--run-base", run_base,
-               "--ref", "origin/main", *extra)
+               "--ref", "origin/main", *conf, *extra)
     if r.returncode == 0:  # mesmo encadeamento do workflow (set -e): só commita se a limpeza passou
         assert c.commit("limpa").returncode == 0
     return r
@@ -415,21 +417,96 @@ def test_workflow_executa_so_coisas_cobertas_pelo_filtro():
     assert "pytest" not in code and "tests/" not in code  # por isso tests/p0a/** não está no filtro
 
 
+def _code(text: str) -> str:
+    return "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("#"))
+
+
 def test_workflow_ordem_e_amarracao_do_manifesto():
     text = WFPATH.read_text()
     assert "manifest_sha256: ${{ steps.manifesto.outputs.manifest_sha256 }}" in text
     jc = text[text.index("\n  job-c:\n"):]
     i_rec = jc.index("- name: Recover handoff perdido")
     i_dl = jc.index("actions/download-artifact@v4")
-    i_limpa = jc.index("- name: Limpar itens da própria prova")
+    i_limpa = jc.index("- name: Limpeza da prova em DRY-RUN")
     assert i_rec < i_dl < i_limpa
     bloco = jc[i_limpa:]
-    for s in ("cmp ", "limpa --manifest", "--manifest-sha256", "--run-base", "aimem_commit.sh", "verifica --antes"):
+    for s in ("cmp ", "limpa --manifest", "--manifest-sha256", "--run-base", "--relatorio", "verifica --esperado intacto"):
         assert s in bloco, s
-    assert bloco.index("limpa --manifest") < bloco.index("aimem_commit.sh") < bloco.index("verifica --antes")
+    assert bloco.index("limpa --manifest") < bloco.index("verifica --esperado intacto")
+    assert "prova-limpeza-dry-run-${{ github.run_id }}-${{ github.run_attempt }}" in bloco
+
+
+def test_workflow_nunca_apaga_em_nenhum_evento():
+    """D: nenhum passo do workflow (push ou workflow_dispatch) passa --confirmar → o script nunca faz unlink;
+    depois do download do manifesto, o job-c não commita nem empurra nada."""
+    text = WFPATH.read_text(); code = _code(text)
+    assert "--confirmar" not in code and "confirmar" not in code
+    jc = code[code.index("\n  job-c:\n"):]
+    pos = jc[jc.index("actions/download-artifact@v4"):]
+    for proibido in ("aimem_commit.sh", "git push", "git commit", "git rm", "rm -", "unlink", "AIMEM_SYNC_REF"):
+        assert proibido not in pos, proibido
+    # o passo de limpeza não depende de evento (nenhum if: que libere exclusão em algum evento)
+    i = pos.index("- name: Limpeza da prova em DRY-RUN"); passo = pos[i:pos.index("- name:", i + 5)]
+    assert "if:" not in passo
 
 
 def test_script_sem_regra_por_nome():
     src = pathlib.Path(SCRIPT).read_text()
     for proibido in ("prova-b", "persist-prova", '"recovery"', '"migration"', "sess_re"):
         assert proibido not in src, proibido
+
+
+# ------------------------------------------------------------------ D: dry-run por padrão + confirmação explícita
+def test_limpa_sem_confirmar_e_dry_run_sem_unlink(cenario, tmp_path):
+    remote, c = _fresh(cenario, tmp_path)
+    bl, br = tree_local(c.dir), tree_remote(remote)
+    rel = tmp_path / "rel.json"
+    r = _limpa(c, cenario["manifest"], cenario["sha"], cenario["run_base"], "--relatorio", str(rel), confirmar=False)
+    assert r.returncode == 0, r.stderr
+    out = json.loads(r.stdout.splitlines()[-1])
+    assert out["dry_run"] is True and out["removidos"] == []
+    assert set(out["seriam_removidos"]) == {e["path"] for e in _manifest(cenario)["entries"]}
+    assert json.loads(rel.read_text()) == out
+    assert tree_local(c.dir) == bl and tree_remote(remote) == br          # zero exclusões
+    antes = tmp_path / "antes.json"
+    assert script(c, "snapshot", "--ref", "origin/main", "--out", str(antes)).returncode == 0
+    v = script(c, "verifica", "--esperado", "intacto", "--antes", str(antes), "--manifest", str(cenario["manifest"]),
+               "--manifest-sha256", cenario["sha"], "--ref", "origin/main")
+    assert v.returncode == 0, v.stderr
+
+
+@pytest.mark.parametrize("conf", ["0" * 64, "abc", ""])
+def test_limpa_confirmacao_errada_aborta_sem_unlink(cenario, tmp_path, conf):
+    remote, c = _fresh(cenario, tmp_path)
+    bl, br = tree_local(c.dir), tree_remote(remote)
+    r = script(c, "limpa", "--manifest", str(cenario["manifest"]), "--manifest-sha256", cenario["sha"],
+               "--run-base", cenario["run_base"], "--ref", "origin/main", "--confirmar", conf)
+    _assert_nada_apagado(remote, c, r, bl, br, "confirmar não confere")
+
+
+def test_limpa_dry_run_explicito_vence_confirmar(cenario, tmp_path):
+    remote, c = _fresh(cenario, tmp_path)
+    bl, br = tree_local(c.dir), tree_remote(remote)
+    r = _limpa(c, cenario["manifest"], cenario["sha"], cenario["run_base"], "--dry-run")
+    assert r.returncode == 0 and json.loads(r.stdout.splitlines()[-1])["removidos"] == []
+    assert tree_local(c.dir) == bl and tree_remote(remote) == br
+
+
+def test_verifica_intacto_falha_apos_exclusao_real(cenario, tmp_path):
+    remote, c = _fresh(cenario, tmp_path)
+    antes = tmp_path / "antes.json"
+    assert script(c, "snapshot", "--ref", "origin/main", "--out", str(antes)).returncode == 0
+    assert _limpa(c, cenario["manifest"], cenario["sha"], cenario["run_base"]).returncode == 0
+    git(c.dir, "fetch", "-q", "origin")
+    v = script(c, "verifica", "--esperado", "intacto", "--antes", str(antes), "--manifest", str(cenario["manifest"]),
+               "--manifest-sha256", cenario["sha"], "--ref", "origin/main")
+    assert v.returncode == 1
+
+
+def test_charset_igual_em_aimem_e_na_limpeza():
+    import importlib.util, sys
+    sys.path.insert(0, str(CODE))
+    nomes = importlib.import_module("aimem.nomes")
+    spec = importlib.util.spec_from_file_location("lp_charset", SCRIPT); lp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(lp)
+    assert lp.SAFE_NAME.pattern == nomes.SAFE_NAME_RE

@@ -108,34 +108,11 @@ jobs:
           AIMEM_SYNC_REF: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          python - <<'PY'
-          import hashlib, json, os, pathlib, datetime as dt
-          mem = pathlib.Path("docs/memory")
-          fila = mem / "handoffs" / "fila"
-          fila.mkdir(parents=True, exist_ok=True)
-          hid = f"persist-prova-a-{os.environ['GITHUB_RUN_ID']}-{os.environ.get('GITHUB_RUN_ATTEMPT','1')}"
-          now = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-          item = {
-            "schema": "fyah-handoff@1", "id": hid, "state": "pending",
-            "summary": "prova persistência job A→B (conteúdo conhecido)",
-            "next_steps": ["job-B deve consumir"], "open_questions": [],
-            "files_touched": [],
-            "origin": {"workflow": os.environ.get("GITHUB_WORKFLOW"), "run_id": os.environ["GITHUB_RUN_ID"],
-                       "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT", "1"),
-                       "sha": os.environ.get("GITHUB_SHA"), "session": "prova-a",
-                       "agent": "er-memory-persist", "created_utc": now},
-            "consumer": None, "consumed": None, "attempts": 0, "max_attempts": 3,
-            "history": [{"at": now, "from": None, "to": "pending", "by": "job-a", "reason": "prova A"}],
-          }
-          path = fila / f"{hid}.json"
-          raw = json.dumps(item, indent=2, ensure_ascii=False) + "\n"
-          path.write_text(raw)
-          digest = hashlib.sha256(raw.encode()).hexdigest()
-          with open(os.environ["GITHUB_OUTPUT"], "a") as o:
-              o.write(f"handoff_id={hid}\n")
-              o.write(f"handoff_sha256={digest}\n")
-          print("id", hid, "sha256", digest)
-          PY
+          # D2: o item de prova é criado pelo aimem (nome validado por aimem.nomes ANTES de qualquer escrita,
+          # marcado kind=prova, nunca sobrescreve) — nenhuma escrita inline de arquivo de memória no YAML.
+          python -m aimem prova-item --summary "prova persistência job A→B (conteúdo conhecido)" \
+            --next "job-B deve consumir" --session prova-a --by job-a --reason "prova A" \
+            --github-output "$GITHUB_OUTPUT"
           python -m aimem seed || true
           bash scripts/aimem_commit.sh er-memory-persist-A
           HID=$(grep '^handoff_id=' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)
@@ -362,9 +339,11 @@ jobs:
         with:
           name: prova-manifesto-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/art
-      - name: Limpar itens da própria prova (só manifesto autorizado + proveniência)
+      - name: Limpeza da prova em DRY-RUN (nunca apaga no Actions; só valida e relata)
+        # D: em QUALQUER evento (push/workflow_dispatch) este passo não passa --confirmar → o script não faz
+        # unlink, não há commit/push de limpeza e o remoto é conferido intacto. A exclusão real é um passo
+        # humano posterior, local, com --confirmar=<sha256 do manifesto revisado> (ver docs/memory/README.md, "Limpeza da prova").
         env:
-          AIMEM_SYNC_REF: ${{ github.ref_name }}
           RUN_BASE: ${{ needs.job-a.outputs.run_base }}
           MANIFEST: ${{ needs.job-b.outputs.manifest }}
           MANIFEST_SHA: ${{ needs.job-b.outputs.manifest_sha256 }}
@@ -375,10 +354,20 @@ jobs:
           cmp "$T/manifesto.json" "$T/art/manifesto.json"   # output do job == artefato
           git fetch origin "${GITHUB_REF_NAME}"
           git merge --ff-only "$R"
-          python "$S" snapshot --ref "$R" --out "$T/antes-c.json"
+          mkdir -p "$T/relatorio"
+          python "$S" snapshot --ref "$R" --out "$T/relatorio/antes-c.json"
           python "$S" limpa --manifest "$T/manifesto.json" --manifest-sha256 "${MANIFEST_SHA}" \
-            --run-base "${RUN_BASE}" --ref "$R"
-          bash scripts/aimem_commit.sh "er-memory-persist-limpa-prova-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            --run-base "${RUN_BASE}" --ref "$R" --relatorio "$T/relatorio/limpeza-dry-run.json"
+          cp "$T/manifesto.json" "$T/relatorio/manifesto.json"
+          printf '%s  manifesto.json\n' "${MANIFEST_SHA}" > "$T/relatorio/manifesto.sha256"
+          test -z "$(git status --porcelain -- docs/memory)"   # dry-run não tocou a working tree
           git fetch origin "${GITHUB_REF_NAME}"
-          python "$S" verifica --antes "$T/antes-c.json" --manifest "$T/manifesto.json" \
+          python "$S" verifica --esperado intacto --antes "$T/relatorio/antes-c.json" --manifest "$T/manifesto.json" \
             --manifest-sha256 "${MANIFEST_SHA}" --ref "$R"
+      - name: Relatório do dry-run como artefato (revisão humana antes de qualquer exclusão)
+        uses: actions/upload-artifact@v4
+        with:
+          name: prova-limpeza-dry-run-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/relatorio/
+          if-no-files-found: error
+          retention-days: 30

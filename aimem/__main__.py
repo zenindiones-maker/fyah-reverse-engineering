@@ -10,6 +10,7 @@ import argparse, datetime as dt, json, os, pathlib, re, shlex, subprocess, sys, 
 from aimem.client import Client, AIMemoryError, data_dir, WORKSPACE, PROJECT
 from aimem.hooks import _short
 from aimem import ledger, gitsync, effects
+from aimem.nomes import NomeInvalido, valida_nome
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 MEM = REPO / "docs" / "memory"
@@ -33,6 +34,45 @@ def _ensure_fila() -> None:
             print(f"::warning::migração local ok, push falhou: {e}", file=sys.stderr)
 
 
+# ------------------------------------------------------------------ prova (D2)
+_PROVA_MARCA = "- tipo: prova (workflow de prova; não é memória do projeto)"
+_PROVA_PAGINA_RE = re.compile(r"\A# Sessão .* \((?:%s)\)[ \t]*$" % "|".join(map(re.escape, sorted(ledger.PROVA_WORKFLOWS))),
+                              re.M)
+
+
+def is_prova_page(text: str) -> bool:
+    """Página de sessão gerada por um workflow de prova (nova: marca explícita; legada: cabeçalho do agente)."""
+    return _PROVA_MARCA in text or bool(_PROVA_PAGINA_RE.match(text))
+
+
+def cmd_prova_item(a) -> int:
+    """Cria o item de prova do job-a VALIDANDO o nome antes de qualquer escrita (substitui a escrita inline do YAML)."""
+    import hashlib
+    m = ledger.me()
+    if m["workflow"] not in ledger.PROVA_WORKFLOWS:
+        print(f"::error::prova-item só roda em workflow de prova ({sorted(ledger.PROVA_WORKFLOWS)}), não em {m['workflow']!r}",
+              file=sys.stderr)
+        return 2
+    hid = f"persist-prova-a-{m['run_id']}-{m['run_attempt']}"
+    try:
+        valida_nome(f"{hid}.json")            # antes de mkdir/escrita: nome inválido → nada é criado
+        item = ledger.new_prova_item(hid, a.summary, a.next, session=a.session, agent=m["workflow"],
+                                     by=a.by, reason=a.reason)
+        p = ledger.save(MEM, item, exclusivo=True)
+    except NomeInvalido as e:
+        print(f"::error::nome de item de prova inválido (nada foi criado): {e}", file=sys.stderr)
+        return 2
+    except FileExistsError:
+        print(f"::error::item de prova {hid} já existe (não sobrescrevo)", file=sys.stderr)
+        return 2
+    digest = hashlib.sha256(p.read_bytes()).hexdigest()
+    if a.github_output:
+        with open(a.github_output, "a") as o:
+            o.write(f"handoff_id={hid}\n"); o.write(f"handoff_sha256={digest}\n")
+    print(json.dumps({"id": hid, "sha256": digest, "path": str(p.relative_to(REPO)) if p.is_absolute() else str(p)}))
+    return 0
+
+
 # ------------------------------------------------------------------ seed
 def cmd_seed(a) -> int:
     """Hidrata o servidor efêmero a partir da memória durável em docs/memory/ (git)."""
@@ -42,11 +82,13 @@ def cmd_seed(a) -> int:
     for sub, tier in (("paginas", "semantic"), ("sessoes", "episodic")):
         files = sorted((MEM / sub).glob("*.md"))
         if sub == "sessoes":
+            # páginas de sessão de PROVA nunca entram na memória do servidor (briefing de consumidor real)
+            files = [p for p in files if not is_prova_page(p.read_text())]
             files = files[-a.sessions:]
         for p in files:
             c.mcp("memory_write_page", path=f"{sub}/{p.name}", body=p.read_text(), tier=tier)
             n += 1
-    pending = [i["id"] for i in ledger.load_all(MEM) if i["state"] == "pending"]
+    pending = [i["id"] for i in ledger.load_all(MEM) if i["state"] == "pending" and not ledger.is_prova(i)]
     print(json.dumps({"ok": True, "pages_seeded": n, "pending_handoffs": pending}))
     return 0
 
@@ -262,13 +304,21 @@ def run_session(agent: str, label: str, cmd: list[str], result: str | None = Non
 def _persist(rec, summary, steps, questions, files, *, create_handoff: bool) -> None:
     """Grava a sessão em markdown. Novo handoff na fila só se create_handoff (servidor estava up)."""
     day = dt.date.today().isoformat()
-    name = f"{day}-{_slug(rec['label'])}-{rec['session_id'][-6:]}.md"
+    name = valida_nome(f"{day}-{_slug(rec['label'])}-{_slug(rec['session_id'][-6:])}.md")
+    item = None
+    if create_handoff:
+        # D2: o item da fila é montado e seu nome validado ANTES de escrever qualquer .md (nada criado-e-perdido)
+        origin = ledger.origin_from_env(rec["session_id"], rec["agent"])
+        item = ledger.new_item(summary, steps, questions, files, origin)
+        valida_nome(f"{item['id']}.json")
     (MEM / "sessoes").mkdir(parents=True, exist_ok=True)
     (MEM / "handoffs").mkdir(parents=True, exist_ok=True)
     body = [f"# Sessão {rec['label']} ({rec['agent']})", "",
             f"- sessão: `{rec['session_id']}`", f"- quando (UTC): {rec['started']}",
             f"- comando: `{rec['command'][:300]}`", f"- saída: rc={rec['exit_code']} em {rec['elapsed_sec']} s",
             f"- resultado: `{json.dumps(rec['result'], ensure_ascii=False)[:600]}`"]
+    if ledger.contexto_prova():
+        body.append(_PROVA_MARCA)
     if rec.get("handoff_received"):
         body.append(f"- handoff recebido: {rec['handoff_received']}")
     if rec.get("handoff_claimed_id"):
@@ -281,14 +331,14 @@ def _persist(rec, summary, steps, questions, files, *, create_handoff: bool) -> 
     (MEM / "sessoes" / name).write_text("\n".join(body) + "\n")
     # legado: também um .md legível em handoffs/
     md = [f"# Handoff {day} — {rec['label']}", "", f"De: `{rec['agent']}` · sessão `{rec['session_id']}`", "", summary, ""]
+    if ledger.contexto_prova():
+        md += [_PROVA_MARCA, ""]
     md += [f"- [ ] {s}" for s in steps] + [f"- ? {q}" for q in questions]
     if files:
         md += ["", "Arquivos: " + ", ".join(f"`{f}`" for f in files[:20])]
     (MEM / "handoffs" / name).write_text("\n".join(md) + "\n")
     # NÃO tocar aberto.json. Novo item na fila só com servidor up (e após sucesso ou como registro).
-    if create_handoff:
-        origin = ledger.origin_from_env(rec["session_id"], rec["agent"])
-        item = ledger.new_item(summary, steps, questions, files, origin)
+    if item is not None:
         ledger.save(MEM, item)
         rec["handoff_id"] = item["id"]
 
@@ -310,7 +360,8 @@ def cmd_run_tool(a) -> int:
 def cmd_status(a) -> int:
     c = Client()
     st = {"server": c.url, "up": c.healthy(), "workspace": WORKSPACE, "project": PROJECT,
-          "fila": [{"id": i["id"], "state": i["state"], "summary": i["summary"]} for i in ledger.load_all(MEM)]}
+          "fila": [{"id": i["id"], "state": i["state"], "summary": i["summary"], "eh_prova": ledger.is_prova(i)}
+                   for i in ledger.load_all(MEM)]}
     if st["up"]:
         try:
             st["open_handoffs"] = c.mcp("memory_handoff_list")
@@ -323,9 +374,10 @@ def cmd_status(a) -> int:
 def cmd_fila(a) -> int:
     items = ledger.load_all(MEM)
     if a.json:
-        print(json.dumps(items, indent=2, ensure_ascii=False)); return 0
+        # D2: campo derivado (não gravado no item) para quem lista a fila não confundir prova com memória
+        print(json.dumps([dict(i, eh_prova=ledger.is_prova(i)) for i in items], indent=2, ensure_ascii=False)); return 0
     for i in items:
-        print(f"{i['state']:10} {i['id']}  {i['summary'][:80]}")
+        print(f"{i['state']:10} {i['id']}  {'[PROVA] ' if ledger.is_prova(i) else ''}{i['summary'][:80]}")
     return 0
 
 
@@ -410,6 +462,10 @@ def main(argv=None) -> int:
         else:
             s.add_argument("name"); s.add_argument("--input", required=True); s.add_argument("--input2")
             s.add_argument("--out", required=True)
+    s = sub.add_parser("prova-item", help="cria o item de prova do job-a (nome validado antes da escrita)")
+    s.add_argument("--summary", required=True); s.add_argument("--next", action="append", default=[])
+    s.add_argument("--session", default="prova-a"); s.add_argument("--by", default="job-a")
+    s.add_argument("--reason", default="prova A"); s.add_argument("--github-output")
     sub.add_parser("status")
     s = sub.add_parser("fila"); s.add_argument("--json", action="store_true")
     s = sub.add_parser("sync"); s.add_argument("--msg", default="memoria: sessão ai-memory")
@@ -424,7 +480,7 @@ def main(argv=None) -> int:
     return {"seed": cmd_seed, "smoke": cmd_smoke, "session": cmd_session,
             "run-tool": cmd_run_tool, "status": cmd_status, "fila": cmd_fila,
             "sync": cmd_sync, "migrate": cmd_migrate, "recover": cmd_recover,
-            "claim-race": cmd_claim_race}[a.cmd_name](a)
+            "claim-race": cmd_claim_race, "prova-item": cmd_prova_item}[a.cmd_name](a)
 
 
 if __name__ == "__main__":

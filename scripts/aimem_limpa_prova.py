@@ -11,11 +11,15 @@ Subcomandos:
       Depois do push do job: os caminhos novos em R (ausentes em --antes) cujo commit de criação
       (git log --diff-filter=A) tem os trailers deste workflow/run/attempt/job e descende de
       run-base. Grava o manifesto canônico e imprime o sha256.
-  limpa     --manifest M --manifest-sha256 H --run-base SHA --ref R [--dry-run]
+  limpa     --manifest M --manifest-sha256 H --run-base SHA --ref R [--confirmar H] [--relatorio F] [--dry-run]
       Validação TOTAL antes de apagar. Qualquer falha: ::error::, rc=1, nada apagado.
-  verifica  --antes F --manifest M --manifest-sha256 H --ref R
-      Depois do push da limpeza: todo docs/memory fora do manifesto idêntico byte a byte a
-      --antes, e os caminhos do manifesto ausentes. Qualquer diferença: rc=1.
+      SEM --confirmar (padrão) = DRY-RUN: valida tudo e só relata o que SERIA removido (nenhum unlink).
+      Exclusão real só com --confirmar igual ao sha256 do manifesto (revisado por humano); valor
+      diferente = rc=1 sem exclusão. --dry-run força dry-run mesmo com --confirmar.
+  verifica  --antes F --manifest M --manifest-sha256 H --ref R [--esperado removido|intacto]
+      removido (padrão): depois do push da limpeza, todo docs/memory fora do manifesto idêntico byte a
+      byte a --antes e os caminhos do manifesto ausentes. intacto: docs/memory inteiro idêntico a
+      --antes (prova de que um dry-run não apagou nada). Qualquer diferença: rc=1.
 workflow/run_id/run_attempt vêm de --workflow/--run-id/--attempt (padrão: GITHUB_WORKFLOW,
 GITHUB_RUN_ID e GITHUB_RUN_ATTEMPT).
 """
@@ -37,6 +41,12 @@ ENTRY_KEYS = {"path", "sha256", "sha256_criacao", "created_commit", "workflow", 
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 NUM = re.compile(r"^[0-9]+$")
+# MESMA regex de aimem/nomes.py (SAFE_NAME_RE) — conferido por teste; script standalone não importa aimem.
+# nome de arquivo elegível: ASCII seguro (sem espaço, aspas, glob, controle, não-ASCII; ":" permitido fora do início — nomes de efeitos usam "<id>:<hash>"). Garante que
+# a exclusão seja raciocinada sem ambiguidade (sem glob/citação/NFC×NFD) e publicada; o gitsync (D: porcelain -z +
+# :(literal)) sincroniza qualquer nome, mas a limpeza só remove nomes neste charset.
+SAFE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*\.(json|md)\Z")
+SAFE_NAME_MAX = 200   # = aimem.nomes.MAX_LEN (conferido por teste)
 JOBS = ("job-a", "job-b")
 
 
@@ -100,7 +110,7 @@ def is_run_commit(commit: str, wf: str, rid: str, att: str, job: str | None = No
 
 
 def adds(ref: str, path: str) -> list[str]:
-    return git("log", "--diff-filter=A", "--format=%H", ref, "--", path).stdout.split()
+    return git("log", "--diff-filter=A", "--format=%H", ref, "--", lit(path)).stdout.split()
 
 
 def blob_at(commit: str, path: str) -> bytes:
@@ -121,7 +131,16 @@ def check_path(p) -> str | None:
         return f"caminho fora do escopo permitido: {p!r}"
     if name.startswith(".") or not (name.endswith(".json") or name.endswith(".md")):
         return f"nome fora do escopo (.json/.md, sem dotfile): {p!r}"
+    if len(name) > SAFE_NAME_MAX:
+        return f"nome longo demais (> {SAFE_NAME_MAX}): {p!r}"
+    if not SAFE_NAME.fullmatch(name):
+        return f"nome com caracteres não permitidos (só [A-Za-z0-9._:-]): {p!r}"
     return None
+
+
+def lit(path: str) -> str:
+    """Pathspec literal (sem glob/magic) para git log/ls-tree."""
+    return ":(literal)" + path
 
 
 def run_ids(a):
@@ -189,21 +208,26 @@ def cmd_registra(a):
             if e["path"] not in after:
                 raise Falha(f"arquivo do manifesto anterior sumiu do remoto: {e['path']}")
             entries[e["path"]] = dict(e, sha256=after[e["path"]]["sha256"])
-    ignorados = []
+    ignorados, nao_limpaveis = [], []
     for p in sorted(set(after) - set(antes)):
         cs = adds(a.ref, p)
-        ok = (len(cs) == 1 and cs[0] != base and is_ancestor(base, cs[0])
-              and is_run_commit(cs[0], wf, rid, att, a.job) and check_path(p) is None
-              and after[p]["mode"] == "100644")
-        if not ok:
+        do_run = (len(cs) == 1 and cs[0] != base and is_ancestor(base, cs[0])
+                  and is_run_commit(cs[0], wf, rid, att, a.job))
+        if not do_run:
             ignorados.append(p)
+            continue
+        if check_path(p) is not None or after[p]["mode"] != "100644":
+            nao_limpaveis.append(p)   # criado por ESTE run/job mas a limpeza não poderia removê-lo
             continue
         if p in entries:
             raise Falha(f"duplicidade: {p}")
         entries[p] = {"path": p, "sha256": after[p]["sha256"], "sha256_criacao": sha256(blob_at(cs[0], p)),
                       "created_commit": cs[0], "workflow": wf, "run_id": rid, "run_attempt": att, "job": a.job}
     for p in ignorados:
-        print(f"::warning::novo na janela mas NÃO registrado (proveniência/escopo): {p}", file=sys.stderr)
+        print(f"::warning::novo na janela mas NÃO registrado (proveniência): {p}", file=sys.stderr)
+    if nao_limpaveis:
+        raise Falha("arquivos criados por este run/job fora do escopo/nome/modo limpável (resíduo garantido): "
+                    + ", ".join(repr(x) for x in nao_limpaveis))
     obj = {"schema": SCHEMA, "workflow": wf, "run_id": rid, "run_attempt": att, "run_base": base,
            "entries": [entries[k] for k in sorted(entries)]}
     write_out(obj, a.out, a.github_output)
@@ -244,7 +268,7 @@ def validate(a) -> tuple[dict, list[str]]:
             errs.append(f"run/attempt/job divergente na entrada: {p}"); continue
         if not (HEX64.match(e["sha256"]) and HEX64.match(e["sha256_criacao"]) and HEX40.match(e["created_commit"])):
             errs.append(f"hash/commit malformado: {p}"); continue
-        ls = git("ls-tree", a.ref, "--", p).stdout.split()
+        ls = git("ls-tree", a.ref, "--", lit(p)).stdout.split()
         if not ls:
             errs.append(f"arquivo ausente no ref: {p}"); continue
         if ls[0] != "100644" or ls[1] != "blob":
@@ -274,24 +298,41 @@ def validate(a) -> tuple[dict, list[str]]:
             errs.append(f"commit de criação não pertence a este run/job: {p} ({c[:12]})"); continue
         if sha256(blob_at(c, p)) != e["sha256_criacao"]:
             errs.append(f"hash de criação divergente: {p}"); continue
-        for t in git("log", "--format=%H", f"{base}..{a.ref}", "--", p).stdout.split():
+        for t in git("log", "--format=%H", f"{base}..{a.ref}", "--", lit(p)).stdout.split():
             if not is_run_commit(t, wf, rid, att):
                 errs.append(f"alterado por commit fora do run: {p} ({t[:12]})"); break
     return m, errs
 
 
+def _relatorio(a, obj):
+    if a.relatorio:
+        pathlib.Path(a.relatorio).write_text(json.dumps(obj, ensure_ascii=False, sort_keys=True, indent=1) + "\n")
+    print(json.dumps(obj, ensure_ascii=False))
+
+
 def cmd_limpa(a):
+    if a.confirmar is not None and a.confirmar != a.manifest_sha256:
+        # confirmação explícita errada: aborta ANTES de qualquer validação/exclusão
+        print("::error::limpeza abortada: --confirmar não confere com o sha256 do manifesto", file=sys.stderr)
+        _relatorio(a, {"abortado": True, "erros": ["confirmação não confere"], "removidos": [], "seriam_removidos": []})
+        return 1
     m, errs = validate(a)
     if errs:
         for x in errs:
             print(f"::error::limpeza abortada: {x}", file=sys.stderr)
-        print(json.dumps({"abortado": True, "erros": errs, "removidos": []}, ensure_ascii=False))
+        _relatorio(a, {"abortado": True, "erros": errs, "removidos": [], "seriam_removidos": []})
         return 1
     paths = [e["path"] for e in m["entries"]]
-    if not a.dry_run:
-        for p in paths:
-            pathlib.Path(p).unlink()
-    print(json.dumps({"abortado": False, "dry_run": a.dry_run, "removidos": paths}, ensure_ascii=False))
+    dry = a.dry_run or a.confirmar is None
+    if dry:
+        print("::notice::limpeza em DRY-RUN (sem --confirmar): nada foi apagado", file=sys.stderr)
+        _relatorio(a, {"abortado": False, "dry_run": True, "manifest_sha256": a.manifest_sha256,
+                       "removidos": [], "seriam_removidos": paths})
+        return 0
+    for p in paths:
+        pathlib.Path(p).unlink()
+    _relatorio(a, {"abortado": False, "dry_run": False, "manifest_sha256": a.manifest_sha256,
+                   "removidos": paths, "seriam_removidos": paths})
     return 0
 
 
@@ -299,7 +340,7 @@ def cmd_verifica(a):
     m = load_manifest(a.manifest, a.manifest_sha256)
     antes = json.loads(pathlib.Path(a.antes).read_text())
     after = snapshot(a.ref)
-    rm = {e["path"] for e in m["entries"]}
+    rm = {e["path"] for e in m["entries"]} if a.esperado == "removido" else set()
     esperado = {k: v for k, v in antes.items() if k not in rm}
     difs = []
     for k in sorted(set(esperado) | set(after)):
@@ -311,7 +352,7 @@ def cmd_verifica(a):
         for d in difs:
             print(f"::error::verificação remota: {d}", file=sys.stderr)
         return 1
-    print(json.dumps({"ok": True, "preservados": len(esperado), "removidos": sorted(rm)}))
+    print(json.dumps({"ok": True, "esperado": a.esperado, "preservados": len(esperado), "removidos": sorted(rm)}))
     return 0
 
 
@@ -332,8 +373,11 @@ def main(argv=None) -> int:
             s.add_argument("--manifest", required=True); s.add_argument("--manifest-sha256", required=True)
         if name == "limpa":
             s.add_argument("--run-base", required=True); s.add_argument("--dry-run", action="store_true")
+            s.add_argument("--confirmar", help="sha256 do manifesto revisado; sem ele = dry-run")
+            s.add_argument("--relatorio", help="grava o resultado (removidos/seriam_removidos) em JSON")
         if name == "verifica":
             s.add_argument("--antes", required=True)
+            s.add_argument("--esperado", choices=("removido", "intacto"), default="removido")
     a = ap.parse_args(argv)
     try:
         return {"snapshot": cmd_snapshot, "registra": cmd_registra,

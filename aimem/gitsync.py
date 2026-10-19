@@ -8,6 +8,7 @@ from __future__ import annotations
 import json, os, pathlib, random, shutil, subprocess, time
 
 from aimem import ledger
+from aimem.nomes import NomeInvalido, valida_nome
 
 ALLOWED_DEFAULT = ("docs/memory/",)
 CONFLICT_DIR = pathlib.Path("out/aimem/conflito")
@@ -100,21 +101,41 @@ def _run_trailers() -> str:
             f"Aimem-Job: {v('GITHUB_JOB')}")
 
 
+def _status_paths() -> list[str]:
+    """Caminhos alterados/novos/removidos via `git status --porcelain=v1 -z -uall`.
+
+    -z: sem aspas/escapes (espaço, acento, aspas, barra invertida, TAB, newline chegam crus); renomeações
+    vêm como `XY novo\0antigo\0` — os dois caminhos entram (o antigo como remoção)."""
+    r = _run(["git", "status", "--porcelain=v1", "-z", "-uall"], check=False)
+    recs = (r.stdout or "").split("\0")
+    out, i = [], 0
+    while i < len(recs):
+        rec = recs[i]; i += 1
+        if len(rec) < 4:
+            continue
+        xy, path = rec[:2], rec[3:]
+        out.append(path)
+        if "R" in xy or "C" in xy:
+            if i < len(recs) and recs[i]:
+                out.append(recs[i])
+            i += 1
+    return out
+
+
 def _stage_allowed() -> list[str]:
-    """Só paths autorizados. Rejeita alterações em paginas/ (curadoria humana)."""
-    r = _run(["git", "status", "--porcelain", "-uall"], check=False)
+    """Só paths autorizados. Rejeita alterações em paginas/ (curadoria humana).
+
+    Qualquer nome válido é sincronizado (D): sem parsing de saída citada e com pathspec literal
+    (`[ab].md` não vira glob; `a -> b.md` não é tomado por renomeação)."""
     staged = []
-    for line in (r.stdout or "").splitlines():
-        path = line[3:].strip()
-        if " -> " in path:
-            path = path.split(" -> ", 1)[1]
+    for path in _status_paths():
         if not any(path == a.rstrip("/") or path.startswith(a) for a in _allowed()):
             continue
         if path.startswith("docs/memory/paginas/"):
             continue
         staged.append(path)
     if staged:
-        _run(["git", "add", "--", *staged])
+        _run(["git", "add", "-A", "--", *[":(literal)" + p for p in staged]])
     return staged
 
 
@@ -253,7 +274,7 @@ def _preserve(reason: str) -> pathlib.Path:
 
 def _semantic_rebase() -> None:
     """Durante rebase com conflitos: merge semântico de fila/*.json; resto = abort."""
-    unmerged = _run(["git", "diff", "--name-only", "--diff-filter=U"], check=False).stdout.split()
+    unmerged = [x for x in (_run(["git", "diff", "--name-only", "-z", "--diff-filter=U"], check=False).stdout or "").split("\0") if x]
     if not unmerged:
         return
     for path in unmerged:
@@ -274,7 +295,7 @@ def _semantic_rebase() -> None:
             dest = _preserve(f"UnsafeMerge em {path}: {e}")
             raise SyncError(f"UnsafeMerge em {path}: {e} (artefato {dest})")
         ours.write_text(ledger.dumps(merged))
-        _run(["git", "add", "--", path])
+        _run(["git", "add", "--", ":(literal)" + path])
     r = _run(["git", "rebase", "--continue"], check=False, env={**os.environ, "GIT_EDITOR": "true"})
     if r.returncode:
         _run(["git", "rebase", "--abort"], check=False)
@@ -397,6 +418,9 @@ def claim_one(mem: pathlib.Path) -> dict | None:
             # revalida claimability no estado fresco
             ok, reason = False, ""
             m = ledger.me()
+            motivo = ledger.recusa_prova(it, m)
+            if motivo:
+                raise ledger.LostClaim(motivo)
             if it["state"] == "pending":
                 ok, reason = True, _why
             elif it["state"] == "claimed":
@@ -435,6 +459,10 @@ def confirm(mem: pathlib.Path, iid: str, *, ok: bool) -> dict:
 
 def claim_id(mem: pathlib.Path, iid: str) -> dict:
     """Claim de um handoff específico (CAS + validação remota). LostClaim se outro dono."""
+    try:   # D2: id vem de AIMEM_CLAIM_ID (env) → validar antes de qualquer checkout/leitura/escrita
+        valida_nome(f"{iid}.json")
+    except NomeInvalido as e:
+        raise ledger.LostClaim(f"id de handoff inválido (nada foi lido nem escrito): {e}") from None
     path = ledger.fila_dir(mem) / f"{iid}.json"
     if not path.is_file():
         _run(["git", "fetch", "origin", _sync_ref()], check=False)
@@ -444,6 +472,9 @@ def claim_id(mem: pathlib.Path, iid: str) -> dict:
 
     def mut(it):
         m = ledger.me()
+        motivo = ledger.recusa_prova(it, m)
+        if motivo:
+            raise ledger.LostClaim(motivo)
         ok, reason = False, ""
         if it["state"] == "pending":
             ok, reason = True, "claim"

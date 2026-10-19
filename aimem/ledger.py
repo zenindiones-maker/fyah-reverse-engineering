@@ -8,6 +8,7 @@ Nada é apagado; toda transição entra em `history`.
 from __future__ import annotations
 
 import datetime as dt, hashlib, json, os, pathlib, re, subprocess, uuid
+from aimem.nomes import valida_nome
 
 SCHEMA = "fyah-handoff@1"
 REPO_SLUG = os.environ.get("GITHUB_REPOSITORY", "zenindiones-maker/fyah-reverse-engineering")
@@ -65,21 +66,88 @@ def origin_from_env(session: str, agent: str) -> dict:
 def new_item(summary, next_steps, open_questions, files, origin: dict) -> dict:
     stamp = _ts(origin["created_utc"]).strftime("%Y%m%dT%H%M%SZ")
     iid = f"{stamp}-{origin['run_id']}-{origin['run_attempt']}-{uuid.uuid4().hex[:6]}"
-    return {"schema": SCHEMA, "id": iid, "state": "pending", "summary": summary,
+    item = {"schema": SCHEMA, "id": iid, "state": "pending", "summary": summary,
             "next_steps": list(next_steps or []), "open_questions": list(open_questions or []),
             "files_touched": list(files or []), "origin": origin, "consumer": None, "consumed": None,
             "attempts": 0, "max_attempts": int(os.environ.get("AIMEM_MAX_ATTEMPTS", "3")),
             "history": [{"at": origin["created_utc"], "from": None, "to": "pending",
                          "by": f"{origin['workflow']}:{origin['run_id']}", "reason": "criado"}]}
+    if origin.get("workflow") in PROVA_WORKFLOWS or os.environ.get("AIMEM_PROVA") == "1":
+        _marca_prova(item)   # sessão dentro do workflow de prova (ex.: prova-B) → item de prova
+    return item
+
+
+# ------------------------------------------------------------------ itens de PROVA (D2)
+# Marcação estrutural: item de prova NUNCA é entregue a um consumidor real.
+# - novos itens: campo `kind: "prova"` + `prova: {workflow, run_id, run_attempt}` (gravados na criação);
+# - itens legados sem `kind` (ex.: os já existentes em p0a): reconhecidos pela origem — todo item cuja
+#   origin.workflow é um workflow de prova é prova (er-memory-persist não tem outra finalidade).
+# Só o PRÓPRIO run de prova (mesmo workflow e run_id) pode fazer claim; demais → recusado.
+PROVA_WORKFLOWS = frozenset({"er-memory-persist"})
+PROVA_KIND = "prova"
+
+
+def contexto_prova(m: dict | None = None) -> bool:
+    """True se o processo atual roda dentro de um workflow de prova (ou AIMEM_PROVA=1)."""
+    m = m or me()
+    return m["workflow"] in PROVA_WORKFLOWS or os.environ.get("AIMEM_PROVA") == "1"
+
+
+def is_prova(item: dict) -> bool:
+    if item.get("kind") == PROVA_KIND or item.get("prova"):
+        return True
+    return (item.get("origin") or {}).get("workflow") in PROVA_WORKFLOWS
+
+
+def recusa_prova(item: dict, m: dict | None = None) -> str | None:
+    """Motivo de recusa (str) se `item` é prova e o consumidor NÃO é o próprio run de prova; senão None."""
+    if not is_prova(item):
+        return None
+    m = m or me()
+    o = item.get("origin") or {}
+    p = item.get("prova") or {}
+    wf = str(p.get("workflow") or o.get("workflow") or "")
+    rid = str(p.get("run_id") or o.get("run_id") or "")
+    if m["workflow"] == wf and m["run_id"] not in ("", "local") and str(m["run_id"]) == rid:
+        return None
+    return (f"{item.get('id')} é item de PROVA ({wf}:{rid}); consumidor {m['consumer_id']} não é o run de prova "
+            f"— recusado (nunca vira memória válida)")
+
+
+def _marca_prova(item: dict) -> dict:
+    o = item["origin"]
+    item["kind"] = PROVA_KIND
+    item["prova"] = {"workflow": o["workflow"], "run_id": str(o["run_id"]), "run_attempt": str(o["run_attempt"])}
+    return item
+
+
+def new_prova_item(hid: str, summary: str, next_steps, *, session: str, agent: str, by: str, reason: str) -> dict:
+    """Item de prova do job-a: id fixo (validado), marcado como prova, conteúdo determinístico."""
+    valida_nome(f"{hid}.json")
+    m = me()
+    t = now()
+    origin = {"workflow": m["workflow"], "run_id": m["run_id"], "run_attempt": m["run_attempt"],
+              "sha": os.environ.get("GITHUB_SHA"), "session": session, "agent": agent, "created_utc": t}
+    item = {"schema": SCHEMA, "id": hid, "state": "pending", "summary": summary,
+            "next_steps": list(next_steps or []), "open_questions": [], "files_touched": [],
+            "origin": origin, "consumer": None, "consumed": None, "attempts": 0, "max_attempts": 3,
+            "history": [{"at": t, "from": None, "to": "pending", "by": by, "reason": reason}]}
+    return _marca_prova(item)
 
 
 def dumps(item: dict) -> str:
     return json.dumps(item, indent=2, ensure_ascii=False) + "\n"
 
 
-def save(mem, item: dict) -> pathlib.Path:
+def save(mem, item: dict, *, exclusivo: bool = False) -> pathlib.Path:
+    name = valida_nome(f"{item['id']}.json")  # falha alto ANTES de criar (nunca criado-e-perdido)
     d = fila_dir(mem); d.mkdir(parents=True, exist_ok=True)
-    p = d / f"{item['id']}.json"; p.write_text(dumps(item)); return p
+    p = d / name
+    if exclusivo:
+        with open(p, "x", encoding="utf-8") as f:   # nunca sobrescreve item existente
+            f.write(dumps(item))
+        return p
+    p.write_text(dumps(item)); return p
 
 
 def load(mem, iid: str) -> dict:
@@ -112,6 +180,8 @@ def _expired(item: dict) -> bool:
 
 
 def _claimable(item: dict, m: dict) -> tuple[bool, str]:
+    if recusa_prova(item, m):
+        return False, ""
     if item["state"] == "pending":
         return True, "claim"
     if item["state"] != "claimed":
@@ -124,9 +194,24 @@ def _claimable(item: dict, m: dict) -> tuple[bool, str]:
     return False, ""
 
 
+def _id_seguro(mem, item: dict) -> bool:
+    """D2: o claim usa `fila/<id>.json`; o id (conteúdo do JSON) precisa ser um nome válido E corresponder a um
+    arquivo existente da fila — senão o item nunca é oferecido (evita id forjado apontar para outro caminho)."""
+    iid = item.get("id")
+    if not isinstance(iid, str):
+        return False
+    try:
+        valida_nome(f"{iid}.json")
+    except ValueError:
+        return False
+    return (fila_dir(mem) / f"{iid}.json").is_file()
+
+
 def claimable(mem) -> list[tuple[dict, str]]:
     m = me(); out = []
     for i in load_all(mem):
+        if not _id_seguro(mem, i):
+            continue
         ok, why = _claimable(i, m)
         if ok:
             out.append((i, why))
@@ -255,7 +340,8 @@ def merge_items(ours: dict, theirs: dict) -> dict:
     core = lambda it: (it.get("summary"), tuple(it.get("next_steps") or []),
                        tuple(it.get("open_questions") or []),
                        (it.get("recovery") or {}).get("original_sha256"),
-                       (it.get("migration") or {}).get("original_sha256"))
+                       (it.get("migration") or {}).get("original_sha256"),
+                       it.get("kind"), json.dumps(it.get("prova"), sort_keys=True))
     if core(ours) != core(theirs):
         raise UnsafeMerge(f"{ours['id']}: mesmo ID com conteúdo essencial diferente (não descartar)")
 
@@ -349,12 +435,13 @@ def migrate_aberto(mem: pathlib.Path, by: str = "aimem migrate") -> dict | None:
             return None
         if (it.get("recovery") or {}).get("original_sha256") == digest:
             return None
-    raw_dir = pathlib.Path(mem) / "handoffs" / "raw"; raw_dir.mkdir(parents=True, exist_ok=True)
-    raw_name = f"aberto-{digest[:12]}.json"
-    (raw_dir / raw_name).write_bytes(body)
+    raw_name = valida_nome(f"aberto-{digest[:12]}.json")
     raw_path = f"docs/memory/handoffs/raw/{raw_name}"
     item = _item_from_aberto(body, reason="migrado de aberto.json", by=by,
                              migration={"original_sha256": digest, "raw_path": raw_path, "migrated_utc": now(), "by": by})
+    valida_nome(f"{item['id']}.json")   # D2: os DOIS nomes validados antes de criar diretório ou arquivo
+    raw_dir = pathlib.Path(mem) / "handoffs" / "raw"; raw_dir.mkdir(parents=True, exist_ok=True)
+    (raw_dir / raw_name).write_bytes(body)
     save(mem, item)
     return item
 
@@ -374,14 +461,15 @@ def recover_lost(mem: pathlib.Path, commit: str, overwritten_by: str, path: str,
     for it in load_all(mem):
         if (it.get("recovery") or {}).get("original_sha256") == digest:
             return it
-    raw_dir = pathlib.Path(mem) / "handoffs" / "raw"; raw_dir.mkdir(parents=True, exist_ok=True)
-    raw_name = f"recuperado-{digest[:12]}.json"
-    (raw_dir / raw_name).write_bytes(body)
+    raw_name = valida_nome(f"recuperado-{digest[:12]}.json")
     raw_path = f"docs/memory/handoffs/raw/{raw_name}"
     run_url = f"https://github.com/{REPO_SLUG}/actions/runs/39177110784"
     recovery = {"from_commit": commit, "overwritten_by_commit": overwritten_by, "source_path": path,
                 "original_sha256": digest, "raw_path": raw_path, "source_run": run_url,
                 "recovered_by": by, "recovered_utc": now()}
     item = _item_from_aberto(body, reason="recuperado (perdido por -X theirs)", by=by, recovery=recovery)
+    valida_nome(f"{item['id']}.json")   # D2: os DOIS nomes validados antes de criar diretório ou arquivo
+    raw_dir = pathlib.Path(mem) / "handoffs" / "raw"; raw_dir.mkdir(parents=True, exist_ok=True)
+    (raw_dir / raw_name).write_bytes(body)
     save(mem, item)
     return item
